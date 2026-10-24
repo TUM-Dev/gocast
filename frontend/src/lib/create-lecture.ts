@@ -328,7 +328,7 @@ export async function createLectures(courseId: number, request: CreateLecturesRe
   return res.lectures.map(toLecture);
 }
 
-/** Hands a VOD upload's recording to a worker, which transcodes it into that version. */
+/** Hands a VOD upload's recording to a runner, which transcodes it into that version. */
 export async function uploadLectureMedia(
   courseId: number,
   streamId: number,

@@ -50,7 +50,6 @@ type Stream struct {
 	ThumbInterval          uint32 `gorm:"default:null"`
 	StreamName             string
 	Duration               sql.NullInt32    `gorm:"default:null"`
-	StreamWorkers          []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses       []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections          []VideoSection
 	TranscodingProgresses  []TranscodingProgress `gorm:"foreignKey:StreamID"`

@@ -67,7 +67,6 @@ var spaRoutes = map[string]bool{
 	"/admin/integrations":                   true,
 	"/admin/users":                          true,
 	"/admin/info-pages":                     true,
-	"/admin/workers":                        true,
 	"/admin/maintenance":                    true,
 	"/admin/course-import":                  true,
 	"/admin/token":                          true,
@@ -309,7 +308,6 @@ func configMainRoute(router *gin.Engine) {
 	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls/new")
-	registerPage(serverAdminGroup, http.MethodGet, "/admin/workers")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/server-notifications")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/course-import")

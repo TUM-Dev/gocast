@@ -9,7 +9,6 @@ require (
 	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2
-	github.com/TUM-Dev/gocast/worker v0.0.0-20251102182539-4e087e888c3c
 	github.com/antchfx/xmlquery v1.5.1
 	github.com/asticode/go-astisub v0.44.0
 	github.com/crewjam/saml v0.5.1
@@ -38,7 +37,6 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
 	github.com/tum-dev/gocast/runner v0.0.0-20260911225449-efd09b759020
-	github.com/u2takey/go-utils v0.3.1
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/oauth2 v0.37.0

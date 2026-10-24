@@ -265,20 +265,6 @@ func (mr *MockStreamsDaoMockRecorder) GetCurrentLive(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentLive", reflect.TypeOf((*MockStreamsDao)(nil).GetCurrentLive), ctx)
 }
 
-// GetDuePremieresForWorkers mocks base method.
-func (m *MockStreamsDao) GetDuePremieresForWorkers() []model.Stream {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDuePremieresForWorkers")
-	ret0, _ := ret[0].([]model.Stream)
-	return ret0
-}
-
-// GetDuePremieresForWorkers indicates an expected call of GetDuePremieresForWorkers.
-func (mr *MockStreamsDaoMockRecorder) GetDuePremieresForWorkers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuePremieresForWorkers", reflect.TypeOf((*MockStreamsDao)(nil).GetDuePremieresForWorkers))
-}
-
 // GetDueStreamsForRunners mocks base method.
 func (m *MockStreamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
 	m.ctrl.T.Helper()
@@ -292,20 +278,6 @@ func (m *MockStreamsDao) GetDueStreamsForRunners() ([]model.Stream, error) {
 func (mr *MockStreamsDaoMockRecorder) GetDueStreamsForRunners() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDueStreamsForRunners", reflect.TypeOf((*MockStreamsDao)(nil).GetDueStreamsForRunners))
-}
-
-// GetDueStreamsForWorkers mocks base method.
-func (m *MockStreamsDao) GetDueStreamsForWorkers() []model.Stream {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDueStreamsForWorkers")
-	ret0, _ := ret[0].([]model.Stream)
-	return ret0
-}
-
-// GetDueStreamsForWorkers indicates an expected call of GetDueStreamsForWorkers.
-func (mr *MockStreamsDaoMockRecorder) GetDueStreamsForWorkers() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDueStreamsForWorkers", reflect.TypeOf((*MockStreamsDao)(nil).GetDueStreamsForWorkers))
 }
 
 // GetLiveStreamsInLectureHall mocks base method.
@@ -548,20 +520,6 @@ func (m *MockStreamsDao) SaveTranscodingProgress(progress model.TranscodingProgr
 func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).SaveTranscodingProgress), progress)
-}
-
-// SaveWorkerForStream mocks base method.
-func (m *MockStreamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveWorkerForStream", stream, worker)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveWorkerForStream indicates an expected call of SaveWorkerForStream.
-func (mr *MockStreamsDaoMockRecorder) SaveWorkerForStream(stream, worker any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveWorkerForStream", reflect.TypeOf((*MockStreamsDao)(nil).SaveWorkerForStream), stream, worker)
 }
 
 // SetLectureHall mocks base method.

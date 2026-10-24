@@ -198,20 +198,6 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 	}
-	Worker1 = model.Worker{
-		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
-		Host:     "localhost",
-		Status:   "",
-		Workload: 0,
-		LastSeen: time.Now(),
-	}
-	Worker2 = model.Worker{
-		WorkerID: "ed067fa3-2364-4dcd-bfd2-e0ffb8d751d4",
-		Host:     "localhost",
-		Status:   "",
-		Workload: 0,
-		LastSeen: time.Now(),
-	}
 	AdminToken = model.Token{
 		UserID: Admin.ID,
 		User:   Admin,

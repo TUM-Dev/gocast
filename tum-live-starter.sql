@@ -881,32 +881,6 @@ INSERT INTO `stream_progresses` VALUES (0,0,1,1);
 UNLOCK TABLES;
 
 --
--- Table structure for table `stream_workers`
---
-
-DROP TABLE IF EXISTS `stream_workers`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `stream_workers` (
-  `stream_id` bigint(20) unsigned NOT NULL,
-  `worker_worker_id` varchar(191) NOT NULL,
-  PRIMARY KEY (`stream_id`,`worker_worker_id`),
-  KEY `fk_stream_workers_worker` (`worker_worker_id`),
-  CONSTRAINT `fk_stream_workers_stream` FOREIGN KEY (`stream_id`) REFERENCES `streams` (`id`),
-  CONSTRAINT `fk_stream_workers_worker` FOREIGN KEY (`worker_worker_id`) REFERENCES `workers` (`worker_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `stream_workers`
---
-
-LOCK TABLES `stream_workers` WRITE;
-/*!40000 ALTER TABLE `stream_workers` DISABLE KEYS */;
-/*!40000 ALTER TABLE `stream_workers` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `streams`
 --
 
@@ -1069,43 +1043,6 @@ INSERT INTO `users` VALUES (1,'2022-04-18 13:36:21.000','2022-04-18 13:36:22.000
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `workers`
---
-
-DROP TABLE IF EXISTS `workers`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `workers` (
-  `worker_id` varchar(191) NOT NULL,
-  `host` longtext DEFAULT NULL,
-  `status` longtext DEFAULT NULL,
-  `workload` bigint(20) unsigned DEFAULT NULL,
-  `last_seen` datetime(3) DEFAULT NULL,
-  `cpu` longtext DEFAULT NULL,
-  `memory` longtext DEFAULT NULL,
-  `disk` longtext DEFAULT NULL,
-  `uptime` longtext DEFAULT NULL,
-  `version` longtext DEFAULT NULL,
-  PRIMARY KEY (`worker_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `workers`
---
-
-LOCK TABLES `workers` WRITE;
-/*!40000 ALTER TABLE `workers` DISABLE KEYS */;
--- Not in the original dump: workers only register themselves over gRPC. Liveness is
--- a heartbeat within six minutes, so no fixture can seed a live one. `beta` is
--- consumed by the delete test in workers.spec.ts.
-INSERT INTO `workers` (`worker_id`,`host`,`status`,`workload`,`last_seen`,`cpu`,`memory`,`disk`,`uptime`,`version`)
-VALUES
-  ('worker-alpha','vm-alpha','converting',2,DATE_SUB(NOW(), INTERVAL 1 HOUR),'12%','1.2GB/4GB','20%/100GB','3d','1.4.2'),
-  ('worker-beta','vm-beta','',0,DATE_SUB(NOW(), INTERVAL 9 DAY),'0%','0.1GB/4GB','5%/100GB','30d','1.3.0');
-/*!40000 ALTER TABLE `workers` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

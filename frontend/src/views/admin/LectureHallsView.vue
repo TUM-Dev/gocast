@@ -301,7 +301,7 @@ async function snapshotPreset(row: Row, preset: CameraPreset): Promise<void> {
         <div class="border-t pt-3 dark:border-gray-800">
           <h2 class="text-1 font-semibold">Sources</h2>
           <p class="text-5 text-xs">
-            Stream URLs the worker pulls from. Leave a source empty if the hall does not offer it.
+            Stream URLs the runner pulls from. Leave a source empty if the hall does not offer it.
           </p>
           <div class="mt-3 grid gap-4 sm:grid-cols-3">
             <div class="flex flex-col gap-1 text-sm">

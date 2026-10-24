@@ -40,7 +40,6 @@ const administration: AdminLink[] = [
     permission: "server.administer",
     migrated: true,
   },
-  { label: "Workers", path: "/admin/workers", permission: "server.administer", migrated: true },
   { label: "Runners", path: "/admin/runners", permission: "server.administer", migrated: true },
   {
     label: "Server Notifications",

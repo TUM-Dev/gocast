@@ -517,6 +517,6 @@ func copyOfLecture(stream model.Stream, courseID uint, move bool) model.Stream {
 		c.Silences[i] = s
 	}
 	// Not loaded by GetStreamByID, and per-viewer or per-run besides.
-	c.Chats, c.Stats, c.StreamProgresses, c.StreamWorkers, c.TranscodingProgresses = nil, nil, nil, nil, nil
+	c.Chats, c.Stats, c.StreamProgresses, c.TranscodingProgresses = nil, nil, nil, nil
 	return c
 }
