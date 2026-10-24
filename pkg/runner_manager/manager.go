@@ -125,6 +125,7 @@ func (m *Manager) TriggerDueStreams() error {
 			protobuf.StreamVersion_STREAM_VERSION_PRESENTATION,
 			protobuf.StreamVersion_STREAM_VERSION_CAMERA,
 		}
+		silenceVersion := silenceDetectionVersion(lh)
 		for _, version := range versions {
 			// Skip if a runner job already exists for this stream+version (prevents double-triggering)
 			exists, err := m.dao.StreamsDao.HasRunnerJobForStreamVersion(s.ID, modelStreamVersion(version))
@@ -137,7 +138,7 @@ func (m *Manager) TriggerDueStreams() error {
 				continue
 			}
 
-			if err := m.triggerStreamVersion(ctx, s, lh, version); err != nil {
+			if err := m.triggerStreamVersion(ctx, s, lh, version, version == silenceVersion); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -151,7 +152,7 @@ func (m *Manager) TriggerDueStreams() error {
 // triggerStreamVersion starts one version of a stream on a reserved runner. It owns the
 // runner connection for the duration of the call, so that a tick spanning several streams
 // and versions doesn't hold one connection open per iteration.
-func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion) error {
+func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) error {
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)
@@ -160,7 +161,7 @@ func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh m
 		_ = conn.Close()
 	}()
 
-	resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
+	resp, err := m.requestStreamVersion(ctx, s, client, lh, version, detectSilence)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
 		return fmt.Errorf("RequestStream %v: %w", version, err)
 	}
@@ -297,6 +298,8 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	case *protobuf.Notification_SectionImagesReady:
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
+	case *protobuf.Notification_SilenceDetected:
+		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -423,7 +426,7 @@ func (m *Manager) notifyLiveState(streamID uint, live bool) {
 
 var errNotNoLectureSource = fmt.Errorf("no source configured for this lecture hall ip")
 
-func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, lh model.LectureHall, version protobuf.StreamVersion) (*protobuf.StreamResponse, error) {
+func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) (*protobuf.StreamResponse, error) {
 	var ip string
 	switch version {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
@@ -475,6 +478,7 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		FfmpegOutputOptions: ptr.Take(outputOptions),
 		Input:               ptr.Take(input),
 		SelfStream:          ptr.Take(s.IsSelfStream()),
+		DetectSilence:       ptr.Take(detectSilence),
 	})
 }
 
@@ -513,7 +517,7 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		_ = conn.Close()
 	}()
 
-	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
+	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED, true)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
 		m.logger.Error("Could not start selfstream", "err", err)
 		return err

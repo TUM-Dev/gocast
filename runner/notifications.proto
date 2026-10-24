@@ -15,6 +15,7 @@ message Notification {
     SectionImagesReadyNotification section_images_ready = 6;
     TranscodingProgressNotification transcoding_progress = 7;
     VODFailedNotification vod_failed = 8;
+    SilenceDetectedNotification silence_detected = 9;
   }
 }
 
@@ -52,6 +53,15 @@ message TranscodingProgressNotification {
   StreamVersion stream_version = 2;
   // percent, 0 to 99. A finished conversion is reported by VODReadyNotification.
   int32 progress = 3;
+}
+
+// SilenceDetectedNotification reports the stretches of a VoD without sound, in whole seconds.
+// starts[i] and ends[i] belong together. An empty list is never sent.
+message SilenceDetectedNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  repeated uint32 starts = 3;
+  repeated uint32 ends = 4;
 }
 
 // VODFailedNotification reports that a VOD could not be made from an uploaded video.

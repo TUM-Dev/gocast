@@ -115,7 +115,7 @@ func TestWaitIdleWaitsForAnUploadThatIsStillArriving(t *testing.T) {
 	t.Cleanup(func() { importActions = prev })
 
 	r := newUploadTestRunner(t)
-	token, err := r.uploads.create(1, "STREAM_VERSION_COMB")
+	token, err := r.uploads.create(1, "STREAM_VERSION_COMB", false)
 	if err != nil {
 		t.Fatal(err)
 	}
