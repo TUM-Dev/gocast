@@ -10,9 +10,10 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-// RegenerateThumbnailRequest describes the VOD whose thumbnail should be regenerated.
+// RedoPostProcessingRequest describes the VOD whose post-processing, its thumbnail and
+// optionally its silences, should be redone.
 // PlaylistURL must be signed, as for SectionImageRequest.
-type RegenerateThumbnailRequest struct {
+type RedoPostProcessingRequest struct {
 	StreamID    uint
 	Version     model.StreamVersion
 	PlaylistURL string
@@ -33,11 +34,12 @@ func protobufStreamVersion(version model.StreamVersion) protobuf.StreamVersion {
 	}
 }
 
-// RequestRegenerateThumbnail asks a runner to regenerate the thumbnail for an
+// RequestRedoPostProcessing asks a runner to redo the post-processing of an
 // already-recorded VOD. The runner answers asynchronously with a
-// ThumbnailReadyNotification, which saveThumbnail then stores, so this returns as
-// soon as the job is accepted.
-func (m *Manager) RequestRegenerateThumbnail(ctx context.Context, req RegenerateThumbnailRequest) error {
+// ThumbnailReadyNotification, which saveThumbnail then stores, and a
+// SilenceDetectedNotification if silences were asked for, so this returns as soon as the
+// job is accepted. The runner's RPC still has the name it was introduced with.
+func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) error {
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)
@@ -59,6 +61,6 @@ func (m *Manager) RequestRegenerateThumbnail(ctx context.Context, req Regenerate
 		return fmt.Errorf("RegenerateThumbnail: %w", err)
 	}
 	m.logger.With("stream", req.StreamID, "job", resp.GetJobId(), "runner", runner.Hostname).
-		Info("requested thumbnail regeneration")
+		Info("requested post-processing")
 	return nil
 }
