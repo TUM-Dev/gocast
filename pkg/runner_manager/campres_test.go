@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 func writeSolidJPEG(t *testing.T, path string, w, h int, c color.Color) {
