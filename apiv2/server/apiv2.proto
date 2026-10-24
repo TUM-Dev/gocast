@@ -527,7 +527,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Create a lecture, or a series of them, in a course."
-      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
+      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media). A VOD_UPLOAD takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
     };
   }
 
@@ -1923,7 +1923,8 @@ message Stream {
   bool liveNow = 16;
   google.protobuf.Timestamp live_now_timestamp = 17;
   bool recording = 18;
-  bool premiere = 19;
+  reserved 19;
+  reserved "premiere";
   bool ended = 20;
   uint32 vod_views = 21;
   uint32 start_offset = 22;
@@ -2973,7 +2974,8 @@ message CourseLectureAdmin {
   bool past = 16;
   // A version is still transcoding.
   bool converting = 17;
-  bool premiere = 18;
+  reserved 18;
+  reserved "premiere";
   // The recorded versions there are: any of COMB, PRES and CAM.
   repeated string vod_versions = 19;
   // The recording's length in seconds, 0 when not known.
@@ -3068,8 +3070,9 @@ enum LectureCreationKind {
   LECTURE_CREATION_KIND_LIVESTREAM = 0;
   // A recording uploaded afterwards through POST .../streams/{stream_id}/media.
   LECTURE_CREATION_KIND_VOD_UPLOAD = 1;
-  // A recording a worker streams as if live, starting at the lecture's start.
-  LECTURE_CREATION_KIND_PREMIERE = 2;
+  // 2 was PREMIERE, a recording streamed as if live. It needed a worker.
+  reserved 2;
+  reserved "LECTURE_CREATION_KIND_PREMIERE";
 }
 
 message CreateLecturesRequest {
@@ -3079,8 +3082,8 @@ message CreateLecturesRequest {
   LectureCreationKind kind = 3;
   // The first lecture's start. Required unless ad_hoc.
   google.protobuf.Timestamp start = 4;
-  // How long each lecture runs. Required for a livestream; a VOD_UPLOAD or
-  // PREMIERE given 0 gets an hour.
+  // How long each lecture runs. Required for a livestream; a
+  // VOD_UPLOAD given 0 gets an hour.
   uint32 duration_minutes = 5;
   // 0 for none: a self-streamed livestream, and always for the other kinds.
   uint32 lecture_hall_id = 6;

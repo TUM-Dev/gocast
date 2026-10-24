@@ -269,8 +269,6 @@ const (
 	LectureCreationKind_LECTURE_CREATION_KIND_LIVESTREAM LectureCreationKind = 0
 	// A recording uploaded afterwards through POST .../streams/{stream_id}/media.
 	LectureCreationKind_LECTURE_CREATION_KIND_VOD_UPLOAD LectureCreationKind = 1
-	// A recording a worker streams as if live, starting at the lecture's start.
-	LectureCreationKind_LECTURE_CREATION_KIND_PREMIERE LectureCreationKind = 2
 )
 
 // Enum value maps for LectureCreationKind.
@@ -278,12 +276,10 @@ var (
 	LectureCreationKind_name = map[int32]string{
 		0: "LECTURE_CREATION_KIND_LIVESTREAM",
 		1: "LECTURE_CREATION_KIND_VOD_UPLOAD",
-		2: "LECTURE_CREATION_KIND_PREMIERE",
 	}
 	LectureCreationKind_value = map[string]int32{
 		"LECTURE_CREATION_KIND_LIVESTREAM": 0,
 		"LECTURE_CREATION_KIND_VOD_UPLOAD": 1,
-		"LECTURE_CREATION_KIND_PREMIERE":   2,
 	}
 )
 
@@ -3425,7 +3421,6 @@ type Stream struct {
 	LiveNow          bool                   `protobuf:"varint,16,opt,name=liveNow,proto3" json:"liveNow,omitempty"`
 	LiveNowTimestamp *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=live_now_timestamp,json=liveNowTimestamp,proto3" json:"live_now_timestamp,omitempty"`
 	Recording        bool                   `protobuf:"varint,18,opt,name=recording,proto3" json:"recording,omitempty"`
-	Premiere         bool                   `protobuf:"varint,19,opt,name=premiere,proto3" json:"premiere,omitempty"`
 	Ended            bool                   `protobuf:"varint,20,opt,name=ended,proto3" json:"ended,omitempty"`
 	VodViews         uint32                 `protobuf:"varint,21,opt,name=vod_views,json=vodViews,proto3" json:"vod_views,omitempty"`
 	StartOffset      uint32                 `protobuf:"varint,22,opt,name=start_offset,json=startOffset,proto3" json:"start_offset,omitempty"`
@@ -3594,13 +3589,6 @@ func (x *Stream) GetLiveNowTimestamp() *timestamppb.Timestamp {
 func (x *Stream) GetRecording() bool {
 	if x != nil {
 		return x.Recording
-	}
-	return false
-}
-
-func (x *Stream) GetPremiere() bool {
-	if x != nil {
-		return x.Premiere
 	}
 	return false
 }
@@ -11051,7 +11039,6 @@ type CourseLectureAdmin struct {
 	Past bool `protobuf:"varint,16,opt,name=past,proto3" json:"past,omitempty"`
 	// A version is still transcoding.
 	Converting bool `protobuf:"varint,17,opt,name=converting,proto3" json:"converting,omitempty"`
-	Premiere   bool `protobuf:"varint,18,opt,name=premiere,proto3" json:"premiere,omitempty"`
 	// The recorded versions there are: any of COMB, PRES and CAM.
 	VodVersions []string `protobuf:"bytes,19,rep,name=vod_versions,json=vodVersions,proto3" json:"vod_versions,omitempty"`
 	// The recording's length in seconds, 0 when not known.
@@ -11208,13 +11195,6 @@ func (x *CourseLectureAdmin) GetPast() bool {
 func (x *CourseLectureAdmin) GetConverting() bool {
 	if x != nil {
 		return x.Converting
-	}
-	return false
-}
-
-func (x *CourseLectureAdmin) GetPremiere() bool {
-	if x != nil {
-		return x.Premiere
 	}
 	return false
 }
@@ -11916,8 +11896,8 @@ type CreateLecturesRequest struct {
 	Kind  LectureCreationKind `protobuf:"varint,3,opt,name=kind,proto3,enum=protobuf.LectureCreationKind" json:"kind,omitempty"`
 	// The first lecture's start. Required unless ad_hoc.
 	Start *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start,proto3" json:"start,omitempty"`
-	// How long each lecture runs. Required for a livestream; a VOD_UPLOAD or
-	// PREMIERE given 0 gets an hour.
+	// How long each lecture runs. Required for a livestream; a
+	// VOD_UPLOAD given 0 gets an hour.
 	DurationMinutes uint32 `protobuf:"varint,5,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"`
 	// 0 for none: a self-streamed livestream, and always for the other kinds.
 	LectureHallId uint32 `protobuf:"varint,6,opt,name=lecture_hall_id,json=lectureHallId,proto3" json:"lecture_hall_id,omitempty"`
@@ -19471,7 +19451,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04year\x18\x02 \x01(\rR\x04year\"v\n" +
 	"\x14GetSemestersResponse\x12,\n" +
 	"\acurrent\x18\x01 \x01(\v2\x12.protobuf.SemesterR\acurrent\x120\n" +
-	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\x90\b\n" +
+	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\x84\b\n" +
 	"\x06Stream\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -19491,8 +19471,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10playlist_url_cam\x18\x0f \x01(\tR\x0eplaylistUrlCam\x12\x18\n" +
 	"\aliveNow\x18\x10 \x01(\bR\aliveNow\x12H\n" +
 	"\x12live_now_timestamp\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x10liveNowTimestamp\x12\x1c\n" +
-	"\trecording\x18\x12 \x01(\bR\trecording\x12\x1a\n" +
-	"\bpremiere\x18\x13 \x01(\bR\bpremiere\x12\x14\n" +
+	"\trecording\x18\x12 \x01(\bR\trecording\x12\x14\n" +
 	"\x05ended\x18\x14 \x01(\bR\x05ended\x12\x1b\n" +
 	"\tvod_views\x18\x15 \x01(\rR\bvodViews\x12!\n" +
 	"\fstart_offset\x18\x16 \x01(\rR\vstartOffset\x12\x1d\n" +
@@ -19505,7 +19484,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\fis_coming_up\x18\x1f \x01(\bR\n" +
 	"isComingUp\x12\x17\n" +
 	"\ahls_url\x18  \x01(\tR\x06hlsUrl\x12.\n" +
-	"\x13is_publicly_visible\x18! \x01(\bR\x11isPubliclyVisible\"\xd9\x02\n" +
+	"\x13is_publicly_visible\x18! \x01(\bR\x11isPubliclyVisibleJ\x04\b\x13\x10\x14R\bpremiere\"\xd9\x02\n" +
 	"\x13StreamPlaylistEntry\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1f\n" +
 	"\vcourse_slug\x18\x02 \x01(\tR\n" +
@@ -20035,7 +20014,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1eListCourseLecturesAdminRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"[\n" +
 	"\x1fListCourseLecturesAdminResponse\x128\n" +
-	"\blectures\x18\x01 \x03(\v2\x1c.protobuf.CourseLectureAdminR\blectures\"\x9f\a\n" +
+	"\blectures\x18\x01 \x03(\v2\x1c.protobuf.CourseLectureAdminR\blectures\"\x93\a\n" +
 	"\x12CourseLectureAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1b\n" +
 	"\tcourse_id\x18\x02 \x01(\rR\bcourseId\x12\x12\n" +
@@ -20057,13 +20036,12 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04past\x18\x10 \x01(\bR\x04past\x12\x1e\n" +
 	"\n" +
 	"converting\x18\x11 \x01(\bR\n" +
-	"converting\x12\x1a\n" +
-	"\bpremiere\x18\x12 \x01(\bR\bpremiere\x12!\n" +
+	"converting\x12!\n" +
 	"\fvod_versions\x18\x13 \x03(\tR\vvodVersions\x12)\n" +
 	"\x10duration_seconds\x18\x14 \x01(\rR\x0fdurationSeconds\x120\n" +
 	"\x05files\x18\x15 \x03(\v2\x1a.protobuf.LectureFileAdminR\x05files\x12[\n" +
 	"\x16transcoding_progresses\x18\x16 \x03(\v2$.protobuf.LectureTranscodingProgressR\x15transcodingProgresses\x12I\n" +
-	"\x0evideo_sections\x18\x17 \x03(\v2\".protobuf.LectureVideoSectionAdminR\rvideoSections\"[\n" +
+	"\x0evideo_sections\x18\x17 \x03(\v2\".protobuf.LectureVideoSectionAdminR\rvideoSectionsJ\x04\b\x12\x10\x13R\bpremiere\"[\n" +
 	"\x10LectureFileAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\rR\x04type\x12#\n" +
@@ -20669,11 +20647,10 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10CourseSourceMode\x12\x1f\n" +
 	"\x1bCOURSE_SOURCE_MODE_COMBINED\x10\x00\x12(\n" +
 	"$COURSE_SOURCE_MODE_PRESENTATION_ONLY\x10\x01\x12\"\n" +
-	"\x1eCOURSE_SOURCE_MODE_CAMERA_ONLY\x10\x02*\x85\x01\n" +
+	"\x1eCOURSE_SOURCE_MODE_CAMERA_ONLY\x10\x02*\x87\x01\n" +
 	"\x13LectureCreationKind\x12$\n" +
 	" LECTURE_CREATION_KIND_LIVESTREAM\x10\x00\x12$\n" +
-	" LECTURE_CREATION_KIND_VOD_UPLOAD\x10\x01\x12\"\n" +
-	"\x1eLECTURE_CREATION_KIND_PREMIERE\x10\x02*\x8c\x01\n" +
+	" LECTURE_CREATION_KIND_VOD_UPLOAD\x10\x01\"\x04\b\x02\x10\x02*\x1eLECTURE_CREATION_KIND_PREMIERE*\x8c\x01\n" +
 	"\rWatchViewKind\x12\x1f\n" +
 	"\x1bWATCH_VIEW_KIND_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18WATCH_VIEW_KIND_COMBINED\x10\x01\x12 \n" +
@@ -20735,7 +20712,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fcreateFirstUser\x12 .protobuf.CreateFirstUserRequest\x1a\x16.google.protobuf.Empty\"\xf5\x01\x92A\xda\x01\n" +
 	"\x04User\x125Create the first administrator of a fresh deployment.\x1a\x9a\x01Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/users/first\x12\x8b\x02\n" +
 	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\x9a\x95\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\x9b\x94\x01\n" +
 	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
@@ -20789,9 +20766,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x13deleteLectureSeries\x12$.protobuf.DeleteLectureSeriesRequest\x1a\x16.google.protobuf.Empty\"\x81\x02\x92A\xc6\x01\n" +
 	"\aCourses\x12,Delete a lecture and the rest of its series.\x1a\x8c\x01Deletes every lecture of the course sharing the lecture's series. Answers 400 for a lecture in no series. Requires administering the course.\x82\xd3\xe4\x93\x021*//courses/{course_id}/streams/{stream_id}/series\x12\x8e\x03\n" +
 	"\vcopyLecture\x12\x1c.protobuf.CopyLectureRequest\x1a\x1d.protobuf.CopyLectureResponse\"\xc1\x02\x92A\x85\x02\n" +
-	"\aCourses\x12)Copy or move a lecture to another course.\x1a\xce\x01Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does.\x82\xd3\xe4\x93\x022:\x01*\"-/courses/{course_id}/streams/{stream_id}/copy\x12\xe7\b\n" +
-	"\x0ecreateLectures\x12\x1f.protobuf.CreateLecturesRequest\x1a .protobuf.CreateLecturesResponse\"\x91\b\x92A\xe6\a\n" +
-	"\aCourses\x123Create a lecture, or a series of them, in a course.\x1a\xa5\aCreates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/courses/{course_id}/streams\x12\xf6\x01\n" +
+	"\aCourses\x12)Copy or move a lecture to another course.\x1a\xce\x01Creates a copy of the lecture in the target course and, with move, then deletes the original. Requires administering both courses; a target the caller does not administer answers 404, as a missing one does.\x82\xd3\xe4\x93\x022:\x01*\"-/courses/{course_id}/streams/{stream_id}/copy\x12\xe8\a\n" +
+	"\x0ecreateLectures\x12\x1f.protobuf.CreateLecturesRequest\x1a .protobuf.CreateLecturesResponse\"\x92\a\x92A\xe7\x06\n" +
+	"\aCourses\x123Create a lecture, or a series of them, in a course.\x1a\xa6\x06Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media). A VOD_UPLOAD takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/courses/{course_id}/streams\x12\xf6\x01\n" +
 	"\x0egetCourseAdmin\x12\x1f.protobuf.GetCourseAdminRequest\x1a\x15.protobuf.CourseAdmin\"\xab\x01\x92A\x85\x01\n" +
 	"\x15Course Administration\x12\x18Get a course's settings.\x1aRWhat the course's settings tab shows and edits. Requires administering the course.\x82\xd3\xe4\x93\x02\x1c\x12\x1a/courses/{course_id}/admin\x12\xa5\x02\n" +
 	"\x1blistCourseIntegrationGrants\x12,.protobuf.ListCourseIntegrationGrantsRequest\x1a-.protobuf.ListCourseIntegrationGrantsResponse\"\xa8\x01\x92A|\n" +

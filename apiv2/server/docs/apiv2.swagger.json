@@ -2632,7 +2632,7 @@
     "/courses/{courseId}/streams": {
       "post": {
         "summary": "Create a lecture, or a series of them, in a course.",
-        "description": "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.",
+        "description": "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media). A VOD_UPLOAD takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.",
         "operationId": "CourseService_createLectures",
         "responses": {
           "200": {
@@ -5612,7 +5612,7 @@
         "durationMinutes": {
           "type": "integer",
           "format": "int64",
-          "description": "How long each lecture runs. Required for a livestream; a VOD_UPLOAD or\nPREMIERE given 0 gets an hour."
+          "description": "How long each lecture runs. Required for a livestream; a\nVOD_UPLOAD given 0 gets an hour."
         },
         "lectureHallId": {
           "type": "integer",
@@ -6879,9 +6879,6 @@
           "type": "boolean",
           "description": "A version is still transcoding."
         },
-        "premiere": {
-          "type": "boolean"
-        },
         "vodVersions": {
           "type": "array",
           "items": {
@@ -7757,11 +7754,10 @@
       "type": "string",
       "enum": [
         "LECTURE_CREATION_KIND_LIVESTREAM",
-        "LECTURE_CREATION_KIND_VOD_UPLOAD",
-        "LECTURE_CREATION_KIND_PREMIERE"
+        "LECTURE_CREATION_KIND_VOD_UPLOAD"
       ],
       "default": "LECTURE_CREATION_KIND_LIVESTREAM",
-      "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media.\n - LECTURE_CREATION_KIND_PREMIERE: A recording a worker streams as if live, starting at the lecture's start."
+      "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media."
     },
     "protobufLectureFileAdmin": {
       "type": "object",
@@ -8882,9 +8878,6 @@
           "format": "date-time"
         },
         "recording": {
-          "type": "boolean"
-        },
-        "premiere": {
           "type": "boolean"
         },
         "ended": {

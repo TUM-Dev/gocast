@@ -21,7 +21,7 @@ import { fromDateTimeLocal } from "./datetime-local";
 
 /**
  * What is being created. v1's form also had in-browser recording, dropped on purpose
- * (it was experimental), and a premiere flag nothing on the page ever set.
+ * (it was experimental).
  */
 export type CreateMode = "scheduled" | "adhoc" | "vod";
 

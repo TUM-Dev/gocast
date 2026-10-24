@@ -37,7 +37,6 @@ type Stream struct {
 	LiveNow                bool      `gorm:"not null"`
 	LiveNowTimestamp       time.Time `gorm:"default:null;column:live_now_timestamp"`
 	Recording              bool
-	Premiere               bool `gorm:"default:null"`
 	Ended                  bool `gorm:"default:null"`
 	Chats                  []Chat
 	Stats                  []Stat
