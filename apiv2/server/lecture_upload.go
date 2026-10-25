@@ -182,7 +182,7 @@ func storeUpload(c *gin.Context, root string, upload *multipart.FileHeader, dirs
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", e.WithStatus(http.StatusInternalServerError, fmt.Errorf("can't create folder: %w", err))
 	}
-	path := filepath.Join(dir, fmt.Sprintf("%s%s", uuid.NewV7(), filepath.Ext(upload.Filename)))
+	path := filepath.Join(dir, fmt.Sprintf("%s%s", uuid.NewV4(), filepath.Ext(upload.Filename)))
 	if err := c.SaveUploadedFile(upload, path); err != nil {
 		return "", e.WithStatus(http.StatusInternalServerError, fmt.Errorf("can't save file: %w", err))
 	}

@@ -279,3 +279,10 @@ func TestRevokeIntegrationGrantPolicyIsIntegrationOnly(t *testing.T) {
 	fullMethod := method(&protobuf.IntegrationService_ServiceDesc, "revokeIntegrationGrant")
 	assert.Equal(t, integrationOnly, methodPolicies[fullMethod])
 }
+
+func TestIsV4RFC4122(t *testing.T) {
+	assert.True(t, isV4RFC4122(uuid.MustParse("685aebd3-45ba-4d4c-91a5-b181932f2ff5")))
+	assert.False(t, isV4RFC4122(uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")), "v1")
+	assert.False(t, isV4RFC4122(uuid.MustParse("018f3c1e-7b2a-7c3d-91a5-b181932f2ff5")), "v7")
+	assert.False(t, isV4RFC4122(uuid.MustParse("685aebd3-45ba-4d4c-c1a5-b181932f2ff5")), "wrong variant")
+}
