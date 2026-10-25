@@ -162,8 +162,9 @@ func TestUpdateCourseSettings(t *testing.T) {
 				return nil
 			})
 		m.audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error {
-			if a.Type != model.AuditCourseEdit || !strings.Contains(a.Message, "visibility=hidden") || a.User.ID != courseLecturer.ID {
-				t.Errorf("audit = %+v", a)
+			if a.Type != model.AuditCourseEdit || !strings.Contains(a.Message, "visibility=hidden") || a.User.ID != courseLecturer.ID ||
+				a.CourseID == nil || *a.CourseID != 5 {
+				t.Errorf("audit = %+v, want it on course 5's log", a)
 			}
 			return nil
 		})

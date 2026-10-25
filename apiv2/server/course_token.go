@@ -66,7 +66,7 @@ func (a *API) OptInCourseByToken(ctx context.Context, req *protobuf.CourseTokenR
 		a.log.Error("can't save an opted-in course", "err", err, "course", course.ID)
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("opted in by token, %s:'%s'", course.Name, course.Slug))
+	a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("opted in by token, %s:'%s'", course.Name, course.Slug), forCourse(course.ID))
 	return &emptypb.Empty{}, nil
 }
 
@@ -80,7 +80,7 @@ func (a *API) OptOutCourseByToken(ctx context.Context, req *protobuf.CourseToken
 		// Already out; deleting its lectures again would only log errors.
 		return &emptypb.Empty{}, nil
 	}
-	a.audit(ctx, model.AuditCourseDelete, fmt.Sprintf("opted out by token, '%s' (%d, %s)[%d]", course.Name, course.Year, course.TeachingTerm, course.ID))
+	a.audit(ctx, model.AuditCourseDelete, fmt.Sprintf("opted out by token, '%s' (%d, %s)[%d]", course.Name, course.Year, course.TeachingTerm, course.ID), forCourse(course.ID))
 	a.dao.CoursesDao.DeleteCourse(course)
 	return &emptypb.Empty{}, nil
 }

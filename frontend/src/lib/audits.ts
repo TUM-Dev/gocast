@@ -60,21 +60,21 @@ export interface AuditPage {
   total: number;
 }
 
-/** One page of the audit log, newest first, optionally of a single kind. */
+/**
+ * One page of the audit log, newest first, optionally of a single kind. With a course,
+ * only the entries about that course and its lectures -- the course administrators'
+ * own view, where the server-wide log is the server administrators'.
+ */
 export async function fetchAuditPage(
   offset: number,
   limit: number = AUDITS_PAGE_SIZE,
   type = "",
+  courseId?: number,
 ): Promise<AuditPage> {
-  const query = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
-  });
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (type) query.set("type", type);
-  const res = await apiGetMessage(
-    ListAuditsResponseSchema,
-    `/admin/audits?${query}`,
-  );
+  const path = courseId === undefined ? "/admin/audits" : `/courses/${courseId}/audits`;
+  const res = await apiGetMessage(ListAuditsResponseSchema, `${path}?${query}`);
 
   return {
     total: res.total,

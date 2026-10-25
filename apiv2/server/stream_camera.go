@@ -69,7 +69,7 @@ func (a *API) SwitchCameraPreset(ctx context.Context, req *protobuf.SwitchCamera
 
 	// Right after the move, not after the wait below: a client that goes away during
 	// the wait has still had the camera moved.
-	a.audit(ctx, model.AuditCameraMoved, fmt.Sprintf("stream %d: hall %d moved to preset %d", stream.ID, stream.LectureHallID, preset.PresetID))
+	a.audit(ctx, model.AuditCameraMoved, fmt.Sprintf("stream %d: hall %d moved to preset %d", stream.ID, stream.LectureHallID, preset.PresetID), forStream(stream))
 
 	// Answering only once the camera has arrived is what lets the page show the
 	// switch as in progress until the picture has actually changed.

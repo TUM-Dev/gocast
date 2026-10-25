@@ -628,6 +628,15 @@ service CourseService {
     };
   }
 
+  rpc listCourseAudits(ListCourseAuditsRequest) returns (ListAuditsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/audits"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Audits"
+      summary: "List a course's audit log entries."
+      description: "Retrieves one page of the audit log entries about a course and its lectures, newest first. Requires administering the course. Entries from before they were linked to courses are included where their message made the course unambiguous."
+    };
+  }
+
   rpc listCourseAdmins(ListCourseAdminsRequest) returns (ListCourseAdminsResponse) {
     option (google.api.http) = {get: "/courses/{course_id}/admins"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -2544,6 +2553,15 @@ message ListAuditsRequest {
   // Only entries of this kind, as AuditEntry.type renders it ("User Deleted"). Empty
   // for every kind; an unknown name is a 400 rather than an empty page.
   string type = 3;
+}
+
+message ListCourseAuditsRequest {
+  uint32 course_id = 1;
+  // Defaults to 10 server-side when omitted or zero.
+  uint32 limit = 2;
+  uint32 offset = 3;
+  // Only entries of this kind, as in ListAuditsRequest.type.
+  string type = 4;
 }
 
 ///////////////////////////////

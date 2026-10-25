@@ -803,6 +803,7 @@ const (
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
 	CourseService_RedoCoursePostProcessing_FullMethodName        = "/protobuf.CourseService/redoCoursePostProcessing"
+	CourseService_ListCourseAudits_FullMethodName                = "/protobuf.CourseService/listCourseAudits"
 	CourseService_ListCourseAdmins_FullMethodName                = "/protobuf.CourseService/listCourseAdmins"
 	CourseService_AddCourseAdmin_FullMethodName                  = "/protobuf.CourseService/addCourseAdmin"
 	CourseService_RemoveCourseAdmin_FullMethodName               = "/protobuf.CourseService/removeCourseAdmin"
@@ -879,6 +880,7 @@ type CourseServiceClient interface {
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error)
 	ListCourseAdmins(ctx context.Context, in *ListCourseAdminsRequest, opts ...grpc.CallOption) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(ctx context.Context, in *AddCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
 	RemoveCourseAdmin(ctx context.Context, in *RemoveCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
@@ -1266,6 +1268,16 @@ func (c *courseServiceClient) RedoCoursePostProcessing(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *courseServiceClient) ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListCourseAudits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) ListCourseAdmins(ctx context.Context, in *ListCourseAdminsRequest, opts ...grpc.CallOption) (*ListCourseAdminsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListCourseAdminsResponse)
@@ -1484,6 +1496,7 @@ type CourseServiceServer interface {
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
 	RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error)
+	ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error)
 	ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(context.Context, *AddCourseAdminRequest) (*CourseAdminUser, error)
 	RemoveCourseAdmin(context.Context, *RemoveCourseAdminRequest) (*CourseAdminUser, error)
@@ -1618,6 +1631,9 @@ func (UnimplementedCourseServiceServer) DeleteCourse(context.Context, *DeleteCou
 }
 func (UnimplementedCourseServiceServer) RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RedoCoursePostProcessing not implemented")
+}
+func (UnimplementedCourseServiceServer) ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseAudits not implemented")
 }
 func (UnimplementedCourseServiceServer) ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCourseAdmins not implemented")
@@ -2336,6 +2352,24 @@ func _CourseService_RedoCoursePostProcessing_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_ListCourseAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseAuditsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListCourseAudits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListCourseAudits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListCourseAudits(ctx, req.(*ListCourseAuditsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_ListCourseAdmins_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListCourseAdminsRequest)
 	if err := dec(in); err != nil {
@@ -2774,6 +2808,10 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "redoCoursePostProcessing",
 			Handler:    _CourseService_RedoCoursePostProcessing_Handler,
+		},
+		{
+			MethodName: "listCourseAudits",
+			Handler:    _CourseService_ListCourseAudits_Handler,
 		},
 		{
 			MethodName: "listCourseAdmins",

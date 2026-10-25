@@ -92,6 +92,13 @@ type Audit struct {
 	UserID  *uint
 	Message string
 	Type    AuditType
+
+	// The course and lecture the entry is about, nil for server-wide entries. Rows
+	// from before these columns existed are linked by dao/migrations where the
+	// message allows it. Plain ids, no foreign keys: courses and streams are
+	// soft-deleted and their history should outlive them.
+	CourseID *uint `gorm:"index"`
+	StreamID *uint
 }
 
 // Json converts the audit into a json object consumed by apis

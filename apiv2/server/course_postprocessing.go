@@ -43,7 +43,7 @@ func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCo
 		return nil, e.WithStatus(http.StatusServiceUnavailable, errors.New("no runner configured"))
 	}
 
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' post-processing redone", course.Name, course.Slug))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' post-processing redone", course.Name, course.Slug), forCourse(course.ID))
 	streams := course.Streams
 	postProcessing := a.postProcessing
 	go func() {

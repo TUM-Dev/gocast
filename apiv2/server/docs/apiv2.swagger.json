@@ -2158,6 +2158,61 @@
         ]
       }
     },
+    "/courses/{courseId}/audits": {
+      "get": {
+        "summary": "List a course's audit log entries.",
+        "description": "Retrieves one page of the audit log entries about a course and its lectures, newest first. Requires administering the course. Entries from before they were linked to courses are included where their message made the course unambiguous.",
+        "operationId": "CourseService_listCourseAudits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAuditsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "description": "Defaults to 10 server-side when omitted or zero.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "type",
+            "description": "Only entries of this kind, as in ListAuditsRequest.type.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Audits"
+        ]
+      }
+    },
     "/courses/{courseId}/copy": {
       "post": {
         "summary": "Copy a course into another semester.",

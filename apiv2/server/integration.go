@@ -91,7 +91,7 @@ func (a *API) RevokeIntegrationGrant(ctx context.Context, req *protobuf.RevokeIn
 	if course.ID != 0 {
 		// No user acted; the integration is named in the message instead.
 		message := fmt.Sprintf("%s:'%s' revoke integration grant: %d by integration '%s' (%d)", course.Name, course.Slug, req.GetGrantId(), integration.Name, integration.ID)
-		if err := a.dao.AuditDao.Create(&model.Audit{Message: message, Type: model.AuditCourseEdit}); err != nil {
+		if err := a.dao.AuditDao.Create(&model.Audit{Message: message, Type: model.AuditCourseEdit, CourseID: &course.ID}); err != nil {
 			a.log.Error("can't write audit entry", "err", err, "message", message)
 		}
 	}
