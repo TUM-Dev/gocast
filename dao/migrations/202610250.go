@@ -199,8 +199,8 @@ func (r *auditResolver) resolve(a auditRow) (auditLink, bool) {
 		}
 	case auditCourseDelete:
 		if m := courseDeleteMessage.FindStringSubmatch(a.Message); m != nil {
-			id, _ := strconv.ParseUint(m[1], 10, 64)
-			if _, ok := r.courses[uint(id)]; ok {
+			id, err := strconv.ParseUint(m[1], 10, 32)
+			if _, ok := r.courses[uint(id)]; err == nil && ok {
 				return auditLink{courseID: uint(id)}, true
 			}
 		}
@@ -215,7 +215,7 @@ func (r *auditResolver) resolve(a auditRow) (auditLink, bool) {
 }
 
 func (r *auditResolver) viaStream(rawID string) (auditLink, bool) {
-	id, err := strconv.ParseUint(rawID, 10, 64)
+	id, err := strconv.ParseUint(rawID, 10, 32)
 	if err != nil {
 		return auditLink{}, false
 	}
