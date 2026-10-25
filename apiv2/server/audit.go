@@ -26,8 +26,21 @@ func (a *API) ListAudits(ctx context.Context, req *protobuf.ListAuditsRequest) (
 		limit = defaultAuditPageSize
 	}
 
-	found, err := a.dao.AuditDao.Find(limit, int(req.GetOffset()), model.GetAllAuditTypes()...)
+	types := model.GetAllAuditTypes()
+	if name := req.GetType(); name != "" {
+		typ, ok := model.AuditTypeByName(name)
+		if !ok {
+			return nil, e.WithStatus(http.StatusBadRequest, errors.New("unknown audit type"))
+		}
+		types = []model.AuditType{typ}
+	}
+
+	found, err := a.dao.AuditDao.Find(limit, int(req.GetOffset()), types...)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	total, err := a.dao.AuditDao.Count(types...)
+	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
@@ -36,7 +49,7 @@ func (a *API) ListAudits(ctx context.Context, req *protobuf.ListAuditsRequest) (
 		out = append(out, auditMessage(audit))
 	}
 
-	return &protobuf.ListAuditsResponse{Audits: out}, nil
+	return &protobuf.ListAuditsResponse{Audits: out, Total: uint32(total)}, nil
 }
 
 func auditMessage(audit model.Audit) *protobuf.AuditEntry {

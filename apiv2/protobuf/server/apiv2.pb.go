@@ -7702,8 +7702,11 @@ type ListAuditsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Defaults to 10 server-side when omitted or zero, matching the page size the old
 	// admin page used.
-	Limit         uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        uint32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	Limit  uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset uint32 `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	// Only entries of this kind, as AuditEntry.type renders it ("User Deleted"). Empty
+	// for every kind; an unknown name is a 400 rather than an empty page.
+	Type          string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -7752,9 +7755,18 @@ func (x *ListAuditsRequest) GetOffset() uint32 {
 	return 0
 }
 
+func (x *ListAuditsRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
 type ListAuditsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Audits        []*AuditEntry          `protobuf:"bytes,1,rep,name=audits,proto3" json:"audits,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Audits []*AuditEntry          `protobuf:"bytes,1,rep,name=audits,proto3" json:"audits,omitempty"`
+	// How many entries match the request's filter, ignoring limit and offset.
+	Total         uint32 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -7794,6 +7806,13 @@ func (x *ListAuditsResponse) GetAudits() []*AuditEntry {
 		return x.Audits
 	}
 	return nil
+}
+
+func (x *ListAuditsResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 // ServerStatsDataPoint is a single point of a chart, matching dao.Stat: a label and
@@ -19759,12 +19778,14 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage\x12\x17\n" +
 	"\auser_id\x18\x05 \x01(\rR\x06userId\x12\x1b\n" +
-	"\tuser_name\x18\x06 \x01(\tR\buserName\"A\n" +
+	"\tuser_name\x18\x06 \x01(\tR\buserName\"U\n" +
 	"\x11ListAuditsRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\rR\x06offset\"B\n" +
+	"\x06offset\x18\x02 \x01(\rR\x06offset\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\"X\n" +
 	"\x12ListAuditsResponse\x12,\n" +
-	"\x06audits\x18\x01 \x03(\v2\x14.protobuf.AuditEntryR\x06audits\"2\n" +
+	"\x06audits\x18\x01 \x03(\v2\x14.protobuf.AuditEntryR\x06audits\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"2\n" +
 	"\x14ServerStatsDataPoint\x12\f\n" +
 	"\x01x\x18\x01 \x01(\tR\x01x\x12\f\n" +
 	"\x01y\x18\x02 \x01(\x05R\x01y\"a\n" +

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { ApiError } from "@/lib/api";
-import { AUDITS_PAGE_SIZE, fetchAudits, type AuditEntry } from "@/lib/audits";
+import {
+  AUDITS_PAGE_SIZE,
+  AUDIT_TYPES,
+  fetchAuditPage,
+  type AuditEntry,
+} from "@/lib/audits";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
@@ -18,17 +23,17 @@ const audits = ref<AuditEntry[]>([]);
 const offset = ref(0);
 const loading = ref(true);
 const error = ref("");
-/**
- * Whether a further page might exist. There is no total count, so this is a guess
- * from the page just fetched: a page shorter than the limit cannot be followed by
- * another.
- */
-const hasMore = ref(true);
+const typeFilter = ref("");
+/** Entries matching the filter, so the last page is known rather than guessed. */
+const total = ref(0);
+const hasMore = computed(() => offset.value + pageSize < total.value);
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.isUnauthenticated) return "Your session expired. Please sign in again.";
-    if (err.status === 403) return "You do not have permission to view the audit log.";
+    if (err.isUnauthenticated)
+      return "Your session expired. Please sign in again.";
+    if (err.status === 403)
+      return "You do not have permission to view the audit log.";
     return err.message;
   }
   return "Something went wrong. Please try again.";
@@ -37,9 +42,9 @@ function message(err: unknown): string {
 async function load(): Promise<void> {
   loading.value = true;
   try {
-    const page = await fetchAudits(offset.value, pageSize);
-    audits.value = page;
-    hasMore.value = page.length === pageSize;
+    const page = await fetchAuditPage(offset.value, pageSize, typeFilter.value);
+    audits.value = page.entries;
+    total.value = page.total;
     error.value = "";
   } catch (err) {
     error.value = message(err);
@@ -51,6 +56,10 @@ async function load(): Promise<void> {
 function go(nextOffset: number): void {
   offset.value = Math.max(0, nextOffset);
   void load();
+}
+
+function applyFilter(): void {
+  go(0);
 }
 
 function formatDate(date: Date | null): string {
@@ -74,15 +83,34 @@ onMounted(async () => {
     <section class="mx-auto flex max-w-5xl flex-col gap-6">
       <div class="flex items-center justify-between">
         <h1 class="text-1 text-2xl font-bold">Audits</h1>
+        <label class="text-5 flex items-center gap-2 text-sm">
+          Type
+          <select
+            v-model="typeFilter"
+            class="rounded-lg border bg-transparent px-2 py-1 dark:border-gray-800"
+            @change="applyFilter"
+          >
+            <option value="">All</option>
+            <option v-for="type in AUDIT_TYPES" :key="type" :value="type">
+              {{ type }}
+            </option>
+          </select>
+        </label>
       </div>
 
       <Transition name="fade" mode="out-in">
-        <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+        <p
+          v-if="error"
+          class="rounded-lg bg-danger/25 px-2 py-2 text-sm"
+          role="alert"
+        >
           {{ error }}
         </p>
       </Transition>
 
-      <div class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800">
+      <div
+        class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800"
+      >
         <p v-if="loading" class="text-5 text-sm">Loading audits…</p>
 
         <!--
@@ -90,17 +118,31 @@ onMounted(async () => {
           logged nothing yet, and paging past the end shows nothing further.
         -->
         <p v-else-if="!audits.length" class="text-5 text-sm">
-          {{ offset === 0 ? "No audit entries yet." : "No further audit entries." }}
+          {{
+            offset === 0 ? "No audit entries yet." : "No further audit entries."
+          }}
         </p>
 
-        <ul v-else class="flex flex-col divide-y dark:divide-gray-800" role="list">
-          <li v-for="audit in audits" :key="audit.id" class="py-4 first:pt-0 last:pb-0">
-            <p class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 font-semibold">
+        <ul
+          v-else
+          class="flex flex-col divide-y dark:divide-gray-800"
+          role="list"
+        >
+          <li
+            v-for="audit in audits"
+            :key="audit.id"
+            class="py-4 first:pt-0 last:pb-0"
+          >
+            <p
+              class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 font-semibold"
+            >
               <span class="text-1">{{ audit.type }}</span>
               <span class="text-4 text-xs font-normal whitespace-nowrap">
                 <span class="mr-4">{{ formatDate(audit.createdAt) }}</span>
                 <span v-if="audit.userId">
-                  <i class="fas fa-user"></i> {{ audit.userName }} ({{ audit.userId }})
+                  <i class="fas fa-user"></i> {{ audit.userName }} ({{
+                    audit.userId
+                  }})
                 </span>
               </span>
             </p>
@@ -108,7 +150,9 @@ onMounted(async () => {
           </li>
         </ul>
 
-        <div class="flex justify-between border-t pt-4 dark:border-gray-800">
+        <div
+          class="flex items-center justify-between border-t pt-4 dark:border-gray-800"
+        >
           <button
             type="button"
             class="text-5 font-semibold enabled:hover:text-1 disabled:opacity-50"
@@ -117,6 +161,7 @@ onMounted(async () => {
           >
             <i class="fa-solid fa-angles-left mr-2"></i>Previous
           </button>
+          <span class="text-5 text-sm">{{ total }} entries</span>
           <button
             type="button"
             class="text-5 font-semibold enabled:hover:text-1 disabled:opacity-50"

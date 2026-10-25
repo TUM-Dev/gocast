@@ -89,6 +89,13 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "type",
+            "description": "Only entries of this kind, as AuditEntry.type renders it (\"User Deleted\"). Empty\nfor every kind; an unknown name is a 400 rather than an empty page.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -7997,6 +8004,11 @@
             "type": "object",
             "$ref": "#/definitions/protobufAuditEntry"
           }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How many entries match the request's filter, ignoring limit and offset."
         }
       }
     },
