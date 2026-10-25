@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -57,6 +58,7 @@ func (a *API) CreateNotification(ctx context.Context, req *protobuf.CreateNotifi
 	// call would return instead of leaving the body unrendered until the next fetch.
 	_ = notification.AfterFind(nil)
 
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("notification %d created (target %d)", notification.ID, target))
 	return notificationMessage(notification), nil
 }
 
@@ -65,6 +67,7 @@ func (a *API) DeleteNotification(ctx context.Context, req *protobuf.DeleteNotifi
 	if err := a.dao.NotificationsDao.DeleteNotification(uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("notification %d deleted", req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 

@@ -48,7 +48,7 @@ func TestRunMaintenanceCronJob(t *testing.T) {
 			t.Fatalf("AddFunc: %v", err)
 		}
 
-		api := &API{log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{AuditDao: auditSink(t)}, log: slog.Default()}
 		if _, err := api.RunMaintenanceCronJob(context.Background(), &protobuf.RunMaintenanceCronJobRequest{
 			Job: "collectStats",
 		}); err != nil {
@@ -108,7 +108,9 @@ func TestDeleteMaintenanceTranscodingFailure(t *testing.T) {
 	failureMock := mock_dao.NewMockTranscodingFailureDao(ctrl)
 	failureMock.EXPECT().Delete(uint(7)).Return(nil).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{TranscodingFailureDao: failureMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao:              auditSink(t),
+		TranscodingFailureDao: failureMock}, log: slog.Default()}
 	if _, err := api.DeleteMaintenanceTranscodingFailure(context.Background(), &protobuf.DeleteMaintenanceTranscodingFailureRequest{
 		Id: 7,
 	}); err != nil {
@@ -164,7 +166,9 @@ func TestDeleteMaintenanceEmailFailure(t *testing.T) {
 	emailMock := mock_dao.NewMockEmailDao(ctrl)
 	emailMock.EXPECT().Delete(gomock.Any(), uint(9)).Return(nil).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{EmailDao: emailMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao: auditSink(t),
+		EmailDao: emailMock}, log: slog.Default()}
 	if _, err := api.DeleteMaintenanceEmailFailure(context.Background(), &protobuf.DeleteMaintenanceEmailFailureRequest{
 		Id: 9,
 	}); err != nil {

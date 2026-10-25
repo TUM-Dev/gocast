@@ -12,6 +12,7 @@ import (
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 var (
@@ -73,6 +74,8 @@ func (a *API) SwitchCameraPreset(ctx context.Context, req *protobuf.SwitchCamera
 		return nil, status.FromContextError(ctx.Err()).Err()
 	case <-time.After(camSwitchDelay):
 	}
+
+	a.audit(ctx, model.AuditCameraMoved, fmt.Sprintf("stream %d: hall %d moved to preset %d", stream.ID, stream.LectureHallID, preset.PresetID))
 
 	return &emptypb.Empty{}, nil
 }

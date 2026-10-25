@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"log/slog"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -51,7 +52,9 @@ func TestCreateIntegration(t *testing.T) {
 		saved = *integration
 		return nil
 	})
-	api := &API{dao: dao.DaoWrapper{IntegrationDao: integrations}}
+	api := &API{log: slog.Default(), dao: dao.DaoWrapper{
+		AuditDao:       auditSink(t),
+		IntegrationDao: integrations}}
 	response, err := api.CreateIntegration(context.Background(), &protobuf.CreateIntegrationRequest{
 		Name: " Course portal ", ReturnUrl: " https://portal.example/callback ",
 	})
@@ -108,7 +111,9 @@ func TestIntegrationKeyChanges(t *testing.T) {
 		storedHash = bytes.Clone(hash)
 		return nil
 	})
-	api := &API{dao: dao.DaoWrapper{IntegrationDao: integrations}}
+	api := &API{log: slog.Default(), dao: dao.DaoWrapper{
+		AuditDao:       auditSink(t),
+		IntegrationDao: integrations}}
 	response, err := api.RotateIntegrationKey(context.Background(), &protobuf.RotateIntegrationKeyRequest{Id: 7})
 	if err != nil {
 		t.Fatal(err)

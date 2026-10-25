@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -42,6 +43,7 @@ func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCo
 		return nil, e.WithStatus(http.StatusServiceUnavailable, errors.New("no runner configured"))
 	}
 
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' post-processing redone", course.Name, course.Slug))
 	streams := course.Streams
 	postProcessing := a.postProcessing
 	go func() {

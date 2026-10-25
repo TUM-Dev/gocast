@@ -127,7 +127,9 @@ func TestCreateTokenReturnsTheSecretExactlyOnce(t *testing.T) {
 		return nil
 	}).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{TokenDao: tokenMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao: auditSink(t),
+		TokenDao: tokenMock}, log: slog.Default()}
 
 	resp, err := api.CreateToken(ctxAs(admin), &protobuf.CreateTokenRequest{Scope: model.TokenScopeLecturer})
 	if err != nil {
@@ -171,7 +173,9 @@ func TestDeleteToken(t *testing.T) {
 	tokenMock.EXPECT().GetTokenByID("5").Return(model.Token{Model: gorm.Model{ID: 5}, UserID: 2}, nil).Times(1)
 	tokenMock.EXPECT().DeleteToken("5").Return(nil).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{TokenDao: tokenMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao: auditSink(t),
+		TokenDao: tokenMock}, log: slog.Default()}
 
 	if _, err := api.DeleteToken(ctxAs(admin), &protobuf.DeleteTokenRequest{Id: 5}); err != nil {
 		t.Fatalf("DeleteToken: %v", err)

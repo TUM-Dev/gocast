@@ -590,6 +590,8 @@ func TestEndStream(t *testing.T) {
 func TestUpdateLecturePublishesTimeChanges(t *testing.T) {
 	setup := func(t *testing.T) (*API, lectureMocks, <-chan *protobuf.RealtimeEvent) {
 		api, m := newLectureAPI(t)
+		// The audit is not what these subtests are about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		hub := realtimehub.NewMemory(realtimehub.WithViewersInterval(time.Hour))
 		api.hub = hub
 		events, cancel := hub.Subscribe(7)

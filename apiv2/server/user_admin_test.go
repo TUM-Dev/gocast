@@ -240,7 +240,9 @@ func TestUpdateUserRole(t *testing.T) {
 				update.Times(0)
 			}
 
-			api := &API{dao: dao.DaoWrapper{UsersDao: usersMock}, log: slog.Default()}
+			api := &API{dao: dao.DaoWrapper{
+				AuditDao: auditSink(t),
+				UsersDao: usersMock}, log: slog.Default()}
 			ctx := context.WithValue(context.Background(), callerKey{}, &caller{user: &signedIn})
 
 			_, err := api.UpdateUserRole(ctx, &protobuf.UpdateUserRoleRequest{
@@ -275,9 +277,13 @@ func TestDeleteUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	usersMock := mock_dao.NewMockUsersDao(ctrl)
 	usersMock.EXPECT().IsUserAdmin(gomock.Any(), uint(2)).Return(false, nil).Times(1)
+	// Looked up first, for the name in the audit entry.
+	usersMock.EXPECT().GetUserByID(gomock.Any(), uint(2)).Return(user(2, "Tim", "tim@example.org", model.LecturerType), nil)
 	usersMock.EXPECT().DeleteUser(gomock.Any(), uint(2)).Return(nil).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{UsersDao: usersMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao: auditSink(t),
+		UsersDao: usersMock}, log: slog.Default()}
 
 	if _, err := api.DeleteUser(context.Background(), &protobuf.DeleteUserRequest{UserId: 2}); err != nil {
 		t.Fatalf("DeleteUser: %v", err)
@@ -337,7 +343,9 @@ func TestCreateUserMakesALecturer(t *testing.T) {
 	emailMock.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	api := &API{
-		dao: dao.DaoWrapper{UsersDao: usersMock, EmailDao: emailMock},
+		dao: dao.DaoWrapper{
+			AuditDao: auditSink(t),
+			UsersDao: usersMock, EmailDao: emailMock},
 		log: slog.Default(),
 	}
 

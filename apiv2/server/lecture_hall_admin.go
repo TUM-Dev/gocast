@@ -56,6 +56,7 @@ func (a *API) CreateLectureHallAdmin(ctx context.Context, req *protobuf.CreateLe
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("'%s' (%d) created", lectureHall.Name, lectureHall.ID))
 	return lectureHallAdminMessage(lectureHall), nil
 }
 
@@ -83,15 +84,20 @@ func (a *API) UpdateLectureHallAdmin(ctx context.Context, req *protobuf.UpdateLe
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("'%s' (%d) edited", lectureHall.Name, lectureHall.ID))
 	return lectureHallAdminMessage(lectureHall), nil
 }
 
 // DeleteLectureHallAdmin deletes a lecture hall. Its streams keep playing but lose
 // the hall association, matching the v1 handler's DeleteLectureHall dao call.
 func (a *API) DeleteLectureHallAdmin(ctx context.Context, req *protobuf.DeleteLectureHallAdminRequest) (*emptypb.Empty, error) {
+	// Looked up first: the name is gone with the hall. A failed lookup only costs the
+	// name in the entry.
+	hall, _ := a.dao.LectureHallsDao.GetLectureHallByID(uint(req.GetId()))
 	if err := a.dao.LectureHallsDao.DeleteLectureHall(uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("'%s' (%d) deleted", hall.Name, req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 
@@ -124,6 +130,7 @@ func (a *API) RefreshLectureHallPresetsAdmin(ctx context.Context, req *protobuf.
 		return nil, e.FromGorm(err, "can not find lecture hall")
 	}
 
+	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("'%s' (%d) presets refreshed", lectureHall.Name, lectureHall.ID))
 	return lectureHallAdminMessage(lectureHall), nil
 }
 
@@ -146,6 +153,7 @@ func (a *API) SetDefaultCameraPresetAdmin(ctx context.Context, req *protobuf.Set
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("%d: default preset set to %d", req.GetLectureHallId(), req.GetPresetId()))
 	return &emptypb.Empty{}, nil
 }
 

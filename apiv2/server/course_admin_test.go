@@ -527,6 +527,12 @@ func TestInviteCourseParticipants(t *testing.T) {
 
 		m.users.EXPECT().GetUserByEmail(gomock.Any(), "anja@example.org").Return(known, nil)
 		m.courses.EXPECT().AddUserToCourse(gomock.Any(), uint(8), uint(5)).Return(nil)
+		m.audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error {
+			if a.Type != model.AuditCourseEdit || !strings.Contains(a.Message, "invited 2 participants") {
+				t.Errorf("audit = %+v", a)
+			}
+			return nil
+		})
 		m.emails.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, mail *model.Email) error {
 			if mail.To != "anja@example.org" || !strings.Contains(mail.Body, `"Brauereiwesen"`) {
 				t.Errorf("notification = %+v", mail)
@@ -581,6 +587,7 @@ func TestInviteCourseParticipants(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)
 		m.users.EXPECT().GetUserByEmail(gomock.Any(), "tim@example.org").Return(model.User{}, errors.New("connection reset"))
 		// No CreateUser expected.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
 
 		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
 			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Tim", Email: "tim@example.org"}},

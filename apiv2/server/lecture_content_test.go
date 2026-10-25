@@ -45,6 +45,7 @@ func newContentAPI(t *testing.T) (*API, contentMocks) {
 	return &API{
 		dao: dao.DaoWrapper{
 			StreamsDao: m.streams, CoursesDao: m.courses, VideoSectionDao: m.sections, FileDao: m.files,
+			AuditDao: auditSink(t),
 		},
 		log: slog.Default(),
 	}, m

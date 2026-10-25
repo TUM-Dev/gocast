@@ -93,9 +93,13 @@ func (a *API) mayChangeLectureHall(ctx context.Context) error {
 }
 
 // audit records an administrator's change. A failure is logged, not answered: the
-// change itself has been made.
+// change itself has been made, so call it after the change succeeded.
 func (a *API) audit(ctx context.Context, typ model.AuditType, message string) {
-	user, _ := a.getCurrent(ctx)
+	user, err := a.getCurrent(ctx)
+	if err != nil {
+		// Without this the entry would be recorded as a system action, hiding who did it.
+		a.log.Warn("audit entry has no acting user", "err", err, "message", message)
+	}
 	if err := a.dao.AuditDao.Create(&model.Audit{User: user, Message: message, Type: typ}); err != nil {
 		a.log.Error("can't write audit entry", "err", err, "message", message)
 	}
@@ -253,13 +257,36 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 		if err := a.dao.StreamsDao.ToggleVisibility(stream.ID, req.GetPrivate()); err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
-		// v1's visibility toggle audited; its other edits did not.
-		a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: (Visibility: %v)", stream.ID, req.GetPrivate()))
 	}
 
 	// Last, also because it is what clears the stream cache the hall update skips.
 	if err := a.dao.StreamsDao.UpdateStream(stream); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	// After the writes, so a failed edit leaves no entry. v1 audited only the
+	// visibility; every field this request carries is named here.
+	var changed []string
+	if req.Name != nil {
+		changed = append(changed, "name")
+	}
+	if req.Description != nil {
+		changed = append(changed, "description")
+	}
+	if timesChanged {
+		changed = append(changed, "times")
+	}
+	if req.ChatEnabled != nil {
+		changed = append(changed, fmt.Sprintf("chat: %v", req.GetChatEnabled()))
+	}
+	if req.LectureHallId != nil {
+		changed = append(changed, fmt.Sprintf("lecture hall: %d", req.GetLectureHallId()))
+	}
+	if req.Private != nil {
+		changed = append(changed, fmt.Sprintf("Visibility: %v", req.GetPrivate()))
+	}
+	if len(changed) > 0 {
+		a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: (%s)", stream.ID, strings.Join(changed, ", ")))
 	}
 
 	if timesChanged {
@@ -308,6 +335,7 @@ func (a *API) UpdateLectureSeries(ctx context.Context, req *protobuf.UpdateLectu
 	if err := a.dao.StreamsDao.UpdateCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier, update); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: series '%s' edited", stream.ID, stream.SeriesIdentifier))
 	return &emptypb.Empty{}, nil
 }
 
@@ -336,6 +364,8 @@ func (a *API) UpdateLectureSeriesTime(ctx context.Context, req *protobuf.UpdateL
 	if err := a.dao.StreamsDao.UpdateCourseLectureSeriesTime(stream.CourseID, stream.ID, stream.SeriesIdentifier, start, end); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: series '%s' times set to %s - %s",
+		stream.ID, stream.SeriesIdentifier, start.Format("15:04"), end.Format("15:04")))
 	// Only the lecture the request names is told: the rest of the series moved by a
 	// time of day per date, and nobody is likely to have those pages open.
 	a.publish(ctx, stream.ID, realtimehub.TimeChangedEvent(stream.ID, start, end))
@@ -381,6 +411,7 @@ func (a *API) UpdateLecturesLectureHall(ctx context.Context, req *protobuf.Updat
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("lectures %v: lecture hall set to %d", ids, req.GetLectureHallId()))
 	return &emptypb.Empty{}, nil
 }
 
@@ -407,9 +438,9 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 	}
 
 	for _, stream := range streams {
+		a.dao.StreamsDao.DeleteStream(fmt.Sprintf("%d", stream.ID))
 		a.audit(ctx, model.AuditStreamDelete,
 			fmt.Sprintf("'%s': %s (%d)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID))
-		a.dao.StreamsDao.DeleteStream(fmt.Sprintf("%d", stream.ID))
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -430,11 +461,11 @@ func (a *API) DeleteLectureSeries(ctx context.Context, req *protobuf.DeleteLectu
 		return nil, e.FromGorm(err, "can't find course")
 	}
 
-	a.audit(ctx, model.AuditStreamDelete,
-		fmt.Sprintf("'%s': %s (%d and series)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID))
 	if err := a.dao.StreamsDao.DeleteCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamDelete,
+		fmt.Sprintf("'%s': %s (%d and series)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID))
 	return &emptypb.Empty{}, nil
 }
 
@@ -474,10 +505,11 @@ func (a *API) CopyLecture(ctx context.Context, req *protobuf.CopyLectureRequest)
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditStreamCreate, fmt.Sprintf("%d: %s to course %d as %d",
+		originalID, map[bool]string{true: "moved", false: "copied"}[req.GetMove()], target.ID, copied.ID))
 	if req.GetMove() {
-		a.audit(ctx, model.AuditStreamDelete,
-			fmt.Sprintf("%d: moved to course %d as %d", originalID, target.ID, copied.ID))
 		a.dao.StreamsDao.DeleteStream(fmt.Sprintf("%d", originalID))
+		a.audit(ctx, model.AuditStreamDelete, fmt.Sprintf("%d: moved away to course %d", originalID, target.ID))
 	}
 	return &protobuf.CopyLectureResponse{StreamId: uint32(copied.ID)}, nil
 }

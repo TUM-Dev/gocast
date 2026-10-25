@@ -53,7 +53,9 @@ func TestCreateServerNotification(t *testing.T) {
 				return nil
 			}).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		start := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
 		expires := timestamppb.New(time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC))
@@ -73,7 +75,9 @@ func TestCreateServerNotification(t *testing.T) {
 		notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 		notificationMock.EXPECT().CreateServerNotification(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		_, err := api.CreateServerNotification(context.Background(), &protobuf.CreateServerNotificationRequest{
 			Text: "",
@@ -88,7 +92,9 @@ func TestCreateServerNotification(t *testing.T) {
 		notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 		notificationMock.EXPECT().CreateServerNotification(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		start := timestamppb.New(time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC))
 		expires := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -107,7 +113,9 @@ func TestUpdateServerNotification(t *testing.T) {
 		notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 		notificationMock.EXPECT().UpdateServerNotification(gomock.Any(), "3").Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		start := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
 		expires := timestamppb.New(time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC))
@@ -127,7 +135,9 @@ func TestUpdateServerNotification(t *testing.T) {
 		notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 		notificationMock.EXPECT().UpdateServerNotification(gomock.Any(), gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		start := timestamppb.New(time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC))
 		expires := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -144,7 +154,9 @@ func TestUpdateServerNotification(t *testing.T) {
 		notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 		notificationMock.EXPECT().UpdateServerNotification(gomock.Any(), "3").Return(errors.New("boom")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:              auditSink(t),
+			ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 		start := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
 		expires := timestamppb.New(time.Date(2026, 1, 2, 0, 0, 0, 0, time.UTC))
@@ -162,7 +174,9 @@ func TestDeleteServerNotification(t *testing.T) {
 	notificationMock := mock_dao.NewMockServerNotificationDao(ctrl)
 	notificationMock.EXPECT().DeleteServerNotification("3").Return(nil).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{ServerNotificationDao: notificationMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao:              auditSink(t),
+		ServerNotificationDao: notificationMock}, log: slog.Default()}
 
 	if _, err := api.DeleteServerNotification(context.Background(), &protobuf.DeleteServerNotificationRequest{Id: 3}); err != nil {
 		t.Fatalf("DeleteServerNotification: %v", err)

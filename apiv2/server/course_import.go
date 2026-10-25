@@ -149,6 +149,7 @@ func (a *API) ImportCourseImportCourses(ctx context.Context, req *protobuf.Cours
 			})
 			continue
 		}
+		a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("imported '%s' (%d, %s)", courseReq.GetTitle(), req.GetYear(), req.GetTerm()))
 		results = append(results, &protobuf.CourseImportResult{Title: courseReq.GetTitle(), Success: true})
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -130,6 +131,7 @@ func (a *API) CreateUser(ctx context.Context, req *protobuf.CreateUserRequest) (
 		)
 	}
 
+	a.audit(ctx, model.AuditUserCreate, fmt.Sprintf("%s (%d) created as lecturer", user.GetLoginString(), user.ID))
 	return userSummary(user, false), nil
 }
 
@@ -159,10 +161,12 @@ func (a *API) UpdateUserRole(ctx context.Context, req *protobuf.UpdateUserRoleRe
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("no such user"))
 	}
 
+	oldRole := user.Role
 	user.Role = role
 	if err := a.dao.UsersDao.UpdateUser(user); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditUserEdit, fmt.Sprintf("%s (%d) role: %d -> %d", user.GetLoginString(), user.ID, oldRole, role))
 
 	// Cached for ten seconds, so without this the caller reads back a stale role.
 	dao.InvalidateUserCache(uint(req.GetUserId()))
@@ -181,9 +185,13 @@ func (a *API) DeleteUser(ctx context.Context, req *protobuf.DeleteUserRequest) (
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("administrators cannot be deleted"))
 	}
 
+	// Looked up first: the name is gone with the account. A failed lookup only costs
+	// the name in the entry.
+	deleted, _ := a.dao.UsersDao.GetUserByID(ctx, uint(req.GetUserId()))
 	if err := a.dao.UsersDao.DeleteUser(ctx, uint(req.GetUserId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditUserDelete, fmt.Sprintf("%s (%d)", deleted.GetLoginString(), req.GetUserId()))
 
 	dao.InvalidateUserCache(uint(req.GetUserId()))
 
