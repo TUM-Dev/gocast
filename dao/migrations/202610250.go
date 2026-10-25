@@ -68,13 +68,15 @@ func Migrate202610250() *gormigrate.Migration {
 			}
 
 			// Soft-deleted rows included: they keep their ids, and a deleted course's
-			// history is what a deleted-course audit is about.
+			// history is what a deleted-course audit is about. Unscoped, because gorm
+			// otherwise adds "deleted_at IS NULL" for the DeletedAt field below -- which
+			// would drop almost every course-deleted entry, as those courses are deleted.
 			var courses []auditCourse
-			if err := tx.Table("courses").Select("id, name, slug, year, teaching_term, created_at, deleted_at").Find(&courses).Error; err != nil {
+			if err := tx.Table("courses").Unscoped().Select("id, name, slug, year, teaching_term, created_at, deleted_at").Find(&courses).Error; err != nil {
 				return err
 			}
 			var streams []auditStream
-			if err := tx.Table("streams").Select("id, course_id, created_at").Find(&streams).Error; err != nil {
+			if err := tx.Table("streams").Unscoped().Select("id, course_id, created_at").Find(&streams).Error; err != nil {
 				return err
 			}
 
