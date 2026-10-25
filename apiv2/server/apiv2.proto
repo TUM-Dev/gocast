@@ -423,7 +423,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Change one of a course's lectures."
-      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload."
+      description: "Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat, visibility and expiration override (-1 inherits the course default, 0 never expires, positive values are days after the lecture ends). The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload."
     };
   }
 
@@ -591,7 +591,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Course Administration"
       summary: "Change a course's settings."
-      description: "Sets the fields that are present and leaves the rest. Requires administering the course."
+      description: "Sets the fields that are present and leaves the rest. The course lecture expiration setting is 0 to disable expiration or a number of days after a lecture ends; an individual lecture may override it. Requires administering the course."
     };
   }
 
@@ -1946,6 +1946,9 @@ message Stream {
   // False for a private lecture. Only a course administrator is ever sent one, so
   // this marks the lectures that the rest of the course cannot see.
   bool is_publicly_visible = 33;
+  // True when the retention period has elapsed. Expired lectures are sent only to
+  // course administrators.
+  bool is_expired = 34;
 }
 
 message StreamPlaylistEntry {
@@ -2731,6 +2734,9 @@ message UpdateLectureRequest {
   optional bool chat_enabled = 8;
   // Withholds the lecture from everyone but the course's administrators.
   optional bool private = 9;
+  // -1 inherits the course retention period; 0 never expires; positive values
+  // hide the lecture that many days after it ends.
+  optional int32 expiration_days_override = 10;
 }
 
 // ----- Course administration -----
@@ -2763,6 +2769,9 @@ message CourseAdmin {
   string tum_online_identifier = 16;
   // The course's owner; administrators are listed by listCourseAdmins.
   uint32 user_id = 17;
+  // 0 disables automatic expiration; positive values hide lectures that many days
+  // after they end, unless a lecture has an override.
+  int32 lecture_expiration_days = 18;
 }
 
 // The settings v1's course settings form edited.
@@ -2777,6 +2786,9 @@ message UpdateCourseSettingsRequest {
   optional bool moderated_chat_enabled = 7;
   optional bool live_private = 8;
   optional bool vod_private = 9;
+  // 0 disables automatic expiration; otherwise lectures are hidden this many days
+  // after they end unless overridden individually. At most 3650.
+  optional int32 lecture_expiration_days = 10;
 }
 
 message CopyCourseRequest {
@@ -3006,6 +3018,9 @@ message CourseLectureAdmin {
   repeated LectureFileAdmin files = 21;
   repeated LectureTranscodingProgress transcoding_progresses = 22;
   repeated LectureVideoSectionAdmin video_sections = 23;
+  // Absent inherits the course setting; 0 never expires; positive values override it.
+  optional int32 expiration_days_override = 24;
+  bool expired = 25;
 }
 
 message LectureFileAdmin {

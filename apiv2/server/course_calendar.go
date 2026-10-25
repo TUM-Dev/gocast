@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -109,7 +110,11 @@ func (a *API) handleCourseCalendar(c *gin.Context, yearStr, term, slug string) {
 	}
 
 	entries := make([]calendarEntry, 0, len(course.Streams))
+	now := time.Now()
 	for _, s := range course.Streams {
+		if course.IsLectureExpired(s, now) {
+			continue
+		}
 		entries = append(entries, streamToCalendarEntry(s, course))
 	}
 

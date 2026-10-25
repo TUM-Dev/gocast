@@ -38,6 +38,7 @@ type Course struct {
 	ModeratedChatEnabled    bool `gorm:"not null;default:false"`
 	VodChatEnabled          bool
 	Visibility              string `gorm:"default:loggedin"` // public, loggedin or enrolled
+	LectureExpirationDays   int32  `gorm:"not null;default:0"`
 	Streams                 []Stream
 	Users                   []User `gorm:"many2many:course_users;"`
 	Admins                  []User `gorm:"many2many:course_admins;"`
@@ -50,6 +51,22 @@ type Course struct {
 	Pinned      bool `gorm:"-"`                       // Used to determine if the course is pinned when loaded for a specific user.
 	LivePrivate bool `gorm:"not null; default:false"` // whether Livestreams are private
 	VodPrivate  bool `gorm:"not null; default:false"` // Whether VODs are made private after livestreams
+}
+
+const MaxLectureExpirationDays int32 = 3650
+
+// IsLectureExpired reports whether a lecture is past its retention period. A
+// per-lecture override of 0 means it never expires; an unset override inherits
+// the course setting. A course setting of 0 disables expiration.
+func (c Course) IsLectureExpired(stream Stream, now time.Time) bool {
+	if stream.LiveNow {
+		return false
+	}
+	days := c.LectureExpirationDays
+	if stream.ExpirationDaysOverride.Valid {
+		days = stream.ExpirationDaysOverride.Int32
+	}
+	return days > 0 && !now.Before(stream.End.Add(time.Duration(days)*24*time.Hour))
 }
 
 type CourseDTO struct {
@@ -260,8 +277,12 @@ func (c *Course) GetNextLecture(u *User) *Stream {
 func (c *Course) GetLastRecording(u *User) *Stream {
 	var lastLecture Stream
 	now := time.Now()
+	isAdmin := u != nil && u.IsAdminOfCourse(*c)
 	for _, s := range c.Streams {
 		if s.Private && (u == nil || (c != nil && !u.IsAdminOfCourse(*c))) {
+			continue
+		}
+		if c.IsLectureExpired(s, now) && !isAdmin {
 			continue
 		}
 		if s.Start.After(now) {

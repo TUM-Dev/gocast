@@ -52,6 +52,11 @@ const emit = defineEmits<{
 const id = computed(() => props.lecture.id);
 const inSeries = computed(() => props.seriesCount > 0);
 
+function expirationMode(days: number | null): "course" | "never" | "custom" {
+  if (days === null) return "course";
+  return days === 0 ? "never" : "custom";
+}
+
 const edit = reactive({
   name: props.lecture.name,
   description: props.lecture.description,
@@ -60,6 +65,10 @@ const edit = reactive({
   hallId: props.lecture.lectureHallId,
   chatEnabled: props.lecture.chatEnabled,
   private: props.lecture.private,
+  expirationMode: expirationMode(props.lecture.expirationDaysOverride),
+  expirationDays: props.lecture.expirationDaysOverride && props.lecture.expirationDaysOverride > 0
+    ? props.lecture.expirationDaysOverride
+    : 7,
 });
 const series = reactive({ text: false, time: false, hall: false, chat: false });
 
@@ -81,6 +90,12 @@ watch(
     follow("hallId", before.lectureHallId, now.lectureHallId);
     follow("chatEnabled", before.chatEnabled, now.chatEnabled);
     follow("private", before.private, now.private);
+    follow("expirationMode", expirationMode(before.expirationDaysOverride), expirationMode(now.expirationDaysOverride));
+    follow(
+      "expirationDays",
+      before.expirationDaysOverride && before.expirationDaysOverride > 0 ? before.expirationDaysOverride : 7,
+      now.expirationDaysOverride && now.expirationDaysOverride > 0 ? now.expirationDaysOverride : 7,
+    );
   },
 );
 
@@ -203,6 +218,33 @@ async function saveOptions(): Promise<void> {
       private: privateChanged ? edit.private : undefined,
     });
   }, "Options saved.");
+}
+
+const expirationDirty = computed(
+  () =>
+    edit.expirationMode !== expirationMode(props.lecture.expirationDaysOverride) ||
+    (edit.expirationMode === "custom" &&
+      edit.expirationDays !==
+        (props.lecture.expirationDaysOverride && props.lecture.expirationDaysOverride > 0
+          ? props.lecture.expirationDaysOverride
+          : 7)),
+);
+const expirationProblem = computed(() => {
+  if (edit.expirationMode !== "custom") return "";
+  if (!Number.isInteger(edit.expirationDays) || edit.expirationDays < 1 || edit.expirationDays > 3650) {
+    return "Enter a whole number between 1 and 3650.";
+  }
+  return "";
+});
+
+function saveExpiration(): void {
+  if (expirationProblem.value) return;
+  const expirationDaysOverride =
+    edit.expirationMode === "course" ? -1 : edit.expirationMode === "never" ? 0 : edit.expirationDays;
+  void run(
+    () => updateLecture(props.courseId, id.value, { expirationDaysOverride }),
+    "Expiration setting saved.",
+  );
 }
 
 /* Deleting. */
@@ -375,6 +417,44 @@ const field = (name: string) => `lecture-${id.value}-${name}`;
       <div class="flex justify-end">
         <button type="submit" class="tum-live-button tum-live-button-primary px-3 py-1 text-sm" :disabled="saving || !optionsDirty">
           Save
+        </button>
+      </div>
+    </form>
+
+    <form class="flex flex-col gap-2 text-sm" @submit.prevent="saveExpiration">
+      <h3 class="text-5 border-b text-xs font-semibold uppercase tracking-wide dark:border-gray-700">
+        Automatic expiration
+      </h3>
+      <label :for="field('expiration-mode')" class="text-2">Expiration rule</label>
+      <select :id="field('expiration-mode')" v-model="edit.expirationMode" class="tum-live-input">
+        <option value="course">Use the course default</option>
+        <option value="never">Never expire</option>
+        <option value="custom">Hide after a custom number of days</option>
+      </select>
+      <template v-if="edit.expirationMode === 'custom'">
+        <label :for="field('expiration-days')" class="text-2">Days after the lecture ends</label>
+        <div class="flex items-center gap-2">
+          <input
+            :id="field('expiration-days')"
+            v-model.number="edit.expirationDays"
+            type="number"
+            min="1"
+            max="3650"
+            step="1"
+            class="tum-live-input w-28"
+          />
+          <span class="text-3">days</span>
+        </div>
+      </template>
+      <p class="text-5 text-xs">Expired lectures are hidden from students and remain available to course administrators.</p>
+      <p v-if="expirationProblem" class="text-sm text-red-600 dark:text-red-400">{{ expirationProblem }}</p>
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="tum-live-button tum-live-button-primary px-3 py-1 text-sm"
+          :disabled="saving || !expirationDirty || !!expirationProblem"
+        >
+          Save expiration
         </button>
       </div>
     </form>

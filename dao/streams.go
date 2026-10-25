@@ -542,11 +542,12 @@ func (d streamsDao) UnsetLectureHall(streamIDs []uint) error {
 func (d streamsDao) UpdateStream(stream model.Stream) error {
 	defer Cache.Clear()
 	err := DB.Model(&stream).Updates(map[string]interface{}{
-		"name":         stream.Name,
-		"description":  stream.Description,
-		"start":        stream.Start,
-		"end":          stream.End,
-		"chat_enabled": stream.ChatEnabled,
+		"name":                     stream.Name,
+		"description":              stream.Description,
+		"start":                    stream.Start,
+		"end":                      stream.End,
+		"chat_enabled":             stream.ChatEnabled,
+		"expiration_days_override": stream.ExpirationDaysOverride,
 	}).Error
 	return err
 }

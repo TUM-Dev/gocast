@@ -266,7 +266,7 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 	}
 
 	if !visibility.StreamVisible(user, course, stream) {
-		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access private stream"))
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access this stream"))
 	}
 
 	return user, stream, course, nil

@@ -51,6 +51,7 @@ export interface CourseAdmin {
   vodChatEnabled: boolean;
   livePrivate: boolean;
   vodPrivate: boolean;
+  lectureExpirationDays: number;
   /** "de", "en" or "". */
   language: string;
   tumOnlineIdentifier: string;
@@ -67,6 +68,7 @@ export type CourseSettings = Pick<
   | "moderatedChatEnabled"
   | "livePrivate"
   | "vodPrivate"
+  | "lectureExpirationDays"
 >;
 
 function toVisibility(value: string): CourseVisibility {
@@ -89,6 +91,7 @@ function toCourseAdmin(c: CourseAdminMessage): CourseAdmin {
     vodChatEnabled: c.vodChatEnabled,
     livePrivate: c.livePrivate,
     vodPrivate: c.vodPrivate,
+    lectureExpirationDays: c.lectureExpirationDays,
     language: c.language,
     tumOnlineIdentifier: c.tumOnlineIdentifier,
   };
