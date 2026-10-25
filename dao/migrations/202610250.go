@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,10 @@ const (
 // the entry follows the insert directly. Wide enough for a slow request, narrow enough
 // that two courses of one name, created a semester apart, never both fit.
 const auditCreationWindow = 10 * time.Second
+
+// auditBackfillBatch bounds the updates per transaction. Far below MariaDB's default
+// max_prepared_stmt_count (16382), which the statements of one transaction count against.
+const auditBackfillBatch = 500
 
 // Migrate202610250 links audit entries that predate audits.course_id and stream_id to
 // their course, so a course's own log shows its history and not only what happens from
@@ -81,22 +86,38 @@ func Migrate202610250() *gormigrate.Migration {
 			}
 
 			resolver := newAuditResolver(courses, streams)
-			return tx.Transaction(func(tx *gorm.DB) error {
-				for _, a := range audits {
-					link, ok := resolver.resolve(a)
-					if !ok {
-						continue
-					}
-					update := map[string]any{"course_id": link.courseID}
-					if link.streamID != 0 {
-						update["stream_id"] = link.streamID
-					}
-					if err := tx.Table("audits").Where("id = ? AND course_id IS NULL", a.ID).Updates(update).Error; err != nil {
-						return err
-					}
+			var links []auditUpdate
+			for _, a := range audits {
+				if link, ok := resolver.resolve(a); ok {
+					links = append(links, auditUpdate{id: a.ID, link: link})
 				}
-				return nil
-			})
+			}
+
+			// One transaction per batch, not one for everything. The server runs gorm
+			// with PrepareStmt, and inside a transaction every statement is prepared
+			// again on the transaction's connection and only released at commit. Row by
+			// row in a single transaction that is one server-side statement per audit
+			// entry, and a database with enough of them hits max_prepared_stmt_count --
+			// which crash-looped the server on boot. Each batch is idempotent (rows
+			// already linked are skipped), so a failure part-way simply resumes next boot.
+			for batch := range slices.Chunk(links, auditBackfillBatch) {
+				err := tx.Transaction(func(tx *gorm.DB) error {
+					for _, u := range batch {
+						update := map[string]any{"course_id": u.link.courseID}
+						if u.link.streamID != 0 {
+							update["stream_id"] = u.link.streamID
+						}
+						if err := tx.Table("audits").Where("id = ? AND course_id IS NULL", u.id).Updates(update).Error; err != nil {
+							return err
+						}
+					}
+					return nil
+				})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
 		},
 		Rollback: func(tx *gorm.DB) error {
 			// The links are derived data; nothing is lost by leaving them in place.
@@ -126,6 +147,11 @@ type auditStream struct {
 	ID        uint
 	CourseID  uint
 	CreatedAt time.Time
+}
+
+type auditUpdate struct {
+	id   uint
+	link auditLink
 }
 
 type auditLink struct {
