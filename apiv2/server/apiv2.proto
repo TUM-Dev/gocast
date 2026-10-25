@@ -2541,6 +2541,9 @@ message ListAuditsRequest {
   // admin page used.
   uint32 limit = 1;
   uint32 offset = 2;
+  // Only entries of this kind, as AuditEntry.type renders it ("User Deleted"). Empty
+  // for every kind; an unknown name is a 400 rather than an empty page.
+  string type = 3;
 }
 
 ///////////////////////////////
@@ -2549,6 +2552,8 @@ message ListAuditsRequest {
 
 message ListAuditsResponse {
   repeated AuditEntry audits = 1;
+  // How many entries match the request's filter, ignoring limit and offset.
+  uint32 total = 2;
 }
 
 ///////////////////////////////

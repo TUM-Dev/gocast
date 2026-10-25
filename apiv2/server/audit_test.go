@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"os"
+	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -21,6 +23,7 @@ func TestListAuditsDefaultsTheLimitWhenOmitted(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	auditMock := mock_dao.NewMockAuditDao(ctrl)
 	auditMock.EXPECT().Find(defaultAuditPageSize, 0, gomock.Any()).Return([]model.Audit{}, nil).Times(1)
+	auditMock.EXPECT().Count(gomock.Any()).Return(int64(0), nil).Times(1)
 
 	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
 
@@ -33,6 +36,7 @@ func TestListAuditsPassesThroughLimitAndOffset(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	auditMock := mock_dao.NewMockAuditDao(ctrl)
 	auditMock.EXPECT().Find(5, 20, gomock.Any()).Return([]model.Audit{}, nil).Times(1)
+	auditMock.EXPECT().Count(gomock.Any()).Return(int64(0), nil).Times(1)
 
 	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
 
@@ -47,6 +51,7 @@ func TestListAuditsMapsASystemAuditWithoutAUser(t *testing.T) {
 	auditMock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{
 		{Message: "server started", Type: model.AuditInfo, User: nil, UserID: nil},
 	}, nil).Times(1)
+	auditMock.EXPECT().Count(gomock.Any()).Return(int64(0), nil).Times(1)
 
 	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
 
@@ -85,6 +90,7 @@ func TestListAuditsMapsAnAuditWithAUser(t *testing.T) {
 			},
 		},
 	}, nil).Times(1)
+	auditMock.EXPECT().Count(gomock.Any()).Return(int64(0), nil).Times(1)
 
 	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
 
@@ -115,6 +121,7 @@ func TestListAuditsWithNoneFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	auditMock := mock_dao.NewMockAuditDao(ctrl)
 	auditMock.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any()).Return([]model.Audit{}, nil).Times(1)
+	auditMock.EXPECT().Count(gomock.Any()).Return(int64(0), nil).Times(1)
 
 	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
 
@@ -124,5 +131,67 @@ func TestListAuditsWithNoneFound(t *testing.T) {
 	}
 	if len(resp.Audits) != 0 {
 		t.Errorf("got %d audits, want none", len(resp.Audits))
+	}
+}
+
+func TestListAuditsFiltersByTypeAndReportsTheTotal(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	auditMock := mock_dao.NewMockAuditDao(ctrl)
+	auditMock.EXPECT().Find(10, 0, model.AuditUserDelete).Return([]model.Audit{}, nil).Times(1)
+	auditMock.EXPECT().Count(model.AuditUserDelete).Return(int64(42), nil).Times(1)
+
+	api := &API{dao: dao.DaoWrapper{AuditDao: auditMock}, log: slog.Default()}
+
+	resp, err := api.ListAudits(context.Background(), &protobuf.ListAuditsRequest{Type: "User Deleted"})
+	if err != nil {
+		t.Fatalf("ListAudits: %v", err)
+	}
+	if resp.Total != 42 {
+		t.Errorf("total = %d, want 42", resp.Total)
+	}
+}
+
+func TestListAuditsRejectsAnUnknownType(t *testing.T) {
+	api := &API{dao: dao.DaoWrapper{AuditDao: mock_dao.NewMockAuditDao(gomock.NewController(t))}, log: slog.Default()}
+
+	if _, err := api.ListAudits(context.Background(), &protobuf.ListAuditsRequest{Type: "Nope"}); err == nil {
+		t.Fatal("want an error for an unknown type")
+	}
+}
+
+func TestAuditTypeNamesRoundTrip(t *testing.T) {
+	for _, typ := range model.GetAllAuditTypes() {
+		got, ok := model.AuditTypeByName(typ.String())
+		if !ok || got != typ {
+			t.Errorf("%d: %q does not round-trip", typ, typ.String())
+		}
+	}
+	// A row written by a newer version must not panic the page.
+	if got := model.AuditType(999).String(); got != "Unknown" {
+		t.Errorf("out-of-range type = %q, want Unknown", got)
+	}
+}
+
+// auditSink accepts any number of audit entries, for tests of handlers that audit
+// but are not about the audit. Tests of what is audited expect Create themselves.
+func auditSink(t *testing.T) dao.AuditDao {
+	t.Helper()
+	sink := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	sink.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+	return sink
+}
+
+// The frontend's filter offers a copy of the type labels (AUDIT_TYPES), since the API
+// answers the label rather than a code. A type added here and not there could be seen
+// in the log but never filtered for.
+func TestFrontendOffersEveryAuditType(t *testing.T) {
+	src, err := os.ReadFile("../../frontend/src/lib/audits.ts")
+	if err != nil {
+		t.Skipf("frontend sources not available: %v", err)
+	}
+	for _, typ := range model.GetAllAuditTypes() {
+		if !strings.Contains(string(src), `"`+typ.String()+`"`) {
+			t.Errorf("frontend/src/lib/audits.ts AUDIT_TYPES lacks %q", typ.String())
+		}
 	}
 }
