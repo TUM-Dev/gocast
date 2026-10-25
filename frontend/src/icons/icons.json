@@ -57,6 +57,7 @@
     "pen": "pen",
     "plus": "plus",
     "power-off": "power-off",
+    "rotate": "rotate",
     "satellite-dish": "satellite-dish",
     "search": "magnifying-glass",
     "share-nodes": "share-nodes",
@@ -73,6 +74,7 @@
     "undo": "arrow-rotate-left",
     "upload": "upload",
     "user": "user",
+    "wifi": "wifi",
     "xmark": "xmark"
   },
   "regular": {
