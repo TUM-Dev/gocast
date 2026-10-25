@@ -7,13 +7,28 @@ import ServerStatsView from "./admin/ServerStatsView.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const { Chart } = vi.hoisted(() => ({
-  Chart: vi.fn(function (this: { destroy: () => void }, _canvas: HTMLCanvasElement, _config: unknown) {
-    this.destroy = vi.fn();
-  }),
+  Chart: Object.assign(
+    vi.fn(function (this: { destroy: () => void }, _canvas: HTMLCanvasElement, _config: unknown) {
+      this.destroy = vi.fn();
+    }),
+    { register: vi.fn() },
+  ),
 }));
 
 // jsdom has no canvas to draw on; what matters is which canvases a chart was built on.
-vi.mock("chart.js/auto", () => ({ Chart }));
+// The registrables are stubs: StatsPanel only hands them to Chart.register.
+vi.mock("chart.js", () => ({
+  Chart,
+  BarController: {},
+  BarElement: {},
+  CategoryScale: {},
+  LinearScale: {},
+  LineController: {},
+  LineElement: {},
+  PointElement: {},
+  Legend: {},
+  Tooltip: {},
+}));
 
 vi.mock("@/lib/server-stats", async () => {
   const actual = await vi.importActual<typeof import("@/lib/server-stats")>("@/lib/server-stats");

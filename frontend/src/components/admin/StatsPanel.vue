@@ -1,8 +1,36 @@
 <script setup lang="ts">
-import { Chart, type ChartConfiguration } from "chart.js/auto";
+import {
+  BarController,
+  BarElement,
+  CategoryScale,
+  Chart,
+  type ChartConfiguration,
+  LinearScale,
+  LineController,
+  LineElement,
+  Legend,
+  PointElement,
+  Tooltip,
+} from "chart.js";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 
 import type { StatsChart, StatsCounter } from "@/lib/usage-stats";
+
+// Only what the line and bar charts below draw, instead of `chart.js/auto`, which
+// registers every chart type, scale and plugin and is most of this chunk's size.
+// Legend and Tooltip are default plugins that auto would have registered. Add the
+// controller, element and scale here before a chart definition uses a new type.
+Chart.register(
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Legend,
+  Tooltip,
+);
 
 /**
  * The quick counters, charts and export links every statistics page shows. Mounted
