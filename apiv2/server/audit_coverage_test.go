@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"go.uber.org/mock/gomock"
+	"gorm.io/gorm"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/dao"
@@ -147,5 +148,60 @@ func TestDeleteUserStillAuditsWhenTheLookupFails(t *testing.T) {
 	// The id alone, not " (2)" built from an empty user.
 	if len(*got) != 1 || (*got)[0].Message != "2" {
 		t.Errorf("audits = %+v, want a message naming only the id", *got)
+	}
+}
+
+func TestListCourseAuditsReadsOnlyThatCourse(t *testing.T) {
+	audits := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	audits.EXPECT().FindByCourse(uint(5), defaultAuditPageSize, 20, gomock.Any()).
+		Return([]model.Audit{{Message: "7: ended", Type: model.AuditStreamEdit}}, nil)
+	audits.EXPECT().CountByCourse(uint(5), gomock.Any()).Return(int64(31), nil)
+	api := &API{dao: dao.DaoWrapper{AuditDao: audits}, log: slog.Default()}
+
+	resp, err := api.ListCourseAudits(context.Background(), &protobuf.ListCourseAuditsRequest{CourseId: 5, Offset: 20})
+	if err != nil {
+		t.Fatalf("ListCourseAudits: %v", err)
+	}
+	if len(resp.Audits) != 1 || resp.Total != 31 {
+		t.Errorf("audits = %d, total = %d, want 1 and 31", len(resp.Audits), resp.Total)
+	}
+}
+
+func TestListCourseAuditsFiltersAndRefusesAnUnknownType(t *testing.T) {
+	audits := mock_dao.NewMockAuditDao(gomock.NewController(t))
+	audits.EXPECT().FindByCourse(uint(5), defaultAuditPageSize, 0, model.AuditStreamEdit).Return(nil, nil)
+	audits.EXPECT().CountByCourse(uint(5), model.AuditStreamEdit).Return(int64(0), nil)
+	api := &API{dao: dao.DaoWrapper{AuditDao: audits}, log: slog.Default()}
+
+	if _, err := api.ListCourseAudits(context.Background(), &protobuf.ListCourseAuditsRequest{CourseId: 5, Type: "Stream Edited"}); err != nil {
+		t.Fatalf("ListCourseAudits: %v", err)
+	}
+	if _, err := api.ListCourseAudits(context.Background(), &protobuf.ListCourseAuditsRequest{CourseId: 5, Type: "Nope"}); err == nil {
+		t.Fatal("an unknown type was accepted")
+	}
+}
+
+// What puts an entry on a course's log is the ids it is written with.
+func TestAuditScopesLinkTheEntryToItsCourseAndLecture(t *testing.T) {
+	audits, got := auditCapture(t)
+	api := &API{dao: dao.DaoWrapper{AuditDao: audits}, log: slog.Default()}
+	stream := model.Stream{Model: gorm.Model{ID: 7}, CourseID: 5}
+
+	api.audit(context.Background(), model.AuditCourseEdit, "course", forCourse(5))
+	api.audit(context.Background(), model.AuditStreamEdit, "stream", forStream(stream))
+	api.audit(context.Background(), model.AuditRunner, "server-wide")
+
+	e := *got
+	if len(e) != 3 {
+		t.Fatalf("entries = %d, want 3", len(e))
+	}
+	if e[0].CourseID == nil || *e[0].CourseID != 5 || e[0].StreamID != nil {
+		t.Errorf("course entry = %+v, want course 5 and no stream", e[0])
+	}
+	if e[1].CourseID == nil || *e[1].CourseID != 5 || e[1].StreamID == nil || *e[1].StreamID != 7 {
+		t.Errorf("stream entry = %+v, want course 5 and stream 7", e[1])
+	}
+	if e[2].CourseID != nil || e[2].StreamID != nil {
+		t.Errorf("server-wide entry = %+v, want neither", e[2])
 	}
 }

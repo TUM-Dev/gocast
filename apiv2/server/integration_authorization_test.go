@@ -109,10 +109,12 @@ func TestDecideApprovesOnlyOwnerOrDelegate(t *testing.T) {
 						codeHash, stateHash, expiresAt = bytes.Clone(gotCode), bytes.Clone(gotState), gotExpiresAt
 						return 19, nil
 					})
+				courseID := course.ID
 				audits.EXPECT().Create(&model.Audit{
-					User:    user,
-					Message: "Example course:'example' authorize integration: Course portal (19)",
-					Type:    model.AuditCourseEdit,
+					User:     user,
+					Message:  "Example course:'example' authorize integration: Course portal (19)",
+					Type:     model.AuditCourseEdit,
+					CourseID: &courseID,
 				}).Return(nil)
 			}
 

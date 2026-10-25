@@ -35,6 +35,6 @@ func (a *API) RevokeCourseIntegrationGrant(ctx context.Context, req *protobuf.Re
 	if err := a.dao.IntegrationGrantDao.RevokeIntegrationGrant(ctx, uint(req.GetGrantId()), course.ID); err != nil {
 		return nil, e.FromGorm(err, "no active integration grant for this course")
 	}
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' revoke integration grant: %d", course.Name, course.Slug, req.GetGrantId()))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' revoke integration grant: %d", course.Name, course.Slug, req.GetGrantId()), forCourse(course.ID))
 	return &emptypb.Empty{}, nil
 }

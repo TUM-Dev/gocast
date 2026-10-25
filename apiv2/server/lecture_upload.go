@@ -146,7 +146,7 @@ func (a *API) handleLectureUpload(c *gin.Context, route lectureUploadRoute) {
 		return
 	}
 
-	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %s uploaded (file %d)", stream.ID, route.kind, file.ID))
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %s uploaded (file %d)", stream.ID, route.kind, file.ID), forStream(stream))
 	body, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&protobuf.LectureFileAdmin{
 		Id: uint32(file.ID), Type: uint32(file.Type), FriendlyName: file.GetFriendlyFileName(),
 	})

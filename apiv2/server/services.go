@@ -113,6 +113,7 @@ var services = []service{
 			// updateLecturesLectureHall always -- also needs a server administrator,
 			// checked in the handler since the policy cannot see which fields are set.
 			"listCourseLecturesAdmin":   requiresCourseAdmin(),
+			"listCourseAudits":          requiresCourseAdmin(),
 			"updateLecturesLectureHall": requiresCourseAdmin(),
 			"updateLectureSeries":       requiresCourseAdmin(),
 			"updateLectureSeriesTime":   requiresCourseAdmin(),

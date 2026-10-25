@@ -136,4 +136,16 @@ describe("fetchAuditPage", () => {
     );
     expect(url).not.toContain("type=");
   });
+
+  it("reads a course's own log from the course's path", async () => {
+    respondWith({ audits: [], total: 3 });
+
+    const page = await fetchAuditPage(0, 10, "Stream Edited", 5);
+
+    expect(page.total).toBe(3);
+    const url = String(fetchMock.mock.calls.map((c) => c[0]).find((u) => String(u).includes("/audits")));
+    expect(url).toContain("/courses/5/audits?");
+    expect(url).not.toContain("/admin/audits");
+    expect(url).toContain("type=Stream+Edited");
+  });
 });

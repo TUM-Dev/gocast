@@ -143,7 +143,7 @@ func (a *API) DecideIntegrationAuthorization(ctx context.Context, req *protobuf.
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' authorize integration: %s (%d)", course.Name, course.Slug, integration.Name, grantID))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' authorize integration: %s (%d)", course.Name, course.Slug, integration.Name, grantID), forCourse(course.ID))
 	return &protobuf.DecideIntegrationAuthorizationResponse{
 		RedirectUrl: integrationReturnURL(integration.ReturnURL, state, "code", code.String()),
 	}, nil
