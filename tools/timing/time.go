@@ -1,22 +1,16 @@
 // Package timing provides time calculation functions used in TUM Live
 package timing
 
-import (
-	"time"
+import "time"
 
-	"github.com/jinzhu/now"
-)
-
-// GetWeeksInYear returns the number of weeks in the given year
+// GetWeeksInYear returns the number of ISO weeks in the given year
 func GetWeeksInYear(year int) int {
-	now.WeekStartDay = time.Monday
-	yearStart := time.Date(year, 1, 1, 0, 0, 0, 0, time.Local)
-	endOfYear := now.New(yearStart).EndOfYear()
-	firstDayOfLastWeek := now.New(endOfYear).BeginningOfWeek()
-	y, w := firstDayOfLastWeek.ISOWeek()
-	for y != year {
-		firstDayOfLastWeek = firstDayOfLastWeek.Add(time.Hour * -24)
-		y, w = firstDayOfLastWeek.ISOWeek()
-	}
+	// December 28th always falls into the last ISO week of its year.
+	_, w := time.Date(year, time.December, 28, 0, 0, 0, 0, time.Local).ISOWeek()
 	return w
+}
+
+// EndOfDay returns the last representable instant of t's day, in t's location.
+func EndOfDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, int(time.Second-1), t.Location())
 }

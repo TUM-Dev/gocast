@@ -423,3 +423,16 @@ func (c *Course) ShouldGenerateSubtitles(version StreamVersion, lectureHallID ui
 	}
 	return version == PRES
 }
+
+// UniqueCourses drops repeated courses (by ID), keeping the first occurrence and the order.
+func UniqueCourses(courses []Course) []Course {
+	seen := make(map[uint]struct{}, len(courses))
+	var result []Course
+	for _, c := range courses {
+		if _, ok := seen[c.ID]; !ok {
+			seen[c.ID] = struct{}{}
+			result = append(result, c)
+		}
+	}
+	return result
+}

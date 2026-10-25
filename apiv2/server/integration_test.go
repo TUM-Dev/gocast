@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -104,7 +104,7 @@ func TestIntegrationCredentialsStaySeparateFromUserCredentials(t *testing.T) {
 }
 
 func TestRedeemIntegrationAuthorizationHashesCanonicalValues(t *testing.T) {
-	code, err := uuid.FromString("685aebd3-45ba-4d4c-91a5-b181932f2ff5")
+	code, err := uuid.Parse("685aebd3-45ba-4d4c-91a5-b181932f2ff5")
 	require.NoError(t, err)
 	state := bytes.Repeat([]byte{4}, 32)
 	codeHash, stateHash := sha256.Sum256(code[:]), sha256.Sum256(state)

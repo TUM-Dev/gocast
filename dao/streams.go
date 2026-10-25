@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
 	"gorm.io/gorm/clause"
 
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"

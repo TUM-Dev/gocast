@@ -6,7 +6,6 @@ tool go.uber.org/mock/mockgen
 
 require (
 	github.com/RBG-TUM/CAMPUSOnline v0.0.0-20261002130556-2a3785adffe6
-	github.com/RBG-TUM/commons v0.0.0-20220406105618-030c095f6a1b
 	github.com/RBG-TUM/go-anel-pwrctrl v1.0.0
 	github.com/TUM-Dev/CampusProxy/client v0.0.0-20250907134856-9d3b4d5385a2
 	github.com/antchfx/xmlquery v1.5.1
@@ -23,7 +22,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0
 	github.com/icholy/digest v1.2.0
-	github.com/jinzhu/now v1.1.5
 	github.com/matthiasreumann/gomino v0.0.2
 	github.com/meilisearch/meilisearch-go v0.36.3
 	github.com/microcosm-cc/bluemonday v1.0.27
@@ -31,8 +29,6 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/russross/blackfriday/v2 v2.1.0
-	github.com/satori/go.uuid v1.2.0
-	github.com/sirupsen/logrus v1.10.2
 	github.com/soheilhy/cmux v0.1.5
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.12.1
@@ -86,6 +82,7 @@ require (
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -261,7 +261,7 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 	// create new contexts to avoid cancellation on grpc request termination
 	streamCtx, endStream := context.WithCancel(context.Background())
 	afterCtx, endAfter := context.WithCancel(context.Background())
-	job := uuid.New().String()
+	job := uuid.NewV4().String()
 	release := r.hold()
 	r.jobsMu.Lock()
 	r.jobs[job] = jobCancels{endStream: endStream, endAfter: endAfter}
