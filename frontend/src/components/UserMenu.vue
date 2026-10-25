@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import { installed } from "@/lib/pwa";
 import { useClickOutside } from "@/lib/useClickOutside";
 import { useAuthStore } from "@/stores/auth";
 import { useThemeStore, type ThemeMode } from "@/stores/theme";
@@ -96,6 +97,12 @@ function setTheme(mode: ThemeMode): void {
           <RouterLink to="/settings" class="tum-live-menu-item" @click="open = false">
             <div class="icon-wrapper mr-2"><i class="fa-solid fa-gear"></i></div>
             <p>Settings</p>
+          </RouterLink>
+
+          <!-- Only in the installed app, the one place lectures are saved. -->
+          <RouterLink v-if="installed" to="/offline" class="tum-live-menu-item" @click="open = false">
+            <div class="icon-wrapper mr-2"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+            <p>Offline lectures</p>
           </RouterLink>
 
           <button type="button" class="tum-live-menu-item" @click="shortcutsOpen = true">

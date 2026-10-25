@@ -37,6 +37,7 @@ type DaoWrapper struct {
 	RunnerDao RunnerDao
 	IntegrationDao
 	IntegrationGrantDao
+	OfflinePackageDao OfflinePackageDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -65,5 +66,6 @@ func NewDaoWrapper() DaoWrapper {
 		RunnerDao:             NewRunnerDao(),
 		IntegrationDao:        NewIntegrationDao(),
 		IntegrationGrantDao:   NewIntegrationGrantDao(),
+		OfflinePackageDao:     NewOfflinePackageDao(),
 	}
 }

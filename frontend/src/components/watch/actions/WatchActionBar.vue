@@ -2,9 +2,11 @@
 import { computed, ref } from "vue";
 
 import KeyboardShortcuts from "@/components/KeyboardShortcuts.vue";
+import SaveOfflineButton from "@/components/SaveOfflineButton.vue";
 import { WatchLayout, type StreamWatch } from "@/gen/server/apiv2_pb";
 import { announceDownload } from "@/lib/download-notice";
 import type { PlayerController } from "@/lib/player/controller";
+import { installed } from "@/lib/pwa";
 import {
   attachmentLink,
   copyablePlaylistUrl,
@@ -116,6 +118,7 @@ const iconClass = "fa-solid text-lg transition-transform motion-safe:group-hover
         <i class="fa-solid fa-download text-xs text-gray-500 dark:text-gray-200"></i>
         <span>Download {{ d.friendlyName }}</span>
       </a>
+      <SaveOfflineButton v-if="installed && downloads.length > 0" :stream-id="streamId" :class="itemClass" />
     </ActionMenu>
 
     <ActionMenu

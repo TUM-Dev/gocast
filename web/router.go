@@ -59,6 +59,7 @@ var spaRoutes = map[string]bool{
 	"/settings":                             true,
 	"/login":                                true,
 	"/search":                               true,
+	"/offline":                              true,
 	"/setPassword/:resetKey":                true,
 	"/edit-course":                          true,
 	"/edit-course/opt-out":                  true,
@@ -326,6 +327,9 @@ func configMainRoute(router *gin.Engine) {
 
 	// Public: anonymous callers search public courses; the page itself asks v2.
 	registerPage(&router.RouterGroup, http.MethodGet, "/search")
+
+	// Public: the lectures saved on the device; nothing on it comes from the server.
+	registerPage(&router.RouterGroup, http.MethodGet, "/offline")
 
 	// admins
 	//

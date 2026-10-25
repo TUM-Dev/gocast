@@ -35,6 +35,37 @@ export function watchConnectivity(): void {
   window.addEventListener("offline", () => (online.value = false));
 }
 
+/**
+ * Whether this is the installed app, with a service worker in control: the only place
+ * lectures are saved offline. In a browser tab the storage is the first thing evicted
+ * and nothing would bring the viewer back to the saved lecture, so the feature is not
+ * offered there.
+ */
+export const installed = ref(false);
+
+/**
+ * The display modes the installed app runs in. The manifest asks for minimal-ui, which
+ * browsers that lack it replace with standalone.
+ */
+const INSTALLED_MODES = ["standalone", "minimal-ui", "fullscreen", "window-controls-overlay"];
+
+/** Whether the page runs as an installed app rather than in a browser tab. */
+export function runsInstalled(win: Window = window): boolean {
+  // Safari on iOS has no display-mode for a home screen app, only this.
+  if ((win.navigator as Navigator & { standalone?: boolean }).standalone) return true;
+  return INSTALLED_MODES.some((mode) => win.matchMedia?.(`(display-mode: ${mode})`).matches);
+}
+
+export function watchInstalled(): void {
+  if (!("serviceWorker" in navigator)) return;
+  const update = () => (installed.value = !!navigator.serviceWorker.controller && runsInstalled());
+  update();
+  navigator.serviceWorker.addEventListener("controllerchange", update);
+  for (const mode of INSTALLED_MODES) {
+    window.matchMedia?.(`(display-mode: ${mode})`).addEventListener?.("change", update);
+  }
+}
+
 export async function registerServiceWorker(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
 
