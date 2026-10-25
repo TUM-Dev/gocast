@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -32,23 +31,14 @@ func LoadConfig() {
 const rsaKeySize = 2048
 
 func initConfig() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/TUM-Live/")
-	viper.AddConfigPath("$HOME/.TUM-Live")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
-	if err != nil {
-		if errors.Is(err, viper.ConfigFileNotFoundError{}) {
-			logger.Warn("tools.config.LoadConfig: can't find config file", "err", err)
-		} else {
-			panic(fmt.Errorf("fatal error config file: %v", err))
-		}
-	}
-	logger.Info("Using Config file " + viper.ConfigFileUsed())
-	err = viper.Unmarshal(&Cfg)
-	if err != nil {
+	cfgPath, err := loadConfigFile("config", &Cfg)
+	switch {
+	case errors.Is(err, errConfigNotFound):
+		logger.Warn("tools.config.LoadConfig: can't find config file", "err", err)
+	case err != nil:
 		panic(fmt.Errorf("fatal error config file: %v", err))
+	default:
+		logger.Info("Using Config file " + cfgPath)
 	}
 
 	// set defaults
@@ -64,8 +54,11 @@ func initConfig() {
 				Bytes: x509.MarshalPKCS1PrivateKey(JWTKey),
 			},
 		))
-		viper.Set("jwtKey", armoured)
-		err = viper.WriteConfig()
+		if cfgPath == "" {
+			err = errors.New("no config file to write to")
+		} else {
+			err = setConfigKey(cfgPath, "jwtKey", armoured)
+		}
 		if err != nil {
 			logger.Warn("Can't write out config ", "err", err)
 		}
