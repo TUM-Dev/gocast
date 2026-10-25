@@ -8,7 +8,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/model"
 
-	"github.com/RBG-TUM/commons"
 	"gorm.io/gorm"
 )
 
@@ -135,7 +134,7 @@ func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, user
 		return nil, err
 	}
 	foundCourses = append(foundCourses, administeredCourses...)
-	foundCourses = commons.Unique(foundCourses, func(c model.Course) uint { return c.ID })
+	foundCourses = model.UniqueCourses(foundCourses)
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm), foundCourses, 1, time.Minute)
 	}

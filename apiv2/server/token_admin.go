@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

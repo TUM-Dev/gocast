@@ -4,7 +4,6 @@ go 1.27.0
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/google/uuid v1.6.0
 	github.com/icza/gox v0.2.14
 	github.com/otiai10/copy v1.14.1
 	github.com/prometheus/client_golang v1.24.1

@@ -2,8 +2,7 @@ package sony
 
 import (
 	"fmt"
-
-	uuid "github.com/satori/go.uuid"
+	"uuid"
 
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera/protocol"

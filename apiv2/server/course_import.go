@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
