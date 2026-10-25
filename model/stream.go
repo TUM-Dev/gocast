@@ -53,6 +53,7 @@ type Stream struct {
 	VideoSections          []VideoSection
 	TranscodingProgresses  []TranscodingProgress `gorm:"foreignKey:StreamID"`
 	Private                bool                  `gorm:"not null;default:false"`
+	ExpirationDaysOverride sql.NullInt32         `gorm:"default:null"`
 
 	Watched bool `gorm:"-"` // Used to determine if stream is watched when loaded for a specific user.
 }

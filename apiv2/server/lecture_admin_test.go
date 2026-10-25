@@ -157,6 +157,40 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		}
 	})
 
+	t.Run("sets an explicit expiration override and can inherit the course default", func(t *testing.T) {
+		for _, days := range []int32{0, 14, -1} {
+			api, m := newLectureAPI(t)
+			m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+			m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+			m.streams.EXPECT().UpdateStream(gomock.Any()).DoAndReturn(func(s model.Stream) error {
+				if days == -1 {
+					if s.ExpirationDaysOverride.Valid {
+						t.Errorf("override = %+v, want inherited", s.ExpirationDaysOverride)
+					}
+				} else if !s.ExpirationDaysOverride.Valid || s.ExpirationDaysOverride.Int32 != days {
+					t.Errorf("override = %+v, want %d", s.ExpirationDaysOverride, days)
+				}
+				return nil
+			})
+			_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+				CourseId: 1, StreamId: 7, ExpirationDaysOverride: &days,
+			})
+			if err != nil {
+				t.Fatalf("UpdateLecture with expiration override %d: %v", days, err)
+			}
+		}
+	})
+
+	t.Run("rejects an invalid expiration override without writing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		days := model.MaxLectureExpirationDays + 1
+		_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+			CourseId: 1, StreamId: 7, ExpirationDaysOverride: &days,
+		})
+		wantCode(t, err, codes.InvalidArgument)
+	})
+
 	t.Run("hall 0 takes the lecture out of its hall", func(t *testing.T) {
 		api, m := newLectureAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)

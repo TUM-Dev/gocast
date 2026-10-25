@@ -1,120 +1,79 @@
-# Left out in development on purpose: these point at the real matrix.org homeserver,
-# so a local server with the block active tries to log in there as "rbgbot". Without it
-# alerts are disabled and reportStreamIssue answers 503 ("problem reports are not set
-# up"), which is the designed behaviour for a deployment with no alert channel. Fill in
-# your own homeserver and bot account to try problem reports locally.
-#alerts:
-#  matrix:
-#    username: "rbgbot"
-#    password: "password"
-#    homeserver: "matrix.org"
-#    # Obtained in Element by "Room Settings" -> "Advanced" -> "Internal Room ID"
-#    logRoomID: "!id:matrix.org"
-#    alertRoomID: "!id:matrix.org"
-
+allowedreactions:
+    - "\U0001F60A"
+    - "\U0001F44D"
+    - "\U0001F44E"
+    - "\U0001F622"
 auths:
-  camauth: user:password
-  pwrcrtlauth: user:password
-  smppassword: password
-  smpuser: username
+    camauth: user:password
+    pwrcrtlauth: user:password
+    smppassword: password
+    smpuser: username
 campus:
-  base: https://example.tum.de/api/v1/
-  campusProxy: # new services use this proxy from now on
-    host: campus-proxy.mm.rbg.tum.de
-    scheme: https
-  relevantOrgs: # 0 = all
-    - 14189 # institut für informatik
-    - 14178 # fakultät für mathematik
-    - 14179 # fakultät für physik
-  tokens:
-  - secret1
-  - secret2
+    base: https://example.tum.de/api/v1/
+    campusproxy:
+        host: campus-proxy.mm.rbg.tum.de
+        scheme: https
+    relevantorgs:
+        - 14189
+        - 14178
+        - 14179
+    tokens:
+        - secret1
+        - secret2
+canonicalurl: https://tum.live
 db:
-  host: localhost
-  port: 3306
-  database: tumlive
-  password: example
-  user: root
-# The compose service that runs mediamtx; the runner pulls self-streams from it.
+    database: tumlive
+    host: localhost
+    password: example
+    port: 3306
+    user: root
 ingestbase: rtmp://ingest/
-# Port for the prometheus /metrics endpoint. Keep it off the public internet.
-# Leave empty or omit to disable. Deliberately distinct from the edge worker's
-# 2112 and the runner's 9947, so all three can run side by side in development.
-metricsPort: "9948"
-jwtkey: # This is an example key, delete and restart to generate a proper one
-  |
-  -----BEGIN RSA PRIVATE KEY-----
-  MIIEpAIBAAKCAQEA1vjGiZf0zQPI0r7lZkz0CZ4sLf6mhhHuqbY5MSsvnqZv4N99
-  LUH1DX7Y/jMaRxgY40tRgKItfjg7B3oMiincg8/C2BMO4YkODA6wS9T8ErtlB7/3
-  4/92BjyilJCQonOJF1G+qBEMXsJBEwACZUEMj8My0rVd3DpUyjrFBcXo7vN04Dvz
-  md8Tum8hWk7XPMAOajhOZFuDWkE//xQnsP1A3MIiYXbq+B/ANu0S+qOOlODrP8aa
-  Nn1taPsiS34d3vXvqeM+O4U1aj1QGGmz9/y4FG+bXpP2TbobYP6Qz+Akr0CUzWot
-  s+QG7ntLRqQyEA7obxJOI7ArcVbWnMrcMYBoLwIDAQABAoIBAHzUaTVs79I86Fi4
-  US1ecjdDihQLU1d3Ake6cOuEUFqn+z9xh5bIPixgBFFYC2JNM+aIzgMMKa6pqF1n
-  GfEA7fP8qQAf0PxWQbnuraDbRKT7/GbLqn7S0Q4+F4p9h/9NZ8YKydN+UtiTpIYL
-  81gotcqlZtXES4Seuq3UAqSfj+twkqjMupPN9735QWasG0PavrdUmvpRIUqTt47E
-  meHPohIrMYZkaLWRfdAtJdnKiGPwfo3HpEwKCbkZdEiyaG7wmqT4OKK65G/w/2Qa
-  S74wShF7WmfJNJwQhmhhaleSURh7I3kQEXMmtfrh5374uFgz0xVI7oSHm/ha8FuN
-  FxY+5oECgYEA/SXl9h2Rnv8o1MOBYUE1Izwh2Pzww3m+XpdbS75hfk2O6d0tZor0
-  Gtwc2i9Uckhk57eWAvXTfqoxVPQpCoNHH/TUQOgBCeUwNrPoEq2HGHrKnADUx4s1
-  LBlKON6yyPHcDZ8TINXx7Bl4vQffAPdG15b58/GMYiU/zVClcAa8z5kCgYEA2WTG
-  At0PHSW2/i4zwD+GYYGWQTXTSeN9wPAP+2L3AT4C0NuJL959sRNF0mP7Fwj+chSb
-  PTHSarcEeoE1o8oosVFfg3ffLXAiXFvG5Dvm9P5L9e1o4w9VSplKM4CeJqiy9t+j
-  V/i+pk+aMQfuT7Yp4VFQdMw52OdonZ94OgrdcwcCgYEAmWAL2zkBEJ8yAu7NBbq3
-  UjjNnSVrTlQFxlPX6aVYdmjRTNpH9pf73AY+qOcCOBeqo0X06qg8UsMVDo68CvWM
-  80yoCQdIEdG9i3cnBaIDdw52kVxjjt7GAYj1Ek3DbsIy/EHEGiHl6JFqOMV7FJ+9
-  WUPM/0L7Nj+xT1ksUxqR7QkCgYAqm7rHouYsc1Drfsi73HeNMuXtQAx6hfEG2MZ5
-  IguBndLVdsHrtPLzuvBLbTcwa53bZDiNBO/V5KsnC54kzSGup2FOFjeS41CIw6A2
-  6Zq52AGxYOfW4RF5fpPxhjr5HsV855ZPTrynQiDZjVFjJDQPKm3XhpOr9KcnhbL9
-  xVVkDwKBgQCe6nqw9XC/hNEptkSWvQPdW9L/JBiagRn7qWvCiekAHn3E22E1+s/9
-  iWDdq6trmkWW8r6nVyankzcuAC0uoaZfzP0kf73rVvm+8y9UH38kaLuFaEQlutQT
-  0D2sRiCzTBQY06fMx9m+zb9PRixyPIDGaM4He58EkZqWBf7qnHI2Og==
-  -----END RSA PRIVATE KEY-----
-# Leave disabled unless you have a reachable server: with useForLogin set, every
-# rejected password falls back to LDAP, so a wrong password takes as long as that
-# server takes to answer — and hangs if the host does not resolve. The end-to-end job
-# in .github/workflows/frontend-test.yml runs on this file and would hang with it.
-#ldap:
-#  basedn: dc=example,dc=de
-#  password: secret
-#  url: ldap://abc.de
-#  user: user
-#  userdn: uid=%s,ou=people,dc=example,dc=de
-#  useForLogin: true
-#saml:
-#  idpMetadataURL: https://login.tum.de/idp/shibboleth
-#  idpName: TUM Login
-#  idpColor: "#3070B3"
-#  cert: fullchain.pem
-#  privkey: privkey.pem
-#  entityID: https://live.rbg.tum.de/shib
-#  rootURLs:
-#   - https://live.rbg.tum.de/shib
-#   - https://localhost/shib
+jwtkey: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEpAIBAAKCAQEA1vjGiZf0zQPI0r7lZkz0CZ4sLf6mhhHuqbY5MSsvnqZv4N99
+    LUH1DX7Y/jMaRxgY40tRgKItfjg7B3oMiincg8/C2BMO4YkODA6wS9T8ErtlB7/3
+    4/92BjyilJCQonOJF1G+qBEMXsJBEwACZUEMj8My0rVd3DpUyjrFBcXo7vN04Dvz
+    md8Tum8hWk7XPMAOajhOZFuDWkE//xQnsP1A3MIiYXbq+B/ANu0S+qOOlODrP8aa
+    Nn1taPsiS34d3vXvqeM+O4U1aj1QGGmz9/y4FG+bXpP2TbobYP6Qz+Akr0CUzWot
+    s+QG7ntLRqQyEA7obxJOI7ArcVbWnMrcMYBoLwIDAQABAoIBAHzUaTVs79I86Fi4
+    US1ecjdDihQLU1d3Ake6cOuEUFqn+z9xh5bIPixgBFFYC2JNM+aIzgMMKa6pqF1n
+    GfEA7fP8qQAf0PxWQbnuraDbRKT7/GbLqn7S0Q4+F4p9h/9NZ8YKydN+UtiTpIYL
+    81gotcqlZtXES4Seuq3UAqSfj+twkqjMupPN9735QWasG0PavrdUmvpRIUqTt47E
+    meHPohIrMYZkaLWRfdAtJdnKiGPwfo3HpEwKCbkZdEiyaG7wmqT4OKK65G/w/2Qa
+    S74wShF7WmfJNJwQhmhhaleSURh7I3kQEXMmtfrh5374uFgz0xVI7oSHm/ha8FuN
+    FxY+5oECgYEA/SXl9h2Rnv8o1MOBYUE1Izwh2Pzww3m+XpdbS75hfk2O6d0tZor0
+    Gtwc2i9Uckhk57eWAvXTfqoxVPQpCoNHH/TUQOgBCeUwNrPoEq2HGHrKnADUx4s1
+    LBlKON6yyPHcDZ8TINXx7Bl4vQffAPdG15b58/GMYiU/zVClcAa8z5kCgYEA2WTG
+    At0PHSW2/i4zwD+GYYGWQTXTSeN9wPAP+2L3AT4C0NuJL959sRNF0mP7Fwj+chSb
+    PTHSarcEeoE1o8oosVFfg3ffLXAiXFvG5Dvm9P5L9e1o4w9VSplKM4CeJqiy9t+j
+    V/i+pk+aMQfuT7Yp4VFQdMw52OdonZ94OgrdcwcCgYEAmWAL2zkBEJ8yAu7NBbq3
+    UjjNnSVrTlQFxlPX6aVYdmjRTNpH9pf73AY+qOcCOBeqo0X06qg8UsMVDo68CvWM
+    80yoCQdIEdG9i3cnBaIDdw52kVxjjt7GAYj1Ek3DbsIy/EHEGiHl6JFqOMV7FJ+9
+    WUPM/0L7Nj+xT1ksUxqR7QkCgYAqm7rHouYsc1Drfsi73HeNMuXtQAx6hfEG2MZ5
+    IguBndLVdsHrtPLzuvBLbTcwa53bZDiNBO/V5KsnC54kzSGup2FOFjeS41CIw6A2
+    6Zq52AGxYOfW4RF5fpPxhjr5HsV855ZPTrynQiDZjVFjJDQPKm3XhpOr9KcnhbL9
+    xVVkDwKBgQCe6nqw9XC/hNEptkSWvQPdW9L/JBiagRn7qWvCiekAHn3E22E1+s/9
+    iWDdq6trmkWW8r6nVyankzcuAC0uoaZfzP0kf73rVvm+8y9UH38kaLuFaEQlutQT
+    0D2sRiCzTBQY06fMx9m+zb9PRixyPIDGaM4He58EkZqWBf7qnHI2Og==
+    -----END RSA PRIVATE KEY-----
 mail:
-  sender: noreply@example.org
-  server: mailrelay.example.org
-  smimecert: /path/to/cert.pem
-  smimekey: /path/to/key.pem
-  # smimekeypassword: changeme # only if the key is password protected
-  maxMailsPerMinute: 10
-paths:
-  mass: runner/storage # to make development easier, files will end up here were streams also are
-  static: /var/www/static
-  branding: /branding
-voiceservice:
-  host: localhost
-  port: 50055
-weburl: https://live.rbg.tum.de
+    maxmailsperminute: 10
+    sender: noreply@example.org
+    server: mailrelay.example.org
+    smimecert: /path/to/cert.pem
+    smimekey: /path/to/key.pem
 meili:
-  host: http://localhost:7700
-  apiKey: MASTER_KEY
-vodURLTemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
-canonicalURL: https://tum.live
-rtmpProxyURL: https://proxy.example.com/live
-allowedReactions:
-  - 😊
-  - 👍
-  - 👎
-  - 😢
-
+    apikey: MASTER_KEY
+    host: http://localhost:7700
+metricsport: "9948"
+paths:
+    branding: /branding
+    mass: runner/storage
+    static: /var/www/static
+rtmpproxyurl: https://proxy.example.com/live
+vodurltemplate: https://stream.lrz.de/vod/_definst_/mp4:tum/RBG/%s.mp4/playlist.m3u8
+voiceservice:
+    host: localhost
+    port: 50055
+weburl: https://live.rbg.tum.de
+workertoken: c0c61d24-a766-4e4f-93d7-d7897f58fa03

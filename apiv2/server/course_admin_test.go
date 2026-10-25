@@ -196,6 +196,37 @@ func TestUpdateCourseSettings(t *testing.T) {
 		}
 	})
 
+	t.Run("saves the lecture expiration period", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		var written model.Course
+		m.courses.EXPECT().UpdateCourseColumns(gomock.Any(), gomock.Any(), "lecture_expiration_days").
+			DoAndReturn(func(_ context.Context, c model.Course, _ ...string) error {
+				written = c
+				return nil
+			})
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+		days := int32(7)
+
+		resp, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, LectureExpirationDays: &days,
+		})
+		if err != nil {
+			t.Fatalf("UpdateCourseSettings: %v", err)
+		}
+		if written.LectureExpirationDays != days || resp.LectureExpirationDays != days {
+			t.Errorf("saved %d, answered %d; want %d", written.LectureExpirationDays, resp.LectureExpirationDays, days)
+		}
+	})
+
+	t.Run("rejects an invalid expiration period without writing", func(t *testing.T) {
+		api, _ := courseAdminAPI(t, adminCourse)
+		days := model.MaxLectureExpirationDays + 1
+		_, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, LectureExpirationDays: &days,
+		})
+		wantCode(t, err, codes.InvalidArgument)
+	})
+
 	// v1's unanchored regexp let any value containing a visibility through.
 	for _, v := range []string{"", "publicly", "everyone"} {
 		t.Run("rejects the visibility "+v, func(t *testing.T) {

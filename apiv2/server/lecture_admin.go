@@ -2,6 +2,7 @@ package apiv2
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -144,13 +145,14 @@ func (a *API) ListCourseLecturesAdmin(ctx context.Context, req *protobuf.ListCou
 	}
 
 	lectures := make([]*protobuf.CourseLectureAdmin, 0, len(course.Streams))
+	now := time.Now()
 	for i := range course.Streams {
-		lectures = append(lectures, courseLectureAdmin(&course.Streams[i], hallNames))
+		lectures = append(lectures, courseLectureAdmin(&course.Streams[i], hallNames, course, now))
 	}
 	return &protobuf.ListCourseLecturesAdminResponse{Lectures: lectures}, nil
 }
 
-func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.CourseLectureAdmin {
+func courseLectureAdmin(s *model.Stream, hallNames map[uint]string, course model.Course, now time.Time) *protobuf.CourseLectureAdmin {
 	var versions []string
 	if s.PlaylistUrl != "" {
 		versions = append(versions, string(model.COMB))
@@ -190,7 +192,7 @@ func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.Co
 		duration = uint32(s.Duration.Int32)
 	}
 
-	return &protobuf.CourseLectureAdmin{
+	out := &protobuf.CourseLectureAdmin{
 		Id:                     uint32(s.ID),
 		CourseId:               uint32(s.CourseID),
 		Name:                   s.Name,
@@ -213,7 +215,12 @@ func courseLectureAdmin(s *model.Stream, hallNames map[uint]string) *protobuf.Co
 		Files:                  files,
 		TranscodingProgresses:  progresses,
 		VideoSections:          sections,
+		Expired:                course.IsLectureExpired(*s, now),
 	}
+	if s.ExpirationDaysOverride.Valid {
+		out.ExpirationDaysOverride = &s.ExpirationDaysOverride.Int32
+	}
+	return out
 }
 
 // UpdateLecture replaces v1's renameLecture, updateDescription, updateLectureTime,
@@ -244,6 +251,10 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 			return nil, err
 		}
 	}
+	if req.ExpirationDaysOverride != nil &&
+		(req.GetExpirationDaysOverride() < -1 || req.GetExpirationDaysOverride() > model.MaxLectureExpirationDays) {
+		return nil, e.WithStatus(http.StatusBadRequest, fmt.Errorf("expiration_days_override must be -1 or between 0 and %d", model.MaxLectureExpirationDays))
+	}
 
 	if req.Name != nil {
 		stream.Name = strings.TrimSpace(req.GetName())
@@ -257,6 +268,13 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 	}
 	if req.ChatEnabled != nil {
 		stream.ChatEnabled = req.GetChatEnabled()
+	}
+	if req.ExpirationDaysOverride != nil {
+		if req.GetExpirationDaysOverride() == -1 {
+			stream.ExpirationDaysOverride = sql.NullInt32{}
+		} else {
+			stream.ExpirationDaysOverride = sql.NullInt32{Int32: req.GetExpirationDaysOverride(), Valid: true}
+		}
 	}
 
 	if req.LectureHallId != nil {
@@ -304,6 +322,9 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 	}
 	if req.Private != nil {
 		changed = append(changed, fmt.Sprintf("Visibility: %v", req.GetPrivate()))
+	}
+	if req.ExpirationDaysOverride != nil {
+		changed = append(changed, fmt.Sprintf("expiration days override: %d", req.GetExpirationDaysOverride()))
 	}
 	if len(changed) > 0 {
 		a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: (%s)", stream.ID, strings.Join(changed, ", ")), forStream(stream))

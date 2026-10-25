@@ -3433,8 +3433,11 @@ type Stream struct {
 	// False for a private lecture. Only a course administrator is ever sent one, so
 	// this marks the lectures that the rest of the course cannot see.
 	IsPubliclyVisible bool `protobuf:"varint,33,opt,name=is_publicly_visible,json=isPubliclyVisible,proto3" json:"is_publicly_visible,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// True when the retention period has elapsed. Expired lectures are sent only to
+	// course administrators.
+	IsExpired     bool `protobuf:"varint,34,opt,name=is_expired,json=isExpired,proto3" json:"is_expired,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Stream) Reset() {
@@ -3659,6 +3662,13 @@ func (x *Stream) GetHlsUrl() string {
 func (x *Stream) GetIsPubliclyVisible() bool {
 	if x != nil {
 		return x.IsPubliclyVisible
+	}
+	return false
+}
+
+func (x *Stream) GetIsExpired() bool {
+	if x != nil {
+		return x.IsExpired
 	}
 	return false
 }
@@ -9001,9 +9011,12 @@ type UpdateLectureRequest struct {
 	LectureHallId *uint32 `protobuf:"varint,7,opt,name=lecture_hall_id,json=lectureHallId,proto3,oneof" json:"lecture_hall_id,omitempty"`
 	ChatEnabled   *bool   `protobuf:"varint,8,opt,name=chat_enabled,json=chatEnabled,proto3,oneof" json:"chat_enabled,omitempty"`
 	// Withholds the lecture from everyone but the course's administrators.
-	Private       *bool `protobuf:"varint,9,opt,name=private,proto3,oneof" json:"private,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Private *bool `protobuf:"varint,9,opt,name=private,proto3,oneof" json:"private,omitempty"`
+	// -1 inherits the course retention period; 0 never expires; positive values
+	// hide the lecture that many days after it ends.
+	ExpirationDaysOverride *int32 `protobuf:"varint,10,opt,name=expiration_days_override,json=expirationDaysOverride,proto3,oneof" json:"expiration_days_override,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateLectureRequest) Reset() {
@@ -9099,6 +9112,13 @@ func (x *UpdateLectureRequest) GetPrivate() bool {
 	return false
 }
 
+func (x *UpdateLectureRequest) GetExpirationDaysOverride() int32 {
+	if x != nil && x.ExpirationDaysOverride != nil {
+		return *x.ExpirationDaysOverride
+	}
+	return 0
+}
+
 type GetCourseAdminRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CourseId      uint32                 `protobuf:"varint,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
@@ -9167,9 +9187,12 @@ type CourseAdmin struct {
 	Language            string `protobuf:"bytes,15,opt,name=language,proto3" json:"language,omitempty"`
 	TumOnlineIdentifier string `protobuf:"bytes,16,opt,name=tum_online_identifier,json=tumOnlineIdentifier,proto3" json:"tum_online_identifier,omitempty"`
 	// The course's owner; administrators are listed by listCourseAdmins.
-	UserId        uint32 `protobuf:"varint,17,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	UserId uint32 `protobuf:"varint,17,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// 0 disables automatic expiration; positive values hide lectures that many days
+	// after they end, unless a lecture has an override.
+	LectureExpirationDays int32 `protobuf:"varint,18,opt,name=lecture_expiration_days,json=lectureExpirationDays,proto3" json:"lecture_expiration_days,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *CourseAdmin) Reset() {
@@ -9321,6 +9344,13 @@ func (x *CourseAdmin) GetUserId() uint32 {
 	return 0
 }
 
+func (x *CourseAdmin) GetLectureExpirationDays() int32 {
+	if x != nil {
+		return x.LectureExpirationDays
+	}
+	return 0
+}
+
 // The settings v1's course settings form edited.
 type UpdateCourseSettingsRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -9334,8 +9364,11 @@ type UpdateCourseSettingsRequest struct {
 	ModeratedChatEnabled *bool   `protobuf:"varint,7,opt,name=moderated_chat_enabled,json=moderatedChatEnabled,proto3,oneof" json:"moderated_chat_enabled,omitempty"`
 	LivePrivate          *bool   `protobuf:"varint,8,opt,name=live_private,json=livePrivate,proto3,oneof" json:"live_private,omitempty"`
 	VodPrivate           *bool   `protobuf:"varint,9,opt,name=vod_private,json=vodPrivate,proto3,oneof" json:"vod_private,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// 0 disables automatic expiration; otherwise lectures are hidden this many days
+	// after they end unless overridden individually. At most 3650.
+	LectureExpirationDays *int32 `protobuf:"varint,10,opt,name=lecture_expiration_days,json=lectureExpirationDays,proto3,oneof" json:"lecture_expiration_days,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *UpdateCourseSettingsRequest) Reset() {
@@ -9429,6 +9462,13 @@ func (x *UpdateCourseSettingsRequest) GetVodPrivate() bool {
 		return *x.VodPrivate
 	}
 	return false
+}
+
+func (x *UpdateCourseSettingsRequest) GetLectureExpirationDays() int32 {
+	if x != nil && x.LectureExpirationDays != nil {
+		return *x.LectureExpirationDays
+	}
+	return 0
 }
 
 type CopyCourseRequest struct {
@@ -11135,8 +11175,11 @@ type CourseLectureAdmin struct {
 	Files                 []*LectureFileAdmin           `protobuf:"bytes,21,rep,name=files,proto3" json:"files,omitempty"`
 	TranscodingProgresses []*LectureTranscodingProgress `protobuf:"bytes,22,rep,name=transcoding_progresses,json=transcodingProgresses,proto3" json:"transcoding_progresses,omitempty"`
 	VideoSections         []*LectureVideoSectionAdmin   `protobuf:"bytes,23,rep,name=video_sections,json=videoSections,proto3" json:"video_sections,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Absent inherits the course setting; 0 never expires; positive values override it.
+	ExpirationDaysOverride *int32 `protobuf:"varint,24,opt,name=expiration_days_override,json=expirationDaysOverride,proto3,oneof" json:"expiration_days_override,omitempty"`
+	Expired                bool   `protobuf:"varint,25,opt,name=expired,proto3" json:"expired,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *CourseLectureAdmin) Reset() {
@@ -11321,6 +11364,20 @@ func (x *CourseLectureAdmin) GetVideoSections() []*LectureVideoSectionAdmin {
 		return x.VideoSections
 	}
 	return nil
+}
+
+func (x *CourseLectureAdmin) GetExpirationDaysOverride() int32 {
+	if x != nil && x.ExpirationDaysOverride != nil {
+		return *x.ExpirationDaysOverride
+	}
+	return 0
+}
+
+func (x *CourseLectureAdmin) GetExpired() bool {
+	if x != nil {
+		return x.Expired
+	}
+	return false
 }
 
 type LectureFileAdmin struct {
@@ -19540,7 +19597,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04year\x18\x02 \x01(\rR\x04year\"v\n" +
 	"\x14GetSemestersResponse\x12,\n" +
 	"\acurrent\x18\x01 \x01(\v2\x12.protobuf.SemesterR\acurrent\x120\n" +
-	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\x84\b\n" +
+	"\tsemesters\x18\x02 \x03(\v2\x12.protobuf.SemesterR\tsemesters\"\xa3\b\n" +
 	"\x06Stream\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -19573,7 +19630,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\fis_coming_up\x18\x1f \x01(\bR\n" +
 	"isComingUp\x12\x17\n" +
 	"\ahls_url\x18  \x01(\tR\x06hlsUrl\x12.\n" +
-	"\x13is_publicly_visible\x18! \x01(\bR\x11isPubliclyVisibleJ\x04\b\x13\x10\x14R\bpremiere\"\xd9\x02\n" +
+	"\x13is_publicly_visible\x18! \x01(\bR\x11isPubliclyVisible\x12\x1d\n" +
+	"\n" +
+	"is_expired\x18\" \x01(\bR\tisExpiredJ\x04\b\x13\x10\x14R\bpremiere\"\xd9\x02\n" +
 	"\x13StreamPlaylistEntry\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1f\n" +
 	"\vcourse_slug\x18\x02 \x01(\tR\n" +
@@ -19940,7 +19999,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\"f\n" +
 	" ListScheduleLectureHallsResponse\x12B\n" +
-	"\rlecture_halls\x18\x01 \x03(\v2\x1d.protobuf.ScheduleLectureHallR\flectureHalls\"\xae\x03\n" +
+	"\rlecture_halls\x18\x01 \x03(\v2\x1d.protobuf.ScheduleLectureHallR\flectureHalls\"\x8a\x04\n" +
 	"\x14UpdateLectureRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
 	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12\x17\n" +
@@ -19950,15 +20009,18 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x03end\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x03end\x12+\n" +
 	"\x0flecture_hall_id\x18\a \x01(\rH\x02R\rlectureHallId\x88\x01\x01\x12&\n" +
 	"\fchat_enabled\x18\b \x01(\bH\x03R\vchatEnabled\x88\x01\x01\x12\x1d\n" +
-	"\aprivate\x18\t \x01(\bH\x04R\aprivate\x88\x01\x01B\a\n" +
+	"\aprivate\x18\t \x01(\bH\x04R\aprivate\x88\x01\x01\x12=\n" +
+	"\x18expiration_days_override\x18\n" +
+	" \x01(\x05H\x05R\x16expirationDaysOverride\x88\x01\x01B\a\n" +
 	"\x05_nameB\x0e\n" +
 	"\f_descriptionB\x12\n" +
 	"\x10_lecture_hall_idB\x0f\n" +
 	"\r_chat_enabledB\n" +
 	"\n" +
-	"\b_private\"4\n" +
+	"\b_privateB\x1b\n" +
+	"\x19_expiration_days_override\"4\n" +
 	"\x15GetCourseAdminRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"\xc1\x04\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"\xf9\x04\n" +
 	"\vCourseAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -19981,7 +20043,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"vodPrivate\x12\x1a\n" +
 	"\blanguage\x18\x0f \x01(\tR\blanguage\x122\n" +
 	"\x15tum_online_identifier\x18\x10 \x01(\tR\x13tumOnlineIdentifier\x12\x17\n" +
-	"\auser_id\x18\x11 \x01(\rR\x06userId\"\xc0\x04\n" +
+	"\auser_id\x18\x11 \x01(\rR\x06userId\x126\n" +
+	"\x17lecture_expiration_days\x18\x12 \x01(\x05R\x15lectureExpirationDays\"\x99\x05\n" +
 	"\x1bUpdateCourseSettingsRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12#\n" +
 	"\n" +
@@ -19995,7 +20058,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x16moderated_chat_enabled\x18\a \x01(\bH\x05R\x14moderatedChatEnabled\x88\x01\x01\x12&\n" +
 	"\flive_private\x18\b \x01(\bH\x06R\vlivePrivate\x88\x01\x01\x12$\n" +
 	"\vvod_private\x18\t \x01(\bH\aR\n" +
-	"vodPrivate\x88\x01\x01B\r\n" +
+	"vodPrivate\x88\x01\x01\x12;\n" +
+	"\x17lecture_expiration_days\x18\n" +
+	" \x01(\x05H\bR\x15lectureExpirationDays\x88\x01\x01B\r\n" +
 	"\v_visibilityB\x0e\n" +
 	"\f_vod_enabledB\x14\n" +
 	"\x12_downloads_enabledB\x0f\n" +
@@ -20003,7 +20068,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x17_anonymous_chat_enabledB\x19\n" +
 	"\x17_moderated_chat_enabledB\x0f\n" +
 	"\r_live_privateB\x0e\n" +
-	"\f_vod_private\"X\n" +
+	"\f_vod_privateB\x1a\n" +
+	"\x18_lecture_expiration_days\"X\n" +
 	"\x11CopyCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x12\n" +
 	"\x04year\x18\x02 \x01(\x05R\x04year\x12\x12\n" +
@@ -20110,7 +20176,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1eListCourseLecturesAdminRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"[\n" +
 	"\x1fListCourseLecturesAdminResponse\x128\n" +
-	"\blectures\x18\x01 \x03(\v2\x1c.protobuf.CourseLectureAdminR\blectures\"\x93\a\n" +
+	"\blectures\x18\x01 \x03(\v2\x1c.protobuf.CourseLectureAdminR\blectures\"\x89\b\n" +
 	"\x12CourseLectureAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1b\n" +
 	"\tcourse_id\x18\x02 \x01(\rR\bcourseId\x12\x12\n" +
@@ -20137,7 +20203,10 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x10duration_seconds\x18\x14 \x01(\rR\x0fdurationSeconds\x120\n" +
 	"\x05files\x18\x15 \x03(\v2\x1a.protobuf.LectureFileAdminR\x05files\x12[\n" +
 	"\x16transcoding_progresses\x18\x16 \x03(\v2$.protobuf.LectureTranscodingProgressR\x15transcodingProgresses\x12I\n" +
-	"\x0evideo_sections\x18\x17 \x03(\v2\".protobuf.LectureVideoSectionAdminR\rvideoSectionsJ\x04\b\x12\x10\x13R\bpremiere\"[\n" +
+	"\x0evideo_sections\x18\x17 \x03(\v2\".protobuf.LectureVideoSectionAdminR\rvideoSections\x12=\n" +
+	"\x18expiration_days_override\x18\x18 \x01(\x05H\x00R\x16expirationDaysOverride\x88\x01\x01\x12\x18\n" +
+	"\aexpired\x18\x19 \x01(\bR\aexpiredB\x1b\n" +
+	"\x19_expiration_days_overrideJ\x04\b\x12\x10\x13R\bpremiere\"[\n" +
 	"\x10LectureFileAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\rR\x04type\x12#\n" +
@@ -20808,7 +20877,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fcreateFirstUser\x12 .protobuf.CreateFirstUserRequest\x1a\x16.google.protobuf.Empty\"\xf5\x01\x92A\xda\x01\n" +
 	"\x04User\x125Create the first administrator of a fresh deployment.\x1a\x9a\x01Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/users/first\x12\x8b\x02\n" +
 	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\xb5\x97\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\xc0\x99\x01\n" +
 	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
@@ -20846,9 +20915,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\vgetSchedule\x12\x1c.protobuf.GetScheduleRequest\x1a\x1d.protobuf.GetScheduleResponse\"\xed\x01\x92A\xd8\x01\n" +
 	"\aCourses\x12\x19Get the lecture schedule.\x1a\xb1\x01Returns the lectures overlapping [from, to) -- at most 100 days -- of the courses the caller administers, optionally only in some lecture halls. Requires the lecture permission.\x82\xd3\xe4\x93\x02\v\x12\t/schedule\x12\xa0\x02\n" +
 	"\x18listScheduleLectureHalls\x12\x16.google.protobuf.Empty\x1a*.protobuf.ListScheduleLectureHallsResponse\"\xbf\x01\x92A\x9c\x01\n" +
-	"\aCourses\x127List the lecture halls the schedule can be filtered by.\x1aXNames and IDs only; listLectureHallsAdmin has the rest. Requires the lecture permission.\x82\xd3\xe4\x93\x02\x19\x12\x17/schedule/lecture-halls\x12\xe0\x04\n" +
-	"\rupdateLecture\x12\x1e.protobuf.UpdateLectureRequest\x1a\x16.google.protobuf.Empty\"\x96\x04\x92A\xdf\x03\n" +
-	"\aCourses\x12\"Change one of a course's lectures.\x1a\xaf\x03Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat and visibility. The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload.\x82\xd3\xe4\x93\x02-:\x01*2(/courses/{course_id}/streams/{stream_id}\x12\x9a\x03\n" +
+	"\aCourses\x127List the lecture halls the schedule can be filtered by.\x1aXNames and IDs only; listLectureHallsAdmin has the rest. Requires the lecture permission.\x82\xd3\xe4\x93\x02\x19\x12\x17/schedule/lecture-halls\x12\xd8\x05\n" +
+	"\rupdateLecture\x12\x1e.protobuf.UpdateLectureRequest\x1a\x16.google.protobuf.Empty\"\x8e\x05\x92A\xd7\x04\n" +
+	"\aCourses\x12\"Change one of a course's lectures.\x1a\xa7\x04Sets the fields that are present and leaves the rest: name, description, start and end (both or neither, end after start), lecture hall (0 for none), chat, visibility and expiration override (-1 inherits the course default, 0 never expires, positive values are days after the lecture ends). The lecture must be one of the course's. Requires administering the course; setting the lecture hall also requires being a server administrator (403 otherwise, nothing saved). Unlike v1, viewers watching at the time are not told; they see the change on reload.\x82\xd3\xe4\x93\x02-:\x01*2(/courses/{course_id}/streams/{stream_id}\x12\x9a\x03\n" +
 	"\x17listCourseLecturesAdmin\x12(.protobuf.ListCourseLecturesAdminRequest\x1a).protobuf.ListCourseLecturesAdminResponse\"\xa9\x02\x92A\xfa\x01\n" +
 	"\aCourses\x120List a course's lectures for its administrators.\x1a\xbc\x01Every lecture of the course, newest first, with what managing it needs: times, hall, series, stream key, state, files, sections and transcoding progress. Requires administering the course.\x82\xd3\xe4\x93\x02%\x12#/courses/{course_id}/lectures/admin\x12\xef\x03\n" +
 	"\x13updateLectureSeries\x12$.protobuf.UpdateLectureSeriesRequest\x1a\x16.google.protobuf.Empty\"\x99\x03\x92A\xdb\x02\n" +
@@ -20874,9 +20943,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1bgetIntegrationAuthorization\x12,.protobuf.GetIntegrationAuthorizationRequest\x1a\".protobuf.IntegrationAuthorization\"\xa9\x02\x92A\xf1\x01\n" +
 	"\fIntegrations\x120Describe an application's authorization request.\x1a\xae\x01What the consent page shows: the application, the signed-in user and the courses they may connect it to. The state must be 32 random bytes in URL-safe base64 without padding.\x82\xd3\xe4\x93\x02.\x12,/integration-authorizations/{integration_id}\x12\x87\x05\n" +
 	"\x1edecideIntegrationAuthorization\x12/.protobuf.DecideIntegrationAuthorizationRequest\x1a0.protobuf.DecideIntegrationAuthorizationResponse\"\x81\x04\x92A\xbd\x03\n" +
-	"\fIntegrations\x129Approve or cancel an application's authorization request.\x1a\xf1\x02Answers with the application's registered return URL, carrying the state and either a one-time code or error=access_denied; the caller navigates there. Approving needs ownership of the course or an explicit course administrator role. Refused unless the caller presents a bearer token, so a cookie alone, which a foreign page can make the browser send, does not suffice.\x82\xd3\xe4\x93\x02::\x01*\"5/integration-authorizations/{integration_id}/decision\x12\x91\x02\n" +
-	"\x14updateCourseSettings\x12%.protobuf.UpdateCourseSettingsRequest\x1a\x15.protobuf.CourseAdmin\"\xba\x01\x92A\x8e\x01\n" +
-	"\x15Course Administration\x12\x1bChange a course's settings.\x1aXSets the fields that are present and leaves the rest. Requires administering the course.\x82\xd3\xe4\x93\x02\":\x01*2\x1d/courses/{course_id}/settings\x12\x8d\x03\n" +
+	"\fIntegrations\x129Approve or cancel an application's authorization request.\x1a\xf1\x02Answers with the application's registered return URL, carrying the state and either a one-time code or error=access_denied; the caller navigates there. Approving needs ownership of the course or an explicit course administrator role. Refused unless the caller presents a bearer token, so a cookie alone, which a foreign page can make the browser send, does not suffice.\x82\xd3\xe4\x93\x02::\x01*\"5/integration-authorizations/{integration_id}/decision\x12\xa4\x03\n" +
+	"\x14updateCourseSettings\x12%.protobuf.UpdateCourseSettingsRequest\x1a\x15.protobuf.CourseAdmin\"\xcd\x02\x92A\xa1\x02\n" +
+	"\x15Course Administration\x12\x1bChange a course's settings.\x1a\xea\x01Sets the fields that are present and leaves the rest. The course lecture expiration setting is 0 to disable expiration or a number of days after a lecture ends; an individual lecture may override it. Requires administering the course.\x82\xd3\xe4\x93\x02\":\x01*2\x1d/courses/{course_id}/settings\x12\x8d\x03\n" +
 	"\n" +
 	"copyCourse\x12\x1b.protobuf.CopyCourseRequest\x1a\x1c.protobuf.CopyCourseResponse\"\xc3\x02\x92A\x9b\x02\n" +
 	"\x15Course Administration\x12$Copy a course into another semester.\x1a\xdb\x01Copies the course's settings, every one of its lectures and its administrators into a new course in the given semester. Requires administering the course. Answers 409 if that semester already has a course with the slug.\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/courses/{course_id}/copy\x12\xc4\x01\n" +
@@ -21935,6 +22004,7 @@ func file_server_apiv2_proto_init() {
 	file_server_apiv2_proto_msgTypes[83].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[137].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[140].OneofWrappers = []any{}
+	file_server_apiv2_proto_msgTypes[171].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[175].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[205].OneofWrappers = []any{}
 	file_server_apiv2_proto_msgTypes[206].OneofWrappers = []any{}

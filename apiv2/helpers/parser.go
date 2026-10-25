@@ -167,6 +167,7 @@ func ParseStreamToProto(stream model.Stream, course model.Course, user *model.Us
 		// A private stream reaches nobody but a course administrator, so this marks
 		// the ones the page should show as withheld from everyone else.
 		IsPubliclyVisible: !stream.Private,
+		IsExpired:         course.IsLectureExpired(stream, time.Now()),
 	}
 
 	// The column is null until a recording has been processed. v1 answered with the

@@ -82,6 +82,7 @@ describe("fetchCourseAdmin", () => {
       chatEnabled: true,
       language: "",
       tumOnlineIdentifier: "",
+      lectureExpirationDays: 0,
     });
     expect(publicCoursePath(course)).toBe("/course/2022/S/brauereiwesen");
   });
@@ -105,6 +106,13 @@ describe("updateCourseSettings", () => {
     expect(call.method).toBe("PATCH");
     expect(call.body).toEqual({ courseId: 1, downloadsEnabled: false, visibility: "hidden" });
     expect(updated.visibility).toBe("hidden");
+  });
+
+  it("sends the course's lecture expiration period", async () => {
+    respondWith({ id: 1, name: "X", slug: "x", year: 2022, term: "S", lectureExpirationDays: 7 });
+    const updated = await updateCourseSettings(1, { lectureExpirationDays: 7 });
+    expect(lastCall().body).toEqual({ courseId: 1, lectureExpirationDays: 7 });
+    expect(updated.lectureExpirationDays).toBe(7);
   });
 });
 

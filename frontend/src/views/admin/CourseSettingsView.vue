@@ -41,6 +41,7 @@ const form = reactive<CourseSettings>({
   moderatedChatEnabled: false,
   livePrivate: false,
   vodPrivate: false,
+  lectureExpirationDays: 0,
 });
 
 function reset(from: CourseAdmin): void {
@@ -52,6 +53,7 @@ function reset(from: CourseAdmin): void {
   form.moderatedChatEnabled = from.moderatedChatEnabled;
   form.livePrivate = from.livePrivate;
   form.vodPrivate = from.vodPrivate;
+  form.lectureExpirationDays = from.lectureExpirationDays;
 }
 
 watch(course, (c) => c && reset(c), { immediate: true });
@@ -243,6 +245,27 @@ const languages: Record<string, string> = { de: "German", en: "English" };
           <input v-model="form.vodPrivate" type="checkbox" />
           <span class="text-1">Private recordings after the livestream</span>
         </label>
+      </fieldset>
+
+      <fieldset class="flex flex-col gap-2 text-sm">
+        <legend class="text-2 mb-1 font-semibold">Lecture expiration</legend>
+        <label :for="'lecture-expiration-days'" class="text-1">Hide lectures this many days after they end</label>
+        <div class="flex items-center gap-2">
+          <input
+            id="lecture-expiration-days"
+            v-model.number="form.lectureExpirationDays"
+            type="number"
+            min="0"
+            max="3650"
+            step="1"
+            class="tum-live-input w-28"
+          />
+          <span class="text-3">days (0 means never)</span>
+        </div>
+        <p class="text-5 text-xs">
+          Expired lectures are hidden from students but remain visible to course administrators. Individual lectures can
+          override this setting.
+        </p>
       </fieldset>
 
       <div class="flex flex-wrap items-center justify-end gap-3">
