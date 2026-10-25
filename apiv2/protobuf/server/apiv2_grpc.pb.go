@@ -802,7 +802,8 @@ const (
 	CourseService_UpdateCourseSettings_FullMethodName            = "/protobuf.CourseService/updateCourseSettings"
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
-	CourseService_RegenerateCourseThumbnails_FullMethodName      = "/protobuf.CourseService/regenerateCourseThumbnails"
+	CourseService_RedoCoursePostProcessing_FullMethodName        = "/protobuf.CourseService/redoCoursePostProcessing"
+	CourseService_ListCourseAudits_FullMethodName                = "/protobuf.CourseService/listCourseAudits"
 	CourseService_ListCourseAdmins_FullMethodName                = "/protobuf.CourseService/listCourseAdmins"
 	CourseService_AddCourseAdmin_FullMethodName                  = "/protobuf.CourseService/addCourseAdmin"
 	CourseService_RemoveCourseAdmin_FullMethodName               = "/protobuf.CourseService/removeCourseAdmin"
@@ -878,7 +879,8 @@ type CourseServiceClient interface {
 	UpdateCourseSettings(ctx context.Context, in *UpdateCourseSettingsRequest, opts ...grpc.CallOption) (*CourseAdmin, error)
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RegenerateCourseThumbnails(ctx context.Context, in *RegenerateCourseThumbnailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error)
 	ListCourseAdmins(ctx context.Context, in *ListCourseAdminsRequest, opts ...grpc.CallOption) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(ctx context.Context, in *AddCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
 	RemoveCourseAdmin(ctx context.Context, in *RemoveCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
@@ -1256,10 +1258,20 @@ func (c *courseServiceClient) DeleteCourse(ctx context.Context, in *DeleteCourse
 	return out, nil
 }
 
-func (c *courseServiceClient) RegenerateCourseThumbnails(ctx context.Context, in *RegenerateCourseThumbnailsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *courseServiceClient) RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CourseService_RegenerateCourseThumbnails_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CourseService_RedoCoursePostProcessing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListCourseAudits_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1483,7 +1495,8 @@ type CourseServiceServer interface {
 	UpdateCourseSettings(context.Context, *UpdateCourseSettingsRequest) (*CourseAdmin, error)
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
-	RegenerateCourseThumbnails(context.Context, *RegenerateCourseThumbnailsRequest) (*emptypb.Empty, error)
+	RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error)
+	ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error)
 	ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(context.Context, *AddCourseAdminRequest) (*CourseAdminUser, error)
 	RemoveCourseAdmin(context.Context, *RemoveCourseAdminRequest) (*CourseAdminUser, error)
@@ -1616,8 +1629,11 @@ func (UnimplementedCourseServiceServer) CopyCourse(context.Context, *CopyCourseR
 func (UnimplementedCourseServiceServer) DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteCourse not implemented")
 }
-func (UnimplementedCourseServiceServer) RegenerateCourseThumbnails(context.Context, *RegenerateCourseThumbnailsRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method RegenerateCourseThumbnails not implemented")
+func (UnimplementedCourseServiceServer) RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RedoCoursePostProcessing not implemented")
+}
+func (UnimplementedCourseServiceServer) ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseAudits not implemented")
 }
 func (UnimplementedCourseServiceServer) ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCourseAdmins not implemented")
@@ -2318,20 +2334,38 @@ func _CourseService_DeleteCourse_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CourseService_RegenerateCourseThumbnails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegenerateCourseThumbnailsRequest)
+func _CourseService_RedoCoursePostProcessing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RedoCoursePostProcessingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CourseServiceServer).RegenerateCourseThumbnails(ctx, in)
+		return srv.(CourseServiceServer).RedoCoursePostProcessing(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CourseService_RegenerateCourseThumbnails_FullMethodName,
+		FullMethod: CourseService_RedoCoursePostProcessing_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CourseServiceServer).RegenerateCourseThumbnails(ctx, req.(*RegenerateCourseThumbnailsRequest))
+		return srv.(CourseServiceServer).RedoCoursePostProcessing(ctx, req.(*RedoCoursePostProcessingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_ListCourseAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseAuditsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListCourseAudits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListCourseAudits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListCourseAudits(ctx, req.(*ListCourseAuditsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2772,8 +2806,12 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CourseService_DeleteCourse_Handler,
 		},
 		{
-			MethodName: "regenerateCourseThumbnails",
-			Handler:    _CourseService_RegenerateCourseThumbnails_Handler,
+			MethodName: "redoCoursePostProcessing",
+			Handler:    _CourseService_RedoCoursePostProcessing_Handler,
+		},
+		{
+			MethodName: "listCourseAudits",
+			Handler:    _CourseService_ListCourseAudits_Handler,
 		},
 		{
 			MethodName: "listCourseAdmins",
@@ -3892,8 +3930,6 @@ const (
 	AdminService_CreateIntegration_FullMethodName                   = "/protobuf.AdminService/createIntegration"
 	AdminService_RotateIntegrationKey_FullMethodName                = "/protobuf.AdminService/rotateIntegrationKey"
 	AdminService_RevokeIntegrationKey_FullMethodName                = "/protobuf.AdminService/revokeIntegrationKey"
-	AdminService_ListWorkers_FullMethodName                         = "/protobuf.AdminService/listWorkers"
-	AdminService_DeleteWorker_FullMethodName                        = "/protobuf.AdminService/deleteWorker"
 	AdminService_ListMaintenanceCronJobs_FullMethodName             = "/protobuf.AdminService/listMaintenanceCronJobs"
 	AdminService_RunMaintenanceCronJob_FullMethodName               = "/protobuf.AdminService/runMaintenanceCronJob"
 	AdminService_ListMaintenanceTranscodingFailures_FullMethodName  = "/protobuf.AdminService/listMaintenanceTranscodingFailures"
@@ -3954,8 +3990,6 @@ type AdminServiceClient interface {
 	CreateIntegration(ctx context.Context, in *CreateIntegrationRequest, opts ...grpc.CallOption) (*CreateIntegrationResponse, error)
 	RotateIntegrationKey(ctx context.Context, in *RotateIntegrationKeyRequest, opts ...grpc.CallOption) (*RotateIntegrationKeyResponse, error)
 	RevokeIntegrationKey(ctx context.Context, in *RevokeIntegrationKeyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error)
-	DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceCronJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(ctx context.Context, in *RunMaintenanceCronJobRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -4186,26 +4220,6 @@ func (c *adminServiceClient) RevokeIntegrationKey(ctx context.Context, in *Revok
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminService_RevokeIntegrationKey_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) ListWorkers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListWorkersResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListWorkersResponse)
-	err := c.cc.Invoke(ctx, AdminService_ListWorkers_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminServiceClient) DeleteWorker(ctx context.Context, in *DeleteWorkerRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AdminService_DeleteWorker_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -4486,8 +4500,6 @@ type AdminServiceServer interface {
 	CreateIntegration(context.Context, *CreateIntegrationRequest) (*CreateIntegrationResponse, error)
 	RotateIntegrationKey(context.Context, *RotateIntegrationKeyRequest) (*RotateIntegrationKeyResponse, error)
 	RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error)
-	ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error)
-	DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error)
 	ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error)
 	RunMaintenanceCronJob(context.Context, *RunMaintenanceCronJobRequest) (*emptypb.Empty, error)
 	ListMaintenanceTranscodingFailures(context.Context, *emptypb.Empty) (*ListMaintenanceTranscodingFailuresResponse, error)
@@ -4590,12 +4602,6 @@ func (UnimplementedAdminServiceServer) RotateIntegrationKey(context.Context, *Ro
 }
 func (UnimplementedAdminServiceServer) RevokeIntegrationKey(context.Context, *RevokeIntegrationKeyRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeIntegrationKey not implemented")
-}
-func (UnimplementedAdminServiceServer) ListWorkers(context.Context, *emptypb.Empty) (*ListWorkersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListWorkers not implemented")
-}
-func (UnimplementedAdminServiceServer) DeleteWorker(context.Context, *DeleteWorkerRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method DeleteWorker not implemented")
 }
 func (UnimplementedAdminServiceServer) ListMaintenanceCronJobs(context.Context, *emptypb.Empty) (*ListMaintenanceCronJobsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMaintenanceCronJobs not implemented")
@@ -5028,42 +5034,6 @@ func _AdminService_RevokeIntegrationKey_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminServiceServer).RevokeIntegrationKey(ctx, req.(*RevokeIntegrationKeyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_ListWorkers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).ListWorkers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_ListWorkers_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).ListWorkers(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminService_DeleteWorker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteWorkerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminServiceServer).DeleteWorker(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminService_DeleteWorker_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServiceServer).DeleteWorker(ctx, req.(*DeleteWorkerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -5582,14 +5552,6 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "revokeIntegrationKey",
 			Handler:    _AdminService_RevokeIntegrationKey_Handler,
-		},
-		{
-			MethodName: "listWorkers",
-			Handler:    _AdminService_ListWorkers_Handler,
-		},
-		{
-			MethodName: "deleteWorker",
-			Handler:    _AdminService_DeleteWorker_Handler,
 		},
 		{
 			MethodName: "listMaintenanceCronJobs",

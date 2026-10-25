@@ -33,6 +33,7 @@ type Notification struct {
 	//	*Notification_SectionImagesReady
 	//	*Notification_TranscodingProgress
 	//	*Notification_VodFailed
+	//	*Notification_SilenceDetected
 	//	*Notification_OfflinePackageReady
 	//	*Notification_OfflinePackageFailed
 	Data          isNotification_Data `protobuf_oneof:"data"`
@@ -149,6 +150,15 @@ func (x *Notification) GetVodFailed() *VODFailedNotification {
 	return nil
 }
 
+func (x *Notification) GetSilenceDetected() *SilenceDetectedNotification {
+	if x != nil {
+		if x, ok := x.Data.(*Notification_SilenceDetected); ok {
+			return x.SilenceDetected
+		}
+	}
+	return nil
+}
+
 func (x *Notification) GetOfflinePackageReady() *OfflinePackageReadyNotification {
 	if x != nil {
 		if x, ok := x.Data.(*Notification_OfflinePackageReady); ok {
@@ -203,12 +213,16 @@ type Notification_VodFailed struct {
 	VodFailed *VODFailedNotification `protobuf:"bytes,8,opt,name=vod_failed,json=vodFailed,oneof"`
 }
 
+type Notification_SilenceDetected struct {
+	SilenceDetected *SilenceDetectedNotification `protobuf:"bytes,9,opt,name=silence_detected,json=silenceDetected,oneof"`
+}
+
 type Notification_OfflinePackageReady struct {
-	OfflinePackageReady *OfflinePackageReadyNotification `protobuf:"bytes,9,opt,name=offline_package_ready,json=offlinePackageReady,oneof"`
+	OfflinePackageReady *OfflinePackageReadyNotification `protobuf:"bytes,10,opt,name=offline_package_ready,json=offlinePackageReady,oneof"`
 }
 
 type Notification_OfflinePackageFailed struct {
-	OfflinePackageFailed *OfflinePackageFailedNotification `protobuf:"bytes,10,opt,name=offline_package_failed,json=offlinePackageFailed,oneof"`
+	OfflinePackageFailed *OfflinePackageFailedNotification `protobuf:"bytes,11,opt,name=offline_package_failed,json=offlinePackageFailed,oneof"`
 }
 
 func (*Notification_StreamStart) isNotification_Data() {}
@@ -226,6 +240,8 @@ func (*Notification_SectionImagesReady) isNotification_Data() {}
 func (*Notification_TranscodingProgress) isNotification_Data() {}
 
 func (*Notification_VodFailed) isNotification_Data() {}
+
+func (*Notification_SilenceDetected) isNotification_Data() {}
 
 func (*Notification_OfflinePackageReady) isNotification_Data() {}
 
@@ -686,6 +702,77 @@ func (x *TranscodingProgressNotification) GetProgress() int32 {
 	return 0
 }
 
+// SilenceDetectedNotification reports the stretches of a VoD without sound, in whole seconds.
+// starts[i] and ends[i] belong together. Empty lists mean the scan found none, which is not
+// the same as no scan: a scan that failed sends nothing.
+type SilenceDetectedNotification struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
+	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
+	Starts        []uint32               `protobuf:"varint,3,rep,packed,name=starts" json:"starts,omitempty"`
+	Ends          []uint32               `protobuf:"varint,4,rep,packed,name=ends" json:"ends,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SilenceDetectedNotification) Reset() {
+	*x = SilenceDetectedNotification{}
+	mi := &file_notifications_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SilenceDetectedNotification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SilenceDetectedNotification) ProtoMessage() {}
+
+func (x *SilenceDetectedNotification) ProtoReflect() protoreflect.Message {
+	mi := &file_notifications_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SilenceDetectedNotification.ProtoReflect.Descriptor instead.
+func (*SilenceDetectedNotification) Descriptor() ([]byte, []int) {
+	return file_notifications_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SilenceDetectedNotification) GetStream() *StreamInfo {
+	if x != nil {
+		return x.Stream
+	}
+	return nil
+}
+
+func (x *SilenceDetectedNotification) GetStreamVersion() StreamVersion {
+	if x != nil && x.StreamVersion != nil {
+		return *x.StreamVersion
+	}
+	return StreamVersion_STREAM_VERSION_UNSPECIFIED
+}
+
+func (x *SilenceDetectedNotification) GetStarts() []uint32 {
+	if x != nil {
+		return x.Starts
+	}
+	return nil
+}
+
+func (x *SilenceDetectedNotification) GetEnds() []uint32 {
+	if x != nil {
+		return x.Ends
+	}
+	return nil
+}
+
 // VODFailedNotification reports that a VOD could not be made from an uploaded video.
 type VODFailedNotification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -700,7 +787,7 @@ type VODFailedNotification struct {
 
 func (x *VODFailedNotification) Reset() {
 	*x = VODFailedNotification{}
-	mi := &file_notifications_proto_msgTypes[9]
+	mi := &file_notifications_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -712,7 +799,7 @@ func (x *VODFailedNotification) String() string {
 func (*VODFailedNotification) ProtoMessage() {}
 
 func (x *VODFailedNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[9]
+	mi := &file_notifications_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -725,7 +812,7 @@ func (x *VODFailedNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VODFailedNotification.ProtoReflect.Descriptor instead.
 func (*VODFailedNotification) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{9}
+	return file_notifications_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *VODFailedNotification) GetStream() *StreamInfo {
@@ -760,7 +847,7 @@ type ThumbnailReadyNotification struct {
 
 func (x *ThumbnailReadyNotification) Reset() {
 	*x = ThumbnailReadyNotification{}
-	mi := &file_notifications_proto_msgTypes[10]
+	mi := &file_notifications_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -772,7 +859,7 @@ func (x *ThumbnailReadyNotification) String() string {
 func (*ThumbnailReadyNotification) ProtoMessage() {}
 
 func (x *ThumbnailReadyNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[10]
+	mi := &file_notifications_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -785,7 +872,7 @@ func (x *ThumbnailReadyNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThumbnailReadyNotification.ProtoReflect.Descriptor instead.
 func (*ThumbnailReadyNotification) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{10}
+	return file_notifications_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ThumbnailReadyNotification) GetStream() *StreamInfo {
@@ -822,7 +909,7 @@ type SectionImage struct {
 
 func (x *SectionImage) Reset() {
 	*x = SectionImage{}
-	mi := &file_notifications_proto_msgTypes[11]
+	mi := &file_notifications_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -834,7 +921,7 @@ func (x *SectionImage) String() string {
 func (*SectionImage) ProtoMessage() {}
 
 func (x *SectionImage) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[11]
+	mi := &file_notifications_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +934,7 @@ func (x *SectionImage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SectionImage.ProtoReflect.Descriptor instead.
 func (*SectionImage) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{11}
+	return file_notifications_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SectionImage) GetSectionId() uint64 {
@@ -874,7 +961,7 @@ type SectionImagesReadyNotification struct {
 
 func (x *SectionImagesReadyNotification) Reset() {
 	*x = SectionImagesReadyNotification{}
-	mi := &file_notifications_proto_msgTypes[12]
+	mi := &file_notifications_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -886,7 +973,7 @@ func (x *SectionImagesReadyNotification) String() string {
 func (*SectionImagesReadyNotification) ProtoMessage() {}
 
 func (x *SectionImagesReadyNotification) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[12]
+	mi := &file_notifications_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -899,7 +986,7 @@ func (x *SectionImagesReadyNotification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SectionImagesReadyNotification.ProtoReflect.Descriptor instead.
 func (*SectionImagesReadyNotification) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{12}
+	return file_notifications_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SectionImagesReadyNotification) GetStream() *StreamInfo {
@@ -924,7 +1011,7 @@ type NotificationResponse struct {
 
 func (x *NotificationResponse) Reset() {
 	*x = NotificationResponse{}
-	mi := &file_notifications_proto_msgTypes[13]
+	mi := &file_notifications_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -936,7 +1023,7 @@ func (x *NotificationResponse) String() string {
 func (*NotificationResponse) ProtoMessage() {}
 
 func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifications_proto_msgTypes[13]
+	mi := &file_notifications_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -949,14 +1036,14 @@ func (x *NotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationResponse.ProtoReflect.Descriptor instead.
 func (*NotificationResponse) Descriptor() ([]byte, []int) {
-	return file_notifications_proto_rawDescGZIP(), []int{13}
+	return file_notifications_proto_rawDescGZIP(), []int{14}
 }
 
 var File_notifications_proto protoreflect.FileDescriptor
 
 const file_notifications_proto_rawDesc = "" +
 	"\n" +
-	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\xb6\x06\n" +
+	"\x13notifications.proto\x12\bprotobuf\x1a\rcommons.proto\"\x8a\a\n" +
 	"\fNotification\x12F\n" +
 	"\fstream_start\x18\x01 \x01(\v2!.protobuf.StreamStartNotificationH\x00R\vstreamStart\x12@\n" +
 	"\n" +
@@ -967,10 +1054,11 @@ const file_notifications_proto_rawDesc = "" +
 	"\x14section_images_ready\x18\x06 \x01(\v2(.protobuf.SectionImagesReadyNotificationH\x00R\x12sectionImagesReady\x12^\n" +
 	"\x14transcoding_progress\x18\a \x01(\v2).protobuf.TranscodingProgressNotificationH\x00R\x13transcodingProgress\x12@\n" +
 	"\n" +
-	"vod_failed\x18\b \x01(\v2\x1f.protobuf.VODFailedNotificationH\x00R\tvodFailed\x12_\n" +
-	"\x15offline_package_ready\x18\t \x01(\v2).protobuf.OfflinePackageReadyNotificationH\x00R\x13offlinePackageReady\x12b\n" +
-	"\x16offline_package_failed\x18\n" +
-	" \x01(\v2*.protobuf.OfflinePackageFailedNotificationH\x00R\x14offlinePackageFailedB\x06\n" +
+	"vod_failed\x18\b \x01(\v2\x1f.protobuf.VODFailedNotificationH\x00R\tvodFailed\x12R\n" +
+	"\x10silence_detected\x18\t \x01(\v2%.protobuf.SilenceDetectedNotificationH\x00R\x0fsilenceDetected\x12_\n" +
+	"\x15offline_package_ready\x18\n" +
+	" \x01(\v2).protobuf.OfflinePackageReadyNotificationH\x00R\x13offlinePackageReady\x12b\n" +
+	"\x16offline_package_failed\x18\v \x01(\v2*.protobuf.OfflinePackageFailedNotificationH\x00R\x14offlinePackageFailedB\x06\n" +
 	"\x04data\"\x84\x01\n" +
 	"\x1fOfflinePackageReadyNotification\x12\x1d\n" +
 	"\n" +
@@ -1003,7 +1091,12 @@ const file_notifications_proto_rawDesc = "" +
 	"\x1fTranscodingProgressNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1a\n" +
-	"\bprogress\x18\x03 \x01(\x05R\bprogress\"\x9d\x01\n" +
+	"\bprogress\x18\x03 \x01(\x05R\bprogress\"\xb7\x01\n" +
+	"\x1bSilenceDetectedNotification\x12,\n" +
+	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
+	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x16\n" +
+	"\x06starts\x18\x03 \x03(\rR\x06starts\x12\x12\n" +
+	"\x04ends\x18\x04 \x03(\rR\x04ends\"\x9d\x01\n" +
 	"\x15VODFailedNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x16\n" +
@@ -1033,7 +1126,7 @@ func file_notifications_proto_rawDescGZIP() []byte {
 	return file_notifications_proto_rawDescData
 }
 
-var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_notifications_proto_goTypes = []any{
 	(*Notification)(nil),                     // 0: protobuf.Notification
 	(*OfflinePackageReadyNotification)(nil),  // 1: protobuf.OfflinePackageReadyNotification
@@ -1044,43 +1137,47 @@ var file_notifications_proto_goTypes = []any{
 	(*HeartbeatNotification)(nil),            // 6: protobuf.HeartbeatNotification
 	(*VODReadyNotification)(nil),             // 7: protobuf.VODReadyNotification
 	(*TranscodingProgressNotification)(nil),  // 8: protobuf.TranscodingProgressNotification
-	(*VODFailedNotification)(nil),            // 9: protobuf.VODFailedNotification
-	(*ThumbnailReadyNotification)(nil),       // 10: protobuf.ThumbnailReadyNotification
-	(*SectionImage)(nil),                     // 11: protobuf.SectionImage
-	(*SectionImagesReadyNotification)(nil),   // 12: protobuf.SectionImagesReadyNotification
-	(*NotificationResponse)(nil),             // 13: protobuf.NotificationResponse
-	(StreamVersion)(0),                       // 14: protobuf.StreamVersion
+	(*SilenceDetectedNotification)(nil),      // 9: protobuf.SilenceDetectedNotification
+	(*VODFailedNotification)(nil),            // 10: protobuf.VODFailedNotification
+	(*ThumbnailReadyNotification)(nil),       // 11: protobuf.ThumbnailReadyNotification
+	(*SectionImage)(nil),                     // 12: protobuf.SectionImage
+	(*SectionImagesReadyNotification)(nil),   // 13: protobuf.SectionImagesReadyNotification
+	(*NotificationResponse)(nil),             // 14: protobuf.NotificationResponse
+	(StreamVersion)(0),                       // 15: protobuf.StreamVersion
 }
 var file_notifications_proto_depIdxs = []int32{
 	4,  // 0: protobuf.Notification.stream_start:type_name -> protobuf.StreamStartNotification
 	5,  // 1: protobuf.Notification.stream_end:type_name -> protobuf.StreamEndNotification
 	6,  // 2: protobuf.Notification.heartbeat:type_name -> protobuf.HeartbeatNotification
 	7,  // 3: protobuf.Notification.vod_ready:type_name -> protobuf.VODReadyNotification
-	10, // 4: protobuf.Notification.thumbnail_ready:type_name -> protobuf.ThumbnailReadyNotification
-	12, // 5: protobuf.Notification.section_images_ready:type_name -> protobuf.SectionImagesReadyNotification
+	11, // 4: protobuf.Notification.thumbnail_ready:type_name -> protobuf.ThumbnailReadyNotification
+	13, // 5: protobuf.Notification.section_images_ready:type_name -> protobuf.SectionImagesReadyNotification
 	8,  // 6: protobuf.Notification.transcoding_progress:type_name -> protobuf.TranscodingProgressNotification
-	9,  // 7: protobuf.Notification.vod_failed:type_name -> protobuf.VODFailedNotification
-	1,  // 8: protobuf.Notification.offline_package_ready:type_name -> protobuf.OfflinePackageReadyNotification
-	2,  // 9: protobuf.Notification.offline_package_failed:type_name -> protobuf.OfflinePackageFailedNotification
-	3,  // 10: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 11: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 12: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 13: protobuf.StreamEndNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 14: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 15: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 16: protobuf.TranscodingProgressNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 17: protobuf.TranscodingProgressNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 18: protobuf.VODFailedNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 19: protobuf.VODFailedNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 20: protobuf.ThumbnailReadyNotification.stream:type_name -> protobuf.StreamInfo
-	14, // 21: protobuf.ThumbnailReadyNotification.stream_version:type_name -> protobuf.StreamVersion
-	3,  // 22: protobuf.SectionImagesReadyNotification.stream:type_name -> protobuf.StreamInfo
-	11, // 23: protobuf.SectionImagesReadyNotification.images:type_name -> protobuf.SectionImage
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	10, // 7: protobuf.Notification.vod_failed:type_name -> protobuf.VODFailedNotification
+	9,  // 8: protobuf.Notification.silence_detected:type_name -> protobuf.SilenceDetectedNotification
+	1,  // 9: protobuf.Notification.offline_package_ready:type_name -> protobuf.OfflinePackageReadyNotification
+	2,  // 10: protobuf.Notification.offline_package_failed:type_name -> protobuf.OfflinePackageFailedNotification
+	3,  // 11: protobuf.StreamStartNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 12: protobuf.StreamStartNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 13: protobuf.StreamEndNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 14: protobuf.StreamEndNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 15: protobuf.VODReadyNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 16: protobuf.VODReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 17: protobuf.TranscodingProgressNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 18: protobuf.TranscodingProgressNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 19: protobuf.SilenceDetectedNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 20: protobuf.SilenceDetectedNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 21: protobuf.VODFailedNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 22: protobuf.VODFailedNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 23: protobuf.ThumbnailReadyNotification.stream:type_name -> protobuf.StreamInfo
+	15, // 24: protobuf.ThumbnailReadyNotification.stream_version:type_name -> protobuf.StreamVersion
+	3,  // 25: protobuf.SectionImagesReadyNotification.stream:type_name -> protobuf.StreamInfo
+	12, // 26: protobuf.SectionImagesReadyNotification.images:type_name -> protobuf.SectionImage
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_notifications_proto_init() }
@@ -1098,6 +1195,7 @@ func file_notifications_proto_init() {
 		(*Notification_SectionImagesReady)(nil),
 		(*Notification_TranscodingProgress)(nil),
 		(*Notification_VodFailed)(nil),
+		(*Notification_SilenceDetected)(nil),
 		(*Notification_OfflinePackageReady)(nil),
 		(*Notification_OfflinePackageFailed)(nil),
 	}
@@ -1107,7 +1205,7 @@ func file_notifications_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifications_proto_rawDesc), len(file_notifications_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

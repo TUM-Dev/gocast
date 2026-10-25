@@ -239,7 +239,10 @@ type StreamRequest struct {
 	Input               *string                `protobuf:"bytes,7,opt,name=input" json:"input,omitempty"`                                                          // e.g. rtsp://user:password@host:port/rtsp_path
 	// The input is published by a lecturer (RTMP ingest), who decides when the stream is over,
 	// not the schedule.
-	SelfStream    *bool `protobuf:"varint,8,opt,name=self_stream,json=selfStream" json:"self_stream,omitempty"`
+	SelfStream *bool `protobuf:"varint,8,opt,name=self_stream,json=selfStream" json:"self_stream,omitempty"`
+	// Scan the finished VoD for silences and report them. All versions of a stream share their
+	// audio, so the server asks for this on exactly one of them.
+	DetectSilence *bool `protobuf:"varint,9,opt,name=detect_silence,json=detectSilence" json:"detect_silence,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -326,6 +329,13 @@ func (x *StreamRequest) GetInput() string {
 func (x *StreamRequest) GetSelfStream() bool {
 	if x != nil && x.SelfStream != nil {
 		return *x.SelfStream
+	}
+	return false
+}
+
+func (x *StreamRequest) GetDetectSilence() bool {
+	if x != nil && x.DetectSilence != nil {
+		return *x.DetectSilence
 	}
 	return false
 }
@@ -567,10 +577,13 @@ func (x *SectionImageResponse) GetJobId() string {
 }
 
 type RegenerateThumbnailRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StreamId      *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
-	Version       *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
-	PlaylistUrl   *string                `protobuf:"bytes,3,opt,name=playlist_url,json=playlistUrl" json:"playlist_url,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	StreamId    *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
+	Version     *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
+	PlaylistUrl *string                `protobuf:"bytes,3,opt,name=playlist_url,json=playlistUrl" json:"playlist_url,omitempty"`
+	// Also scan the VoD for silences, see StreamRequest.detect_silence. The playlist_url is
+	// read for that too.
+	DetectSilence *bool `protobuf:"varint,4,opt,name=detect_silence,json=detectSilence" json:"detect_silence,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -626,6 +639,13 @@ func (x *RegenerateThumbnailRequest) GetPlaylistUrl() string {
 	return ""
 }
 
+func (x *RegenerateThumbnailRequest) GetDetectSilence() bool {
+	if x != nil && x.DetectSilence != nil {
+		return *x.DetectSilence
+	}
+	return false
+}
+
 type RegenerateThumbnailResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	JobId         *string                `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
@@ -671,9 +691,11 @@ func (x *RegenerateThumbnailResponse) GetJobId() string {
 }
 
 type PrepareUploadRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StreamId      *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
-	Version       *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	StreamId *uint64                `protobuf:"varint,1,opt,name=stream_id,json=streamId" json:"stream_id,omitempty"`
+	Version  *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
+	// Scan the imported VoD for silences, see StreamRequest.detect_silence.
+	DetectSilence *bool `protobuf:"varint,3,opt,name=detect_silence,json=detectSilence" json:"detect_silence,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -720,6 +742,13 @@ func (x *PrepareUploadRequest) GetVersion() StreamVersion {
 		return *x.Version
 	}
 	return StreamVersion_STREAM_VERSION_UNSPECIFIED
+}
+
+func (x *PrepareUploadRequest) GetDetectSilence() bool {
+	if x != nil && x.DetectSilence != nil {
+		return *x.DetectSilence
+	}
+	return false
 }
 
 type PrepareUploadResponse struct {
@@ -1032,7 +1061,7 @@ const file_runner_proto_rawDesc = "" +
 	"\x1bDeleteOfflinePackageRequest\x12\x1d\n" +
 	"\n" +
 	"package_id\x18\x01 \x01(\x04R\tpackageId\"\x1e\n" +
-	"\x1cDeleteOfflinePackageResponse\"\xde\x02\n" +
+	"\x1cDeleteOfflinePackageResponse\"\x85\x03\n" +
 	"\rStreamRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12,\n" +
@@ -1042,7 +1071,8 @@ const file_runner_proto_rawDesc = "" +
 	"\x15ffmpeg_output_options\x18\x06 \x01(\tR\x13ffmpegOutputOptions\x12\x14\n" +
 	"\x05input\x18\a \x01(\tR\x05input\x12\x1f\n" +
 	"\vself_stream\x18\b \x01(\bR\n" +
-	"selfStream\"'\n" +
+	"selfStream\x12%\n" +
+	"\x0edetect_silence\x18\t \x01(\bR\rdetectSilence\"'\n" +
 	"\x0eStreamResponse\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"J\n" +
 	"\x10StreamEndRequest\x12\x15\n" +
@@ -1058,16 +1088,18 @@ const file_runner_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12/\n" +
 	"\x05start\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x05start\"-\n" +
 	"\x14SectionImageResponse\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x8f\x01\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xb6\x01\n" +
 	"\x1aRegenerateThumbnailRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12!\n" +
-	"\fplaylist_url\x18\x03 \x01(\tR\vplaylistUrl\"4\n" +
+	"\fplaylist_url\x18\x03 \x01(\tR\vplaylistUrl\x12%\n" +
+	"\x0edetect_silence\x18\x04 \x01(\bR\rdetectSilence\"4\n" +
 	"\x1bRegenerateThumbnailResponse\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"f\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x8d\x01\n" +
 	"\x14PrepareUploadRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
-	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\"N\n" +
+	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12%\n" +
+	"\x0edetect_silence\x18\x03 \x01(\bR\rdetectSilence\"N\n" +
 	"\x15PrepareUploadResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1f\n" +
 	"\vupload_port\x18\x02 \x01(\x05R\n" +
