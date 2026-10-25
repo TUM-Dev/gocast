@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 
@@ -35,6 +36,7 @@ func (a *API) RunMaintenanceCronJob(ctx context.Context, req *protobuf.RunMainte
 	}
 
 	tools.Cron.RunJob(job)
+	a.audit(ctx, model.AuditMaintenance, fmt.Sprintf("cron job '%s' run", job))
 	return &emptypb.Empty{}, nil
 }
 
@@ -59,6 +61,7 @@ func (a *API) DeleteMaintenanceTranscodingFailure(ctx context.Context, req *prot
 	if err := a.dao.TranscodingFailureDao.Delete(uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditMaintenance, fmt.Sprintf("transcoding failure %d dismissed", req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 
@@ -95,6 +98,7 @@ func (a *API) DeleteMaintenanceEmailFailure(ctx context.Context, req *protobuf.D
 	if err := a.dao.EmailDao.Delete(ctx, uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditMaintenance, fmt.Sprintf("email failure %d dismissed", req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 

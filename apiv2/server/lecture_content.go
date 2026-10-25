@@ -162,6 +162,7 @@ func (a *API) CreateLectureSections(ctx context.Context, req *protobuf.CreateLec
 	// redoing the old ones costs time and nothing else.
 	a.generateSectionImages(ctx, stream, all)
 
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %d sections added", stream.ID, len(sections)))
 	out := make([]*protobuf.LectureVideoSectionAdmin, 0, len(all))
 	for _, s := range all {
 		out = append(out, sectionAdmin(s))
@@ -195,6 +196,7 @@ func (a *API) UpdateLectureSection(ctx context.Context, req *protobuf.UpdateLect
 	if err := a.dao.VideoSectionDao.UpdateContent(&section); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: section %d edited", stream.ID, section.ID))
 	if moved {
 		a.generateSectionImages(ctx, stream, []model.VideoSection{section})
 	}
@@ -220,6 +222,7 @@ func (a *API) DeleteLectureSection(ctx context.Context, req *protobuf.DeleteLect
 	if err := a.dao.VideoSectionDao.Delete(section.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: section %d deleted", stream.ID, section.ID))
 
 	if section.FileID == 0 {
 		return &emptypb.Empty{}, nil
@@ -288,6 +291,7 @@ func (a *API) DeleteLectureAttachment(ctx context.Context, req *protobuf.DeleteL
 	if err := a.dao.FileDao.DeleteFile(file.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: attachment %d deleted", stream.ID, file.ID))
 	return &emptypb.Empty{}, nil
 }
 
@@ -312,6 +316,7 @@ func (a *API) DeleteLectureThumbnail(ctx context.Context, req *protobuf.DeleteLe
 	if err := a.dao.FileDao.DeleteFile(thumb.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: custom thumbnail deleted", stream.ID))
 	return &emptypb.Empty{}, nil
 }
 
@@ -360,6 +365,7 @@ func (a *API) RequestLectureSubtitles(ctx context.Context, req *protobuf.Request
 		}
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: subtitles requested (%s)", stream.ID, req.GetLanguage()))
 	return &emptypb.Empty{}, nil
 }
 

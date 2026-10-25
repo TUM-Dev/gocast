@@ -52,7 +52,9 @@ func TestCreateNotification(t *testing.T) {
 			return nil
 		}).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		resp, err := api.CreateNotification(context.Background(), &protobuf.CreateNotificationRequest{
 			Title: "Heads up", Body: "**bold** text", Target: uint32(model.TargetAdmin),
@@ -83,7 +85,9 @@ func TestCreateNotification(t *testing.T) {
 			return nil
 		}).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		if _, err := api.CreateNotification(context.Background(), &protobuf.CreateNotificationRequest{
 			Body: "no title here", Target: uint32(model.TargetAll),
@@ -97,7 +101,9 @@ func TestCreateNotification(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(ctrl)
 		notificationsMock.EXPECT().AddNotification(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		_, err := api.CreateNotification(context.Background(), &protobuf.CreateNotificationRequest{
 			Body: "body", Target: 99,
@@ -112,7 +118,9 @@ func TestCreateNotification(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(ctrl)
 		notificationsMock.EXPECT().AddNotification(gomock.Any()).Return(errors.New("database is on fire")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		_, err := api.CreateNotification(context.Background(), &protobuf.CreateNotificationRequest{
 			Body: "body", Target: uint32(model.TargetAll),
@@ -129,7 +137,9 @@ func TestDeleteNotification(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(ctrl)
 		notificationsMock.EXPECT().DeleteNotification(uint(3)).Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		if _, err := api.DeleteNotification(context.Background(), &protobuf.DeleteNotificationRequest{Id: 3}); err != nil {
 			t.Fatalf("DeleteNotification: %v", err)
@@ -141,7 +151,9 @@ func TestDeleteNotification(t *testing.T) {
 		notificationsMock := mock_dao.NewMockNotificationsDao(ctrl)
 		notificationsMock.EXPECT().DeleteNotification(gomock.Any()).Return(errors.New("database is on fire")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{NotificationsDao: notificationsMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:         auditSink(t),
+			NotificationsDao: notificationsMock}, log: slog.Default()}
 
 		_, err := api.DeleteNotification(context.Background(), &protobuf.DeleteNotificationRequest{Id: 3})
 		if err == nil {

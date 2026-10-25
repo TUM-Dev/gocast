@@ -49,7 +49,9 @@ func TestCreateLectureHallAdmin(t *testing.T) {
 			return nil
 		}).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		resp, err := api.CreateLectureHallAdmin(context.Background(), &protobuf.CreateLectureHallAdminRequest{
 			Name: "  FMI_HS1  ", StreamProtocol: 1, CamIp: " rtsp://0.0.0.0/cam ",
@@ -71,7 +73,9 @@ func TestCreateLectureHallAdmin(t *testing.T) {
 		lhMock := mock_dao.NewMockLectureHallsDao(ctrl)
 		lhMock.EXPECT().CreateLectureHall(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		_, err := api.CreateLectureHallAdmin(context.Background(), &protobuf.CreateLectureHallAdminRequest{
 			Name: "   ",
@@ -90,7 +94,9 @@ func TestUpdateLectureHallAdmin(t *testing.T) {
 			Return(model.LectureHall{Model: gorm.Model{ID: 3}, Name: "Old Name"}, nil).Times(1)
 		lhMock.EXPECT().SaveLectureHall(gomock.Any()).Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		resp, err := api.UpdateLectureHallAdmin(context.Background(), &protobuf.UpdateLectureHallAdminRequest{
 			Id: 3, Name: "New Name", StreamProtocol: 2,
@@ -109,7 +115,9 @@ func TestUpdateLectureHallAdmin(t *testing.T) {
 		lhMock.EXPECT().GetLectureHallByID(uint(99)).Return(model.LectureHall{}, gorm.ErrRecordNotFound).Times(1)
 		lhMock.EXPECT().SaveLectureHall(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		_, err := api.UpdateLectureHallAdmin(context.Background(), &protobuf.UpdateLectureHallAdminRequest{
 			Id: 99, Name: "New Name",
@@ -125,7 +133,9 @@ func TestUpdateLectureHallAdmin(t *testing.T) {
 		lhMock.EXPECT().GetLectureHallByID(gomock.Any()).Times(0)
 		lhMock.EXPECT().SaveLectureHall(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		_, err := api.UpdateLectureHallAdmin(context.Background(), &protobuf.UpdateLectureHallAdminRequest{
 			Id: 3, Name: "   ",
@@ -140,9 +150,13 @@ func TestDeleteLectureHallAdmin(t *testing.T) {
 	t.Run("deletes the hall it was given", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		lhMock := mock_dao.NewMockLectureHallsDao(ctrl)
+		// Looked up first, for the name in the audit entry.
+		lhMock.EXPECT().GetLectureHallByID(uint(3)).Return(model.LectureHall{Name: "Hall"}, nil).AnyTimes()
 		lhMock.EXPECT().DeleteLectureHall(uint(3)).Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		if _, err := api.DeleteLectureHallAdmin(context.Background(), &protobuf.DeleteLectureHallAdminRequest{Id: 3}); err != nil {
 			t.Fatalf("DeleteLectureHallAdmin: %v", err)
@@ -152,9 +166,13 @@ func TestDeleteLectureHallAdmin(t *testing.T) {
 	t.Run("reports a failed delete", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		lhMock := mock_dao.NewMockLectureHallsDao(ctrl)
+		// Looked up first, for the name in the audit entry.
+		lhMock.EXPECT().GetLectureHallByID(uint(3)).Return(model.LectureHall{Name: "Hall"}, nil).AnyTimes()
 		lhMock.EXPECT().DeleteLectureHall(gomock.Any()).Return(errors.New("database is on fire")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default()}
 
 		_, err := api.DeleteLectureHallAdmin(context.Background(), &protobuf.DeleteLectureHallAdminRequest{Id: 3})
 		if err == nil {
@@ -177,7 +195,9 @@ func TestRefreshLectureHallPresetsAdmin(t *testing.T) {
 
 		cam := &fakeCam{presets: []model.CameraPreset{{Name: "Front", PresetID: 1}}}
 		api := &API{
-			dao:  dao.DaoWrapper{LectureHallsDao: lhMock},
+			dao: dao.DaoWrapper{
+				AuditDao:        auditSink(t),
+				LectureHallsDao: lhMock},
 			log:  slog.Default(),
 			cams: &fakeCamService{cam: cam},
 		}
@@ -197,7 +217,9 @@ func TestRefreshLectureHallPresetsAdmin(t *testing.T) {
 		lhMock.EXPECT().GetLectureHallByID(uint(1)).Return(model.LectureHall{Model: gorm.Model{ID: 1}}, nil).Times(1)
 		lhMock.EXPECT().SaveLectureHallFullAssoc(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default(), cams: &fakeCamService{cam: &fakeCam{}}}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:        auditSink(t),
+			LectureHallsDao: lhMock}, log: slog.Default(), cams: &fakeCamService{cam: &fakeCam{}}}
 
 		_, err := api.RefreshLectureHallPresetsAdmin(context.Background(), &protobuf.RefreshLectureHallPresetsAdminRequest{Id: 1})
 		if status.Code(err) != codes.InvalidArgument {
@@ -219,7 +241,9 @@ func TestSetDefaultCameraPresetAdmin(t *testing.T) {
 		return nil
 	}).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{LectureHallsDao: lhMock}, log: slog.Default()}
+	api := &API{dao: dao.DaoWrapper{
+		AuditDao:        auditSink(t),
+		LectureHallsDao: lhMock}, log: slog.Default()}
 
 	_, err := api.SetDefaultCameraPresetAdmin(context.Background(), &protobuf.SetDefaultCameraPresetAdminRequest{
 		LectureHallId: 1, PresetId: 1,

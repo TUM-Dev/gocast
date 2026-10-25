@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -78,6 +79,7 @@ func (a *API) CreateInfoPage(ctx context.Context, req *protobuf.CreateInfoPageRe
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("info page '%s' (%d) created", page.Slug, page.ID))
 	return infoPageMessage(page), nil
 }
 
@@ -117,6 +119,7 @@ func (a *API) UpdateInfoPage(ctx context.Context, req *protobuf.UpdateInfoPageRe
 	}
 
 	page.ID = id
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("info page '%s' (%d) edited", page.Slug, id))
 	return infoPageMessage(page), nil
 }
 
@@ -125,6 +128,7 @@ func (a *API) DeleteInfoPage(ctx context.Context, req *protobuf.DeleteInfoPageRe
 	if err := a.dao.InfoPageDao.Delete(uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("info page %d deleted", req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 

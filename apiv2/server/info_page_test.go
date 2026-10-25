@@ -84,7 +84,9 @@ func TestCreateInfoPage(t *testing.T) {
 			return nil
 		}).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		resp, err := api.CreateInfoPage(context.Background(), &protobuf.CreateInfoPageRequest{
 			Slug: "terms-of-use", Name: "Terms of Use", RawContent: "# Terms",
@@ -103,7 +105,9 @@ func TestCreateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug(gomock.Any()).Times(0)
 		infoPageMock.EXPECT().New(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.CreateInfoPage(context.Background(), &protobuf.CreateInfoPageRequest{
 			Slug: "Terms Of Use!", Name: "Terms of Use",
@@ -119,7 +123,9 @@ func TestCreateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug(gomock.Any()).Times(0)
 		infoPageMock.EXPECT().New(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.CreateInfoPage(context.Background(), &protobuf.CreateInfoPageRequest{
 			Slug: "login", Name: "Not Actually Login",
@@ -135,7 +141,9 @@ func TestCreateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug("privacy").Return(model.InfoPage{Slug: "privacy"}, nil).Times(1)
 		infoPageMock.EXPECT().New(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.CreateInfoPage(context.Background(), &protobuf.CreateInfoPageRequest{
 			Slug: "privacy", Name: "Another Privacy Page",
@@ -151,7 +159,9 @@ func TestCreateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug(gomock.Any()).Times(0)
 		infoPageMock.EXPECT().New(gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.CreateInfoPage(context.Background(), &protobuf.CreateInfoPageRequest{
 			Slug: "terms", Name: "   ",
@@ -170,7 +180,9 @@ func TestUpdateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug("about").Return(model.InfoPage{Model: gorm.Model{ID: 3}, Slug: "about"}, nil).Times(1)
 		infoPageMock.EXPECT().Update(uint(3), gomock.Any()).Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		resp, err := api.UpdateInfoPage(context.Background(), &protobuf.UpdateInfoPageRequest{
 			Id: 3, Slug: "about", Name: "About Us", RawContent: "# About",
@@ -189,7 +201,9 @@ func TestUpdateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetById(uint(99)).Return(model.InfoPage{}, nil).Times(1)
 		infoPageMock.EXPECT().Update(gomock.Any(), gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.UpdateInfoPage(context.Background(), &protobuf.UpdateInfoPageRequest{
 			Id: 99, Slug: "about", Name: "About",
@@ -206,7 +220,9 @@ func TestUpdateInfoPage(t *testing.T) {
 		infoPageMock.EXPECT().GetBySlug("privacy").Return(model.InfoPage{Model: gorm.Model{ID: 1}, Slug: "privacy"}, nil).Times(1)
 		infoPageMock.EXPECT().Update(gomock.Any(), gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.UpdateInfoPage(context.Background(), &protobuf.UpdateInfoPageRequest{
 			Id: 3, Slug: "privacy", Name: "About",
@@ -223,7 +239,9 @@ func TestDeleteInfoPage(t *testing.T) {
 		infoPageMock := mock_dao.NewMockInfoPageDao(ctrl)
 		infoPageMock.EXPECT().Delete(uint(3)).Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		if _, err := api.DeleteInfoPage(context.Background(), &protobuf.DeleteInfoPageRequest{Id: 3}); err != nil {
 			t.Fatalf("DeleteInfoPage: %v", err)
@@ -235,7 +253,9 @@ func TestDeleteInfoPage(t *testing.T) {
 		infoPageMock := mock_dao.NewMockInfoPageDao(ctrl)
 		infoPageMock.EXPECT().Delete(gomock.Any()).Return(errors.New("database is on fire")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{InfoPageDao: infoPageMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:    auditSink(t),
+			InfoPageDao: infoPageMock}, log: slog.Default()}
 
 		_, err := api.DeleteInfoPage(context.Background(), &protobuf.DeleteInfoPageRequest{Id: 3})
 		if err == nil {

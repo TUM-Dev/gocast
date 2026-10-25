@@ -76,7 +76,9 @@ func TestDeleteRunner(t *testing.T) {
 		runnerMock := mock_dao.NewMockRunnerDao(ctrl)
 		runnerMock.EXPECT().Delete(gomock.Any(), "runner-1").Return(nil).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{RunnerDao: runnerMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:  auditSink(t),
+			RunnerDao: runnerMock}, log: slog.Default()}
 
 		if _, err := api.DeleteRunner(context.Background(), &protobuf.DeleteRunnerRequest{
 			Hostname: "runner-1",
@@ -91,7 +93,9 @@ func TestDeleteRunner(t *testing.T) {
 		runnerMock := mock_dao.NewMockRunnerDao(ctrl)
 		runnerMock.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
-		api := &API{dao: dao.DaoWrapper{RunnerDao: runnerMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:  auditSink(t),
+			RunnerDao: runnerMock}, log: slog.Default()}
 
 		_, err := api.DeleteRunner(context.Background(), &protobuf.DeleteRunnerRequest{})
 
@@ -106,7 +110,9 @@ func TestDeleteRunner(t *testing.T) {
 		runnerMock.EXPECT().Delete(gomock.Any(), gomock.Any()).
 			Return(errors.New("database is on fire")).Times(1)
 
-		api := &API{dao: dao.DaoWrapper{RunnerDao: runnerMock}, log: slog.Default()}
+		api := &API{dao: dao.DaoWrapper{
+			AuditDao:  auditSink(t),
+			RunnerDao: runnerMock}, log: slog.Default()}
 
 		_, err := api.DeleteRunner(context.Background(), &protobuf.DeleteRunnerRequest{
 			Hostname: "runner-1",

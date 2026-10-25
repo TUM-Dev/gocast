@@ -38,7 +38,9 @@ func TestSwitchCameraPreset(t *testing.T) {
 
 		cam := &fakeCam{}
 		api := &API{
-			dao:  dao.DaoWrapper{StreamsDao: streamsMock, LectureHallsDao: lhMock},
+			dao: dao.DaoWrapper{
+				AuditDao:   auditSink(t),
+				StreamsDao: streamsMock, LectureHallsDao: lhMock},
 			log:  slog.Default(),
 			cams: &fakeCamService{cam: cam},
 		}

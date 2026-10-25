@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -55,6 +56,7 @@ func (a *API) CreateServerNotification(ctx context.Context, req *protobuf.Create
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("server notification %d created", notification.ID))
 	return serverNotificationAdminMessage(notification), nil
 }
 
@@ -83,6 +85,7 @@ func (a *API) UpdateServerNotification(ctx context.Context, req *protobuf.Update
 	}
 
 	notification.ID = uint(id)
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("server notification %d edited", id))
 	return serverNotificationAdminMessage(notification), nil
 }
 
@@ -93,6 +96,7 @@ func (a *API) DeleteServerNotification(ctx context.Context, req *protobuf.Delete
 	if err := a.dao.ServerNotificationDao.DeleteServerNotification(id); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditContent, fmt.Sprintf("server notification %s deleted", id))
 	return &emptypb.Empty{}, nil
 }
 
