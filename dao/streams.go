@@ -65,6 +65,8 @@ type StreamsDao interface {
 	ToggleVisibility(streamId uint, private bool) error
 
 	DeleteStream(streamID string)
+	// RemoveStream is DeleteStream that reports a failure, for callers that audit the delete.
+	RemoveStream(streamID string) error
 	DeleteStreamsWithTumID(ids []uint)
 	UpdateLectureSeries(model.Stream) error
 	UpdateLectureSeriesTime(model.Stream) error
@@ -717,6 +719,12 @@ func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion,
 func (d streamsDao) DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
+}
+
+func (d streamsDao) RemoveStream(streamID string) error {
+	err := DB.Where("id = ?", streamID).Delete(&model.Stream{}).Error
+	Cache.Clear()
+	return err
 }
 
 func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {

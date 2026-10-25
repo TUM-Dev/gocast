@@ -448,14 +448,27 @@ func TestDeleteLectures(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(second, nil)
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}, Name: "Bier"}, nil)
 		m.audits.EXPECT().Create(gomock.Any()).Return(nil).Times(2)
-		m.streams.EXPECT().DeleteStream("7")
-		m.streams.EXPECT().DeleteStream("8")
+		m.streams.EXPECT().RemoveStream("7").Return(nil)
+		m.streams.EXPECT().RemoveStream("8").Return(nil)
 
 		if _, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
 			CourseId: 1, StreamIds: []uint32{7, 8},
 		}); err != nil {
 			t.Fatalf("DeleteLectures: %v", err)
 		}
+	})
+
+	t.Run("audits nothing for a lecture whose delete failed", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}, Name: "Bier"}, nil)
+		m.streams.EXPECT().RemoveStream("7").Return(errors.New("db down"))
+		// No audit expected: gomock fails the test on an unexpected Create.
+
+		_, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
+			CourseId: 1, StreamIds: []uint32{7},
+		})
+		wantCode(t, err, codes.Unknown)
 	})
 
 	t.Run("deletes nothing when one lecture is another course's", func(t *testing.T) {
@@ -550,7 +563,7 @@ func TestCopyLecture(t *testing.T) {
 		})
 		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
 		// The original, not the copy v1 deleted.
-		m.streams.EXPECT().DeleteStream("7").After(created)
+		m.streams.EXPECT().RemoveStream("7").Return(nil).After(created)
 
 		// The audit is not what this subtest is about.
 		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()

@@ -416,6 +416,20 @@ func (mr *MockStreamsDaoMockRecorder) HasRunnerJobForStreamVersion(streamID, ver
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasRunnerJobForStreamVersion", reflect.TypeOf((*MockStreamsDao)(nil).HasRunnerJobForStreamVersion), streamID, version)
 }
 
+// RemoveStream mocks base method.
+func (m *MockStreamsDao) RemoveStream(streamID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveStream", streamID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveStream indicates an expected call of RemoveStream.
+func (mr *MockStreamsDaoMockRecorder) RemoveStream(streamID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStream", reflect.TypeOf((*MockStreamsDao)(nil).RemoveStream), streamID)
+}
+
 // RemoveTranscodingProgress mocks base method.
 func (m *MockStreamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion, streamId uint) error {
 	m.ctrl.T.Helper()

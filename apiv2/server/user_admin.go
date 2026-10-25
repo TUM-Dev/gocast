@@ -121,6 +121,9 @@ func (a *API) CreateUser(ctx context.Context, req *protobuf.CreateUserRequest) (
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// Before the invite: the account exists now, whether or not the mail goes out.
+	a.audit(ctx, model.AuditUserCreate, fmt.Sprintf("%s (%d) created as lecturer", user.GetLoginString(), user.ID))
+
 	// The account exists by now, but without the invitation nobody can sign in to
 	// it — so this is reported rather than swallowed or retried by creating another.
 	if err := tools.SendAccountInvite(ctx, a.dao, email); err != nil {
@@ -131,7 +134,6 @@ func (a *API) CreateUser(ctx context.Context, req *protobuf.CreateUserRequest) (
 		)
 	}
 
-	a.audit(ctx, model.AuditUserCreate, fmt.Sprintf("%s (%d) created as lecturer", user.GetLoginString(), user.ID))
 	return userSummary(user, false), nil
 }
 
@@ -187,11 +189,16 @@ func (a *API) DeleteUser(ctx context.Context, req *protobuf.DeleteUserRequest) (
 
 	// Looked up first: the name is gone with the account. A failed lookup only costs
 	// the name in the entry.
-	deleted, _ := a.dao.UsersDao.GetUserByID(ctx, uint(req.GetUserId()))
+	label := fmt.Sprintf("%d", req.GetUserId())
+	if deleted, err := a.dao.UsersDao.GetUserByID(ctx, uint(req.GetUserId())); err != nil {
+		a.log.Warn("can't look up the user to delete for the audit entry", "err", err, "user", req.GetUserId())
+	} else {
+		label = fmt.Sprintf("%s (%d)", deleted.GetLoginString(), req.GetUserId())
+	}
 	if err := a.dao.UsersDao.DeleteUser(ctx, uint(req.GetUserId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	a.audit(ctx, model.AuditUserDelete, fmt.Sprintf("%s (%d)", deleted.GetLoginString(), req.GetUserId()))
+	a.audit(ctx, model.AuditUserDelete, label)
 
 	dao.InvalidateUserCache(uint(req.GetUserId()))
 
