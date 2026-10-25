@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-t"gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 func TestShouldGenerateSubtitles(t *testing.T) {
