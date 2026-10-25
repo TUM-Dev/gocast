@@ -116,11 +116,14 @@ func TestMigrate202610250LinksOnlyWhatItCanAndIsRepeatable(t *testing.T) {
 		require.NoError(t, db.Exec(ddl).Error)
 	}
 	require.NoError(t, db.Exec(`INSERT INTO courses VALUES (4,'Analysis 1','ana1',2025,'W',?,NULL)`, t0).Error)
+	// A deleted course, which the entry about its deletion is all about.
+	require.NoError(t, db.Exec(`INSERT INTO courses VALUES (3,'Analysis 1','ana1',2024,'W',?,?)`, t0.AddDate(-1, 0, 0), t0.AddDate(0, -6, 0)).Error)
 	require.NoError(t, db.Exec(`INSERT INTO streams VALUES (100,4,?)`, t0).Error)
 	require.NoError(t, db.Exec(`INSERT INTO audits (id,type,message,created_at) VALUES
 		(1,8,'100: (Visibility: true)',?),
 		(2,8,'999: ended (discard: false)',?),
-		(3,11,'x (1) signed in as y (2)',?)`, t0, t0, t0).Error)
+		(3,11,'x (1) signed in as y (2)',?),
+		(5,6,'''Analysis 1'' (2024, W)[3]. Token: abc',?)`, t0, t0, t0, t0).Error)
 	// Already linked, to a course the message does not name: must be left as it is.
 	require.NoError(t, db.Exec(`INSERT INTO audits (id,type,message,created_at,course_id) VALUES (4,8,'100: x',?,77)`, t0).Error)
 
@@ -135,13 +138,15 @@ func TestMigrate202610250LinksOnlyWhatItCanAndIsRepeatable(t *testing.T) {
 	}
 	var rows []row
 	require.NoError(t, db.Table("audits").Order("id").Find(&rows).Error)
-	require.Len(t, rows, 4)
+	require.Len(t, rows, 5)
 	require.NotNil(t, rows[0].CourseID)
 	assert.Equal(t, uint(4), *rows[0].CourseID)
 	assert.Equal(t, uint(100), *rows[0].StreamID)
 	assert.Nil(t, rows[1].CourseID, "an unknown stream stays server-wide")
 	assert.Nil(t, rows[2].CourseID, "an impersonation is not about a course")
 	assert.Equal(t, uint(77), *rows[3].CourseID, "a linked row is not rewritten")
+	require.NotNil(t, rows[4].CourseID, "the deletion of a soft-deleted course is linked to it")
+	assert.Equal(t, uint(3), *rows[4].CourseID)
 }
 
 func TestMigrate202610250SkipsAFreshDatabase(t *testing.T) {
