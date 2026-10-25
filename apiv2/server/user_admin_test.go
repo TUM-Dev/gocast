@@ -378,7 +378,8 @@ func TestCreateUserReportsAnInvitationItCouldNotSend(t *testing.T) {
 	usersMock.EXPECT().GetUserByEmail(gomock.Any(), gomock.Any()).
 		Return(model.User{}, errors.New("gone")).Times(1)
 
-	api := &API{dao: dao.DaoWrapper{UsersDao: usersMock}, log: slog.Default()}
+	audits, got := auditCapture(t)
+	api := &API{dao: dao.DaoWrapper{UsersDao: usersMock, AuditDao: audits}, log: slog.Default()}
 
 	_, err := api.CreateUser(context.Background(), &protobuf.CreateUserRequest{
 		Name:  "New Lecturer",
@@ -386,6 +387,10 @@ func TestCreateUserReportsAnInvitationItCouldNotSend(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("an invitation that could not be sent was reported as success")
+	}
+	// The account exists, so its creation is recorded even though the mail failed.
+	if len(*got) != 1 || (*got)[0].Type != model.AuditUserCreate {
+		t.Errorf("audits = %+v, want one user creation", *got)
 	}
 }
 

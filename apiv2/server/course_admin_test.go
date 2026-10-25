@@ -586,8 +586,7 @@ func TestInviteCourseParticipants(t *testing.T) {
 	t.Run("does not read a failed lookup as a new address", func(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)
 		m.users.EXPECT().GetUserByEmail(gomock.Any(), "tim@example.org").Return(model.User{}, errors.New("connection reset"))
-		// No CreateUser expected.
-		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+		// No CreateUser expected, and nothing invited, so nothing audited.
 
 		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
 			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Tim", Email: "tim@example.org"}},

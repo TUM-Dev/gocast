@@ -131,3 +131,21 @@ func TestAuditWithoutAUserIsStillWritten(t *testing.T) {
 		t.Fatalf("audits = %+v, want one entry without a user", *got)
 	}
 }
+
+func TestDeleteUserStillAuditsWhenTheLookupFails(t *testing.T) {
+	admin := user(1, "Anja Admin", "anja@example.org", model.AdminType)
+	users := mock_dao.NewMockUsersDao(gomock.NewController(t))
+	users.EXPECT().IsUserAdmin(gomock.Any(), uint(2)).Return(false, nil)
+	users.EXPECT().GetUserByID(gomock.Any(), uint(2)).Return(model.User{}, errors.New("blip"))
+	users.EXPECT().DeleteUser(gomock.Any(), uint(2)).Return(nil)
+	audits, got := auditCapture(t)
+	api := &API{dao: dao.DaoWrapper{AuditDao: audits, UsersDao: users}, log: slog.Default()}
+
+	if _, err := api.DeleteUser(ctxAs(admin), &protobuf.DeleteUserRequest{UserId: 2}); err != nil {
+		t.Fatalf("DeleteUser: %v", err)
+	}
+	// The id alone, not " (2)" built from an empty user.
+	if len(*got) != 1 || (*got)[0].Message != "2" {
+		t.Errorf("audits = %+v, want a message naming only the id", *got)
+	}
+}

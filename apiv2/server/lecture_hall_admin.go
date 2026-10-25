@@ -93,11 +93,16 @@ func (a *API) UpdateLectureHallAdmin(ctx context.Context, req *protobuf.UpdateLe
 func (a *API) DeleteLectureHallAdmin(ctx context.Context, req *protobuf.DeleteLectureHallAdminRequest) (*emptypb.Empty, error) {
 	// Looked up first: the name is gone with the hall. A failed lookup only costs the
 	// name in the entry.
-	hall, _ := a.dao.LectureHallsDao.GetLectureHallByID(uint(req.GetId()))
+	label := fmt.Sprintf("%d", req.GetId())
+	if hall, err := a.dao.LectureHallsDao.GetLectureHallByID(uint(req.GetId())); err != nil {
+		a.log.Warn("can't look up the lecture hall to delete for the audit entry", "err", err, "hall", req.GetId())
+	} else {
+		label = fmt.Sprintf("'%s' (%d)", hall.Name, req.GetId())
+	}
 	if err := a.dao.LectureHallsDao.DeleteLectureHall(uint(req.GetId())); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	a.audit(ctx, model.AuditLectureHall, fmt.Sprintf("'%s' (%d) deleted", hall.Name, req.GetId()))
+	a.audit(ctx, model.AuditLectureHall, label+" deleted")
 	return &emptypb.Empty{}, nil
 }
 

@@ -557,7 +557,15 @@ func (a *API) InviteCourseParticipants(ctx context.Context, req *protobuf.Invite
 		}
 		results = append(results, result)
 	}
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' invited %d participants", course.Name, course.Slug, len(results)))
+	invited := 0
+	for _, r := range results {
+		if r.Error == "" {
+			invited++
+		}
+	}
+	if invited > 0 {
+		a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' invited %d participants", course.Name, course.Slug, invited))
+	}
 	return &protobuf.InviteCourseParticipantsResponse{Results: results}, nil
 }
 

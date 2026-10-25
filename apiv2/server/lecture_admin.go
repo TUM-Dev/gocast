@@ -438,7 +438,9 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 	}
 
 	for _, stream := range streams {
-		a.dao.StreamsDao.DeleteStream(fmt.Sprintf("%d", stream.ID))
+		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", stream.ID)); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
 		a.audit(ctx, model.AuditStreamDelete,
 			fmt.Sprintf("'%s': %s (%d)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID))
 	}
@@ -508,7 +510,9 @@ func (a *API) CopyLecture(ctx context.Context, req *protobuf.CopyLectureRequest)
 	a.audit(ctx, model.AuditStreamCreate, fmt.Sprintf("%d: %s to course %d as %d",
 		originalID, map[bool]string{true: "moved", false: "copied"}[req.GetMove()], target.ID, copied.ID))
 	if req.GetMove() {
-		a.dao.StreamsDao.DeleteStream(fmt.Sprintf("%d", originalID))
+		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", originalID)); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
 		a.audit(ctx, model.AuditStreamDelete, fmt.Sprintf("%d: moved away to course %d", originalID, target.ID))
 	}
 	return &protobuf.CopyLectureResponse{StreamId: uint32(copied.ID)}, nil
