@@ -12,11 +12,12 @@ import (
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/protobuf"
+
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/tum-dev/gocast/runner/pkg/ptr"
-	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
 func recordSpans(t *testing.T) *tracetest.SpanRecorder {

@@ -25,6 +25,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
+
 	"github.com/TUM-Dev/gocast/api"
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
@@ -43,7 +45,6 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/web"
-	"github.com/tum-dev/gocast/runner/pkg/tracing"
 )
 
 func main() {
