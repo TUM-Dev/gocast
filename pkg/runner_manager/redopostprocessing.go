@@ -39,7 +39,10 @@ func protobufStreamVersion(version model.StreamVersion) protobuf.StreamVersion {
 // ThumbnailReadyNotification, which saveThumbnail then stores, and a
 // SilenceDetectedNotification if silences were asked for, so this returns as soon as the
 // job is accepted. The runner's RPC still has the name it was introduced with.
-func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) error {
+func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) (err error) {
+	version := protobufStreamVersion(req.Version)
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(req.StreamID), version), "manager.request_redo_postprocessing", streamAttrs(uint64(req.StreamID), version)...)
+	defer endSpan(span, &err)
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)

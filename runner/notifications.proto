@@ -17,6 +17,10 @@ message Notification {
     VODFailedNotification vod_failed = 8;
     SilenceDetectedNotification silence_detected = 9;
   }
+  // W3C traceparent of the runner span that produced this notification, so that the
+  // manager's handling of it joins the trace of the job. Empty when tracing is off, and
+  // always for heartbeats.
+  string trace_parent = 10;
 }
 
 message StreamInfo {

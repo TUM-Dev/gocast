@@ -27,6 +27,8 @@ import (
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/TUM-Dev/gocast/pkg/camera"
 
@@ -158,7 +160,9 @@ func (m *Manager) TriggerDueStreams() error {
 // triggerStreamVersion starts one version of a stream on a reserved runner. It owns the
 // runner connection for the duration of the call, so that a tick spanning several streams
 // and versions doesn't hold one connection open per iteration.
-func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) error {
+func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) (err error) {
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(s.ID), version), "manager.trigger_stream", streamAttrs(uint64(s.ID), version)...)
+	defer endSpan(span, &err)
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)
@@ -270,7 +274,17 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	return &protobuf.RegisterResponse{}, nil
 }
 
-func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
+func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (resp *protobuf.NotificationResponse, err error) {
+	// Heartbeats come every few seconds from every runner and are not part of any stream.
+	if _, ok := notification.Data.(*protobuf.Notification_Heartbeat); !ok {
+		var span trace.Span
+		ctx, span = startNotifySpan(ctx, notification)
+		defer endSpan(span, &err)
+	}
+	return m.handleNotification(ctx, notification)
+}
+
+func (m *Manager) handleNotification(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
@@ -488,7 +502,10 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	})
 }
 
-func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
+func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) (err error) {
+	version := protobuf.StreamVersion_STREAM_VERSION_COMBINED
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(stream.ID), version), "manager.request_self_stream", streamAttrs(uint64(stream.ID), version)...)
+	defer endSpan(span, &err)
 	if !tools.TestEnv.AllowsStream(stream.CourseID) {
 		m.logger.Warn("Stream rejected, course not allowed in test env", "streamId", stream.ID, "course", stream.CourseID)
 		return errors.New("stream rejected")
@@ -678,7 +695,9 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	return &protobuf.NotificationResponse{}, nil
 }
 
-func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) (err error) {
+	ctx, span := startSpan(ctx, "manager.request_subtitles", streamAttrs(uint64(stream.ID), protobufStreamVersion(version))...)
+	defer endSpan(span, &err)
 	if m.subtitleClient == nil {
 		m.logger.Info("skipping subtitle generation, not configured", "stream-id", stream.ID, "version", version)
 		return nil // nothing to do
@@ -726,6 +745,8 @@ func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err er
 	if stream.IsSelfStream() {
 		return nil
 	}
+	ctx, span := startSpan(ctx, "manager.handle_camera", attribute.Int64("stream.id", int64(stream.ID)))
+	defer endSpan(span, &err)
 	// A StreamStart arrives once per stream version, so a camera that is briefly unreachable
 	// gets a few tries. A failed attempt used to clear the mark entirely, which made every
 	// redelivered StreamStart move the camera again: several streams of one hall then kept
@@ -923,7 +944,11 @@ func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool)
 	return nil
 }
 
-func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) error {
+func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) (err error) {
+	version := protobufStreamVersion(job.Version)
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(job.StreamID), version), "manager.end_runner_job",
+		append(streamAttrs(uint64(job.StreamID), version), attribute.String("job.id", job.JobID), attribute.Bool("discard_vod", discardVoD))...)
+	defer endSpan(span, &err)
 	runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
 	if err != nil {
 		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
@@ -953,7 +978,7 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 }
 
 func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
-	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()), runnerClientTracing)
 }
 
 // ReapStaleStreams finds streams that are stuck in live state and cleans them up.

@@ -8,12 +8,18 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 	"uuid"
 
 	"github.com/sethvargo/go-retry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc/filters"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
@@ -26,6 +32,7 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -207,13 +214,20 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to listen", "error", err)
 		os.Exit(1)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		// Continues the trace of the manager's request. The live preview is left out: it
+		// is requested every minute for every running stream and belongs to no job.
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithFilter(
+			filters.Not(filters.MethodName("GenerateLivePreview")),
+		))),
+	)
 	protobuf.RegisterRunnerServiceServer(grpcServer, r)
 
 	reflection.Register(grpcServer)
@@ -248,7 +262,12 @@ func (r *Runner) retryDelay(prev time.Duration) time.Duration {
 	return min(prev*2, hi)
 }
 
-// RunAction runs the actions in a in the background and returns the id of the created job.
+// RunAction is RunActionContext for a job that is not part of a trace.
+func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
+	return r.RunActionContext(context.Background(), a, vod, data, logger)
+}
+
+// RunActionContext runs the actions in a in the background and returns the id of the created job.
 // The actions in a keep running after the job's context was cancelled, which is what lets
 // StreamEnd report the end of a stream that was stopped early. The VoD actions are skipped
 // entirely when the stream was ended with discardVod.
@@ -257,19 +276,56 @@ func (r *Runner) retryDelay(prev time.Duration) time.Duration {
 // the cancellation into a VoD is precisely what still has to happen after a stream was
 // ended early, so they must not inherit the cancelled stream context: every
 // exec.CommandContext in them would fail before it started.
-func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
-	// create new contexts to avoid cancellation on grpc request termination
-	streamCtx, endStream := context.WithCancel(context.Background())
-	afterCtx, endAfter := context.WithCancel(context.Background())
+//
+// parent only supplies the trace the job belongs to, see tracing.Detach.
+func (r *Runner) RunActionContext(parent context.Context, a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
 	job := uuid.NewV4().String()
+	// create new contexts to avoid cancellation on grpc request termination
+	jobCtx, jobSpan := tracing.Tracer().Start(tracing.Detach(parent), "runner.job",
+		trace.WithAttributes(append(jobAttributes(data), attribute.String("job.id", job))...))
+	streamCtx, endStream := context.WithCancel(jobCtx)
+	afterCtx, endAfter := context.WithCancel(jobCtx)
+	if jobSpan.SpanContext().IsValid() {
+		logger = logger.With("trace_id", jobSpan.SpanContext().TraceID().String())
+	}
 	release := r.hold()
 	r.jobsMu.Lock()
 	r.jobs[job] = jobCancels{endStream: endStream, endAfter: endAfter}
 	r.jobsMu.Unlock()
+
+	// The actions send their notifications to notify, which stamps them with the job's
+	// trace before handing them on. Without it the manager would handle the results of a
+	// job that ran for hours as traces of their own.
+	notify := make(chan *protobuf.Notification)
+	stopForward := make(chan struct{})
+	forwarded := make(chan struct{})
+	traceParent := tracing.Traceparent(jobCtx)
+	go func() {
+		defer close(forwarded)
+		for {
+			select {
+			case n := <-notify:
+				if traceParent != "" {
+					n.TraceParent = ptr.Take(traceParent)
+				}
+				r.notifications <- n
+			case <-stopForward:
+				return
+			}
+		}
+	}()
+
 	go func() {
 		defer func() {
+			// An action's send returns once the forwarder took the notification, and the
+			// forwarder only looks at stopForward between two of them. Waiting for it
+			// keeps the guarantee that a job hands its last notification to
+			// handleNotifications before it ends, see WaitIdle.
+			close(stopForward)
+			<-forwarded
 			endStream()
 			endAfter()
+			jobSpan.End()
 			r.jobsMu.Lock()
 			delete(r.jobs, job)
 			delete(r.discard, job)
@@ -279,14 +335,20 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 
 		run := func(ctx context.Context, action actions.Action) {
 			var wait time.Duration
-			for {
-				log := logger.With("action", getFunctionName(action)).With("job", job)
+			name := getFunctionName(action)
+			for attempt := 1; ; attempt++ {
+				log := logger.With("action", name).With("job", job)
 				log.Info("running action")
+				actionCtx, span := tracing.Tracer().Start(ctx, "action."+shortName(name),
+					trace.WithAttributes(attribute.Int("action.attempt", attempt)))
 				s := time.Now()
-				err := action(ctx, log, r.notifications, data, r.Metrics)
+				err := action(actionCtx, log, notify, data, r.Metrics)
 				ran := time.Since(s)
 				log.Info("action completed", "duration", ran.String())
 				if err != nil {
+					span.RecordError(err)
+					span.SetStatus(otelcodes.Error, err.Error())
+					span.End()
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
@@ -297,6 +359,8 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 					}
 					wait = r.retryDelay(wait)
 					log.Info("retrying action", "in", wait.String())
+					_, waitSpan := tracing.Tracer().Start(ctx, "action.retry_wait",
+						trace.WithAttributes(attribute.String("action.name", shortName(name)), attribute.String("wait", wait.String())))
 					t := time.NewTimer(wait)
 					select {
 					case <-ctx.Done():
@@ -304,25 +368,54 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 						t.Stop()
 					case <-t.C:
 					}
+					waitSpan.End()
 				} else {
+					span.End()
 					return // escape retry loop on no error
 				}
 			}
 		}
 
-		for _, action := range a {
-			run(streamCtx, action)
+		phase := func(ctx context.Context, name string, list []actions.Action) {
+			ctx, span := tracing.Tracer().Start(ctx, name)
+			defer span.End()
+			for _, action := range list {
+				run(ctx, action)
+			}
 		}
+
+		phase(streamCtx, "runner.stream", a)
 		if r.discarded(job) {
 			// the recording itself is deliberately left on disk, see livestreamCleanup
 			logger.With("job", job).Info("discarding recording, skipping VoD creation")
+			jobSpan.SetAttributes(attribute.Bool("job.discarded", true))
 			return
 		}
-		for _, action := range vod {
-			run(afterCtx, action)
+		if len(vod) > 0 {
+			phase(afterCtx, "runner.vod", vod)
 		}
 	}()
 	return job
+}
+
+// jobAttributes are the span attributes that identify what a job works on.
+func jobAttributes(data map[string]any) []attribute.KeyValue {
+	var attrs []attribute.KeyValue
+	if id, ok := data["streamID"].(uint64); ok {
+		attrs = append(attrs, attribute.Int64("stream.id", int64(id)))
+	}
+	if v, ok := data["streamVersion"].(string); ok {
+		attrs = append(attrs, attribute.String("stream.version", v))
+	}
+	return attrs
+}
+
+// shortName turns "github.com/tum-dev/gocast/runner/pkg/actions.MkVOD" into "MkVOD".
+func shortName(fn string) string {
+	if i := strings.LastIndex(fn, "."); i >= 0 {
+		return fn[i+1:]
+	}
+	return fn
 }
 
 func (r *Runner) discarded(job string) bool {
@@ -499,7 +592,15 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 			go func() {
 				defer release()
 				defer done()
+				// Covers the retries, which is how long the manager took to accept the
+				// result. The manager's handling of it is a child of this span.
+				sendCtx, span := r.startDelivery(sendCtx, n)
+				defer span.End()
 				err := retry.Do(sendCtx, notificationBackoff(n), r.sendNotification(n))
+				if err != nil && !isPermanent(err) {
+					span.RecordError(err)
+					span.SetStatus(otelcodes.Error, err.Error())
+				}
 				if err != nil && ctx.Err() == nil && sendCtx.Err() != nil {
 					r.log.Info("gave up on a StreamStart, its stream version ended", "error", err)
 				} else if err != nil && !isPermanent(err) { // those were logged when they were rejected
@@ -511,6 +612,19 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 			return
 		}
 	}
+}
+
+// startDelivery starts the span of delivering n to the manager if n belongs to a trace, and
+// makes it the parent of whatever the manager does with n.
+func (r *Runner) startDelivery(ctx context.Context, n *protobuf.Notification) (context.Context, trace.Span) {
+	if n.GetTraceParent() == "" {
+		return ctx, trace.SpanFromContext(context.Background())
+	}
+	ctx, span := tracing.Tracer().Start(tracing.WithTraceparent(ctx, n.GetTraceParent()),
+		"runner.notify "+strings.TrimPrefix(fmt.Sprintf("%T", n.Data), "*protobuf.Notification_"),
+		trace.WithSpanKind(trace.SpanKindProducer))
+	n.TraceParent = ptr.Take(tracing.Traceparent(ctx))
+	return ctx, span
 }
 
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {

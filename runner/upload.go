@@ -14,6 +14,7 @@ import (
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 )
 
 // uploadTokenTTL is how long a PrepareUpload token can be traded in. The server
@@ -38,7 +39,10 @@ type uploadSlot struct {
 	version  string
 	// detectSilence is whether the import is followed by a silence scan.
 	detectSilence bool
-	expires       time.Time
+	// traceparent is the trace of the PrepareUpload call, which the import job joins. The
+	// upload itself arrives on a plain HTTP request that carries none.
+	traceparent string
+	expires     time.Time
 }
 
 // uploadSlots hands out the single-use tokens the upload endpoint accepts. The endpoint
@@ -71,6 +75,16 @@ func (u *uploadSlots) create(streamID uint64, version string, detectSilence bool
 	}
 	u.slots[token] = uploadSlot{streamID: streamID, version: version, detectSilence: detectSilence, expires: u.now().Add(uploadTokenTTL)}
 	return token, nil
+}
+
+// attachTrace makes the job of the upload that redeems token part of the trace traceparent.
+func (u *uploadSlots) attachTrace(token, traceparent string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if s, ok := u.slots[token]; ok {
+		s.traceparent = traceparent
+		u.slots[token] = s
+	}
 }
 
 // take redeems a token. It is consumed even if the upload then fails: the server asks
@@ -172,7 +186,7 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		"streamVersion": slot.version,
 		"uploadPath":    file,
 	}
-	jID := r.RunAction(uploadActions(slot.detectSilence), nil, data, log)
+	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)
 	w.WriteHeader(http.StatusOK)
 }

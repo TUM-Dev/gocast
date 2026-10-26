@@ -43,6 +43,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
 	"github.com/TUM-Dev/gocast/web"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 )
 
 func main() {
@@ -72,6 +73,20 @@ func run(ctx context.Context) error {
 		Level: slog.LevelDebug,
 	})).With("service", "main")
 	initAll(initializers)
+
+	// Off unless OTEL_EXPORTER_OTLP_ENDPOINT is set, see tracing.Setup.
+	shutdownTracing, err := tracing.Setup(ctx, "tumlive", VersionTag)
+	if err != nil {
+		logger.Error("tracing disabled", "err", err)
+	} else {
+		defer func() {
+			flushCtx, stop := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer stop()
+			if err := shutdownTracing(flushCtx); err != nil {
+				logger.Error("flushing traces failed", "err", err)
+			}
+		}()
+	}
 
 	web.VersionTag = VersionTag
 	tools.VersionTag = VersionTag

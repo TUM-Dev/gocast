@@ -24,7 +24,10 @@ type UploadSlot struct {
 // The caller sends the file to the returned slot; the runner then converts it and
 // reports the result in a VODReadyNotification and a ThumbnailReadyNotification, which
 // the manager stores like those of a recorded stream.
-func (m *Manager) RequestUpload(ctx context.Context, streamID uint, version model.StreamVersion) (UploadSlot, error) {
+func (m *Manager) RequestUpload(ctx context.Context, streamID uint, version model.StreamVersion) (slot UploadSlot, err error) {
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(streamID), protobufStreamVersion(version)), "manager.request_upload",
+		streamAttrs(uint64(streamID), protobufStreamVersion(version))...)
+	defer endSpan(span, &err)
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return UploadSlot{}, fmt.Errorf("getClient: %w", err)

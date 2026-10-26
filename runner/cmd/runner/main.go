@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/tum-dev/gocast/runner"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 )
 
 // V (Version) is bundled into binary with -ldflags "-X ..."
@@ -18,6 +19,22 @@ func main() {
 	ctx := context.Background()
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 	defer cancel()
+
+	shutdownTracing, err := tracing.Setup(context.Background(), "runner", V)
+	if err != nil {
+		// traces are a diagnostic aid, a runner that can't export them still has jobs to run
+		slog.Error("tracing disabled", "error", err)
+		shutdownTracing = func(context.Context) error { return nil }
+	}
+	// os.Exit skips defers, so the exits below flush the spans themselves. The runner's fatal
+	// startup errors exit without, there is nothing worth flushing then.
+	flushTracing := func() {
+		flushCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
+		defer stop()
+		if err := shutdownTracing(flushCtx); err != nil {
+			slog.Error("flushing traces failed", "error", err)
+		}
+	}
 
 	r := runner.NewRunner(V)
 	// Run gets a context of its own, not the signal one. Everything it starts has to keep
@@ -39,6 +56,7 @@ func main() {
 		// second signal, force shutdown
 		slog.Info("Received second signal, shutting down immediately")
 		r.Cleanup()
+		flushTracing()
 		os.Exit(1)
 	}()
 
@@ -51,5 +69,6 @@ func main() {
 	// their results are done.
 	r.WaitIdle()
 	slog.Info("No jobs left, shutting down")
+	flushTracing()
 	os.Exit(0)
 }
