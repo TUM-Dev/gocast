@@ -28,24 +28,25 @@ var runnerClientTracing = grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelgr
 	filters.Not(filters.MethodName("GenerateLivePreview")),
 )))
 
-// withStreamTrace puts ctx into the trace of one version of a stream, which is what ties
-// the whole flow together. Its steps are hours apart and happen in different processes (the
-// cron tick that starts it, the runner's job, the notifications that report its results, an
-// admin ending it), and none of them hands its context to the next. The trace id is
-// therefore derived from the stream and its version, so every step finds the same trace
-// without anything being stored, across restarts of the manager and the runner alike.
+// streamTraceID is the trace of one version of a stream, which is what ties the whole flow
+// together. Its steps are hours apart and happen in different processes (the cron tick that
+// starts it, the runner's job, the notifications that report its results, an admin ending
+// it), and none of them hands its context to the next. The trace id is therefore derived
+// from the stream and its version, so every step finds the same trace without anything
+// being stored, across restarts of the manager and the runner alike.
 //
-// The span that parents the steps is never exported, so Tempo shows them as roots. A
-// version of 0 (STREAM_VERSION_UNSPECIFIED) is the stream as a whole, for the jobs that
+// A version of 0 (STREAM_VERSION_UNSPECIFIED) is the stream as a whole, for the jobs that
 // belong to no version such as section images.
-func withStreamTrace(ctx context.Context, streamID uint64, version protobuf.StreamVersion) context.Context {
+func streamTraceID(streamID uint64, version protobuf.StreamVersion) trace.TraceID {
 	sum := sha256.Sum256([]byte(fmt.Sprintf("gocast/stream/%d/%d", streamID, version)))
-	return trace.ContextWithRemoteSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    trace.TraceID(sum[:16]),
-		SpanID:     trace.SpanID(sum[16:24]),
-		TraceFlags: trace.FlagsSampled,
-		Remote:     true,
-	}))
+	return trace.TraceID(sum[:16])
+}
+
+// withStreamTrace makes the span started next with ctx a root of the stream version's
+// trace, see streamTraceID. The steps are separate roots of one trace: they have no common
+// parent, and a made-up one would never be exported.
+func withStreamTrace(ctx context.Context, streamID uint64, version protobuf.StreamVersion) context.Context {
+	return tracing.WithTraceID(ctx, streamTraceID(streamID, version))
 }
 
 // startSpan starts a span named name below whatever trace ctx is in.

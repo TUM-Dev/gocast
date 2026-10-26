@@ -7,6 +7,7 @@ package tracing
 
 import (
 	"context"
+	crand "crypto/rand"
 	"fmt"
 	"os"
 
@@ -53,7 +54,7 @@ func Setup(ctx context.Context, service, version string) (shutdown func(context.
 		return nil, fmt.Errorf("create otel resource: %w", err)
 	}
 	// Every span is kept, there are only a handful of jobs per lecture.
-	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exp), sdktrace.WithResource(res))
+	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exp), sdktrace.WithResource(res), sdktrace.WithIDGenerator(NewIDGenerator()))
 	otel.SetTracerProvider(tp)
 	// The otelgrpc handlers inject and extract through the global propagator, which is a
 	// no-op until set: without it no trace crosses the manager's calls to the runner.
@@ -85,4 +86,42 @@ func WithTraceparent(ctx context.Context, traceparent string) context.Context {
 // but their spans still belong to the trace of the request.
 func Detach(parent context.Context) context.Context {
 	return trace.ContextWithRemoteSpanContext(context.Background(), trace.SpanContextFromContext(parent))
+}
+
+type traceIDKey struct{}
+
+// WithTraceID makes the next root span started with ctx join the trace id instead of
+// starting a trace of its own. Spans below it follow their parent as usual.
+//
+// This is how the steps of one stream version, which have no parent in common, end up in
+// one trace. The alternative, a made-up remote parent with a fixed span id, leaves every
+// span pointing at a parent that is never exported, and Tempo then shows the trace as
+// "<root span not yet received>".
+func WithTraceID(ctx context.Context, id trace.TraceID) context.Context {
+	return context.WithValue(ctx, traceIDKey{}, id)
+}
+
+// NewIDGenerator is the SDK's random generator, except that it honours WithTraceID. Setup
+// installs it; a test provider needs it to get the same trace ids.
+func NewIDGenerator() sdktrace.IDGenerator { return idGenerator{} }
+
+type idGenerator struct{}
+
+func (idGenerator) NewIDs(ctx context.Context) (trace.TraceID, trace.SpanID) {
+	tid, ok := ctx.Value(traceIDKey{}).(trace.TraceID)
+	if !ok || !tid.IsValid() {
+		_, _ = crand.Read(tid[:])
+		for !tid.IsValid() {
+			_, _ = crand.Read(tid[:])
+		}
+	}
+	return tid, idGenerator{}.NewSpanID(ctx, tid)
+}
+
+func (idGenerator) NewSpanID(context.Context, trace.TraceID) trace.SpanID {
+	var sid trace.SpanID
+	for !sid.IsValid() {
+		_, _ = crand.Read(sid[:])
+	}
+	return sid
 }

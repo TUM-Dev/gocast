@@ -7,12 +7,12 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 	"github.com/tum-dev/gocast/runner/protobuf"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -23,32 +23,57 @@ import (
 func recordSpans(t *testing.T) *tracetest.SpanRecorder {
 	t.Helper()
 	rec := tracetest.NewSpanRecorder()
-	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec)))
+	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec), sdktrace.WithIDGenerator(tracing.NewIDGenerator())))
 	t.Cleanup(func() { otel.SetTracerProvider(noop.NewTracerProvider()) })
 	return rec
 }
 
-func traceIDOf(ctx context.Context) trace.TraceID {
-	return trace.SpanContextFromContext(ctx).TraceID()
-}
-
 // The steps of a stream version find each other's trace without being told: that is the
 // only link between a cron tick, a job on a runner and an admin ending it hours later.
-func TestWithStreamTraceIsStablePerStreamVersion(t *testing.T) {
+// The steps of a stream version are roots of its trace: a parent that is never exported
+// makes Tempo show "<root span not yet received>". This goes through the real ID generator,
+// which the other tests bypass.
+func TestStreamSpansAreRootsOfTheStreamTrace(t *testing.T) {
+	rec := recordSpans(t)
+
+	version := protobuf.StreamVersion_STREAM_VERSION_COMBINED
+	ctx, span := startSpan(withStreamTrace(context.Background(), 7, version), "manager.trigger_stream")
+	_, child := startSpan(ctx, "child")
+	child.End()
+	span.End()
+
+	ended := rec.Ended()
+	if len(ended) != 2 {
+		t.Fatalf("%d spans, want 2", len(ended))
+	}
+	for _, s := range ended {
+		if s.SpanContext().TraceID() != streamTraceID(7, version) {
+			t.Errorf("%s is in trace %s, want the stream version's", s.Name(), s.SpanContext().TraceID())
+		}
+	}
+	if ended[1].Parent().IsValid() {
+		t.Errorf("%s has parent %s, want a root", ended[1].Name(), ended[1].Parent().SpanID())
+	}
+	if ended[0].Parent().SpanID() != ended[1].SpanContext().SpanID() {
+		t.Error("the child is not below the root")
+	}
+}
+
+func TestStreamTraceIDIsStablePerStreamVersion(t *testing.T) {
 	comb := protobuf.StreamVersion_STREAM_VERSION_COMBINED
 	cam := protobuf.StreamVersion_STREAM_VERSION_CAMERA
 
-	a := traceIDOf(withStreamTrace(context.Background(), 7, comb))
+	a := streamTraceID(7, comb)
 	if !a.IsValid() {
 		t.Fatal("trace id is not valid")
 	}
-	if b := traceIDOf(withStreamTrace(context.Background(), 7, comb)); a != b {
+	if b := streamTraceID(7, comb); a != b {
 		t.Errorf("same stream version: %s != %s", a, b)
 	}
-	if b := traceIDOf(withStreamTrace(context.Background(), 7, cam)); a == b {
+	if b := streamTraceID(7, cam); a == b {
 		t.Error("two versions of a stream share a trace")
 	}
-	if b := traceIDOf(withStreamTrace(context.Background(), 8, comb)); a == b {
+	if b := streamTraceID(8, comb); a == b {
 		t.Error("two streams share a trace")
 	}
 }
@@ -96,7 +121,7 @@ func TestNotifyJoinsTheTrace(t *testing.T) {
 		if len(ended) != 1 {
 			t.Fatalf("%d spans, want 1", len(ended))
 		}
-		want := traceIDOf(withStreamTrace(context.Background(), 5, protobuf.StreamVersion_STREAM_VERSION_COMBINED))
+		want := streamTraceID(5, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 		if got := ended[0].SpanContext().TraceID(); got != want {
 			t.Errorf("trace = %s, want the stream version's %s", got, want)
 		}
@@ -107,7 +132,7 @@ func TestNotifyJoinsTheTrace(t *testing.T) {
 		if len(ended) != 1 {
 			t.Fatalf("%d spans, want 1", len(ended))
 		}
-		want := traceIDOf(withStreamTrace(context.Background(), 5, protobuf.StreamVersion_STREAM_VERSION_COMBINED))
+		want := streamTraceID(5, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
 		if got := ended[0].SpanContext().TraceID(); got != want {
 			t.Errorf("trace = %s, want the stream version's %s", got, want)
 		}
