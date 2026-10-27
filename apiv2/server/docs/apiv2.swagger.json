@@ -797,6 +797,40 @@
         ]
       }
     },
+    "/admin/maintenance/reap-deleted-media": {
+      "post": {
+        "summary": "List or delete the media of soft-deleted streams.",
+        "description": "Without execute this is a dry run: it lists every file and directory that executing would delete and changes nothing. Executing needs the plan_token of a dry run and refuses if the plan has changed since. Files still referenced by a live stream or a copy are never listed. Requires the server.administer permission.",
+        "operationId": "AdminService_reapDeletedMedia",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufReapDeletedMediaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufReapDeletedMediaRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
     "/admin/maintenance/transcoding-failures": {
       "get": {
         "summary": "List transcoding failures.",
@@ -8487,6 +8521,149 @@
           "type": "string"
         }
       }
+    },
+    "protobufReapDeletedMediaRequest": {
+      "type": "object",
+      "properties": {
+        "execute": {
+          "type": "boolean",
+          "description": "execute false is a dry run: nothing is deleted. A bare request can never delete."
+        },
+        "planToken": {
+          "type": "string",
+          "description": "plan_token is required to execute: the token of the dry run the admin reviewed."
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int64",
+          "description": "offset and page_size page through the dry run's entries. page_size 0 means 500."
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufReapDeletedMediaResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufReapEntry"
+          },
+          "description": "entries is one page of the plan; empty when executing."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufReapSkipped"
+          },
+          "description": "skipped is sent on the first page only."
+        },
+        "totalEntries": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalDirs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalFiles": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "planToken": {
+          "type": "string"
+        },
+        "executed": {
+          "type": "boolean",
+          "description": "Set when executing: what was actually removed, and what could not be."
+        },
+        "deletedFiles": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "deletedBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "protobufReapEntry": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/protobufReapEntryKind"
+        },
+        "path": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "courseIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufReapEntryKind": {
+      "type": "string",
+      "enum": [
+        "REAP_ENTRY_KIND_UNSPECIFIED",
+        "REAP_ENTRY_KIND_VOD_DIR",
+        "REAP_ENTRY_KIND_VOD_FILE",
+        "REAP_ENTRY_KIND_FILE"
+      ],
+      "default": "REAP_ENTRY_KIND_UNSPECIFIED",
+      "description": " - REAP_ENTRY_KIND_VOD_DIR: A stream version's directory.\n - REAP_ENTRY_KIND_VOD_FILE: A file inside such a directory.\n - REAP_ENTRY_KIND_FILE: A File row's path: thumbnail, section image, attachment."
+    },
+    "protobufReapSkipped": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "ReapSkipped is something that looked reapable and was left alone, with the reason."
     },
     "protobufRedeemIntegrationAuthorizationRequest": {
       "type": "object",

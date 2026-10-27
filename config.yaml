@@ -100,6 +100,7 @@ mail:
   maxMailsPerMinute: 10
 paths:
   mass: runner/storage # to make development easier, files will end up here were streams also are
+  vod: runner/storage # where the runner writes <streamID>/<VERSION>/; lets the maintenance page reap deleted streams' media
   static: /var/www/static
   branding: /branding
 voiceservice:

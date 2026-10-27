@@ -1330,6 +1330,18 @@ service AdminService {
     };
   }
 
+  rpc reapDeletedMedia(ReapDeletedMediaRequest) returns (ReapDeletedMediaResponse) {
+    option (google.api.http) = {
+      post: "/admin/maintenance/reap-deleted-media"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "List or delete the media of soft-deleted streams."
+      description: "Without execute this is a dry run: it lists every file and directory that executing would delete and changes nothing. Executing needs the plan_token of a dry run and refuses if the plan has changed since. Files still referenced by a live stream or a copy are never listed. Requires the server.administer permission."
+    };
+  }
+
   // Course import reaches TUMonline directly (rather than a dao) and belongs to no
   // course yet, so it is server-wide like runners and info pages.
   rpc searchCourseImportSchedule(CourseImportSearchRequest) returns (CourseImportSearchResponse) {
@@ -2384,6 +2396,59 @@ message ListMaintenanceEmailFailuresResponse {
 
 message DeleteMaintenanceEmailFailureRequest {
   uint32 id = 1;
+}
+
+message ReapDeletedMediaRequest {
+  // execute false is a dry run: nothing is deleted. A bare request can never delete.
+  bool execute = 1;
+  // plan_token is required to execute: the token of the dry run the admin reviewed.
+  string plan_token = 2;
+  // offset and page_size page through the dry run's entries. page_size 0 means 500.
+  uint32 offset = 3;
+  uint32 page_size = 4;
+}
+
+enum ReapEntryKind {
+  REAP_ENTRY_KIND_UNSPECIFIED = 0;
+  // A stream version's directory.
+  REAP_ENTRY_KIND_VOD_DIR = 1;
+  // A file inside such a directory.
+  REAP_ENTRY_KIND_VOD_FILE = 2;
+  // A File row's path: thumbnail, section image, attachment.
+  REAP_ENTRY_KIND_FILE = 3;
+}
+
+message ReapEntry {
+  ReapEntryKind kind = 1;
+  string path = 2;
+  uint64 bytes = 3;
+  repeated uint32 stream_ids = 4;
+  repeated uint32 course_ids = 5;
+  google.protobuf.Timestamp deleted_at = 6;
+}
+
+// ReapSkipped is something that looked reapable and was left alone, with the reason.
+message ReapSkipped {
+  string path = 1;
+  repeated uint32 stream_ids = 2;
+  string reason = 3;
+}
+
+message ReapDeletedMediaResponse {
+  // entries is one page of the plan; empty when executing.
+  repeated ReapEntry entries = 1;
+  // skipped is sent on the first page only.
+  repeated ReapSkipped skipped = 2;
+  uint32 total_entries = 3;
+  uint32 total_dirs = 4;
+  uint32 total_files = 5;
+  uint64 total_bytes = 6;
+  string plan_token = 7;
+  // Set when executing: what was actually removed, and what could not be.
+  bool executed = 8;
+  uint32 deleted_files = 9;
+  uint64 deleted_bytes = 10;
+  repeated string errors = 11;
 }
 
 ///////////////////////////////

@@ -3784,6 +3784,7 @@ const (
 	AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName = "/protobuf.AdminService/deleteMaintenanceTranscodingFailure"
 	AdminService_ListMaintenanceEmailFailures_FullMethodName        = "/protobuf.AdminService/listMaintenanceEmailFailures"
 	AdminService_DeleteMaintenanceEmailFailure_FullMethodName       = "/protobuf.AdminService/deleteMaintenanceEmailFailure"
+	AdminService_ReapDeletedMedia_FullMethodName                    = "/protobuf.AdminService/reapDeletedMedia"
 	AdminService_SearchCourseImportSchedule_FullMethodName          = "/protobuf.AdminService/searchCourseImportSchedule"
 	AdminService_ImportCourseImportCourses_FullMethodName           = "/protobuf.AdminService/importCourseImportCourses"
 	AdminService_ListTokens_FullMethodName                          = "/protobuf.AdminService/listTokens"
@@ -3844,6 +3845,7 @@ type AdminServiceClient interface {
 	DeleteMaintenanceTranscodingFailure(ctx context.Context, in *DeleteMaintenanceTranscodingFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(ctx context.Context, in *DeleteMaintenanceEmailFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReapDeletedMedia(ctx context.Context, in *ReapDeletedMediaRequest, opts ...grpc.CallOption) (*ReapDeletedMediaResponse, error)
 	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
 	// course yet, so it is server-wide like runners and info pages.
 	SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error)
@@ -4134,6 +4136,16 @@ func (c *adminServiceClient) DeleteMaintenanceEmailFailure(ctx context.Context, 
 	return out, nil
 }
 
+func (c *adminServiceClient) ReapDeletedMedia(ctx context.Context, in *ReapDeletedMediaRequest, opts ...grpc.CallOption) (*ReapDeletedMediaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReapDeletedMediaResponse)
+	err := c.cc.Invoke(ctx, AdminService_ReapDeletedMedia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseImportSearchResponse)
@@ -4354,6 +4366,7 @@ type AdminServiceServer interface {
 	DeleteMaintenanceTranscodingFailure(context.Context, *DeleteMaintenanceTranscodingFailureRequest) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(context.Context, *emptypb.Empty) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error)
+	ReapDeletedMedia(context.Context, *ReapDeletedMediaRequest) (*ReapDeletedMediaResponse, error)
 	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
 	// course yet, so it is server-wide like runners and info pages.
 	SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error)
@@ -4468,6 +4481,9 @@ func (UnimplementedAdminServiceServer) ListMaintenanceEmailFailures(context.Cont
 }
 func (UnimplementedAdminServiceServer) DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMaintenanceEmailFailure not implemented")
+}
+func (UnimplementedAdminServiceServer) ReapDeletedMedia(context.Context, *ReapDeletedMediaRequest) (*ReapDeletedMediaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReapDeletedMedia not implemented")
 }
 func (UnimplementedAdminServiceServer) SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchCourseImportSchedule not implemented")
@@ -4994,6 +5010,24 @@ func _AdminService_DeleteMaintenanceEmailFailure_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ReapDeletedMedia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReapDeletedMediaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ReapDeletedMedia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ReapDeletedMedia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ReapDeletedMedia(ctx, req.(*ReapDeletedMediaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_SearchCourseImportSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CourseImportSearchRequest)
 	if err := dec(in); err != nil {
@@ -5424,6 +5458,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteMaintenanceEmailFailure",
 			Handler:    _AdminService_DeleteMaintenanceEmailFailure_Handler,
+		},
+		{
+			MethodName: "reapDeletedMedia",
+			Handler:    _AdminService_ReapDeletedMedia_Handler,
 		},
 		{
 			MethodName: "searchCourseImportSchedule",

@@ -294,6 +294,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
+		apiv2.WithVODStorage(tools.Cfg.Paths.Vod),
 		apiv2.WithSectionImages(sectionimages.SectionImages{Manager: manager}),
 		apiv2.WithPostProcessing(postprocessing.PostProcessing{Manager: manager}),
 		apiv2.WithUploads(uploads.Uploads{Manager: manager}),
