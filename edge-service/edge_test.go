@@ -339,3 +339,44 @@ func TestAddJWTToSegments(t *testing.T) {
 		t.Errorf("crlf: got %q, want %q", got, want)
 	}
 }
+
+func TestDownloadLimit(t *testing.T) {
+	restoreGlobals(t)
+	jwtPubKey = nil // no token validation: this is about the slots
+	target := "/vod/a/comb.m3u8"
+
+	for i := 0; i < maxConcurrentDownloads; i++ {
+		downloadSlots <- struct{}{}
+	}
+	t.Cleanup(func() {
+		for len(downloadSlots) > 0 {
+			<-downloadSlots
+		}
+	})
+
+	for name, url := range map[string]string{"download": target + "?download=1", "probe": target + "?download=1&probe=1"} {
+		t.Run(name+" is rejected when full", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			downloadHandler(w, httptest.NewRequest(http.MethodGet, url, nil))
+			if w.Code != http.StatusServiceUnavailable {
+				t.Errorf("expected 503, got %d", w.Code)
+			}
+			if got := w.Header().Get("Retry-After"); got != "60" {
+				t.Errorf("Retry-After = %q, want 60", got)
+			}
+			if w.Header().Get("Access-Control-Allow-Origin") == "" {
+				t.Error("the watch page could not read the rejection")
+			}
+		})
+	}
+
+	<-downloadSlots
+	w := httptest.NewRecorder()
+	downloadHandler(w, httptest.NewRequest(http.MethodGet, target+"?download=1&probe=1", nil))
+	if w.Code != http.StatusNoContent {
+		t.Errorf("probe with a free slot: expected 204, got %d", w.Code)
+	}
+	if len(downloadSlots) != maxConcurrentDownloads-1 {
+		t.Error("a probe must not keep a slot")
+	}
+}
