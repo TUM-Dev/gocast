@@ -47,7 +47,7 @@ test.describe("the maintenance page", () => {
     test("the run button stays disabled until a job is chosen", async ({ page }) => {
       await login(page, users.admin, "/admin/maintenance");
 
-      await expect(page.getByRole("button", { name: "Run" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Run", exact: true })).toBeDisabled();
     });
 
     test("runs a chosen job and reports success", async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe("the maintenance page", () => {
       // reapStaleStreams only reads and reconciles state for streams stuck live; the
       // fixture has none, so running it here changes nothing it would break.
       await page.getByRole("combobox", { name: "Cron job" }).selectOption("reapStaleStreams");
-      await page.getByRole("button", { name: "Run" }).click();
+      await page.getByRole("button", { name: "Run", exact: true }).click();
 
       await expect(page.getByRole("status")).toHaveText("Job has been triggered.");
     });
