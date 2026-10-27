@@ -100,7 +100,7 @@ mail:
   maxMailsPerMinute: 10
 paths:
   mass: runner/storage # to make development easier, files will end up here were streams also are
-  vod: runner/storage # where the runner writes <streamID>/STREAM_VERSION_<X>/; lets the maintenance page reap deleted streams' media
+  vod: runner/storage # the directory the edge serves as /vod/ (the runner's STORAGE_PATH); lets the maintenance page reap deleted streams' media
   static: /var/www/static
   branding: /branding
 voiceservice:

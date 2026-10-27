@@ -54,7 +54,7 @@ func setup(t *testing.T) (vodRoot, massRoot string, opt Options) {
 			t.Fatal(err)
 		}
 	}
-	return vodRoot, massRoot, Options{VODRoot: vodRoot, MassRoot: massRoot, Cutoff: now.Add(-month)}
+	return vodRoot, massRoot, Options{VODRoot: vodRoot, EdgeHost: "edge.live.rbg.tum.de", MassRoot: massRoot, Cutoff: now.Add(-month)}
 }
 
 func TestListsEveryFileOfAReapableStream(t *testing.T) {
@@ -167,21 +167,76 @@ func TestTheGracePeriodIsRespected(t *testing.T) {
 	}
 }
 
-func TestOtherURLShapesAreSkippedNotGuessed(t *testing.T) {
+// Only URLs the edge serves from the VOD volume map to a path. Another host's /vod/ is
+// not this volume, and nothing may name a path outside the root.
+func TestOnlyURLsFromOurEdgeAreMapped(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "x_2023.mp4", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "_definst_", "mp4:tum", "x", "playlist.m3u8"), "x")
 	streams := []Stream{{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{
-		"https://edge.live.rbg.tum.de/vod/x_2023.mp4/playlist.m3u8",
-		"https://live.stream.lrz.de/livetum/smil:_all.smil/playlist.m3u8",
-		"https://edge.live.rbg.tum.de/vod/../../etc/STREAM_VERSION_COMBINED/playlist.m3u8",
+		"https://live.stream.lrz.de/vod/_definst_/mp4:tum/x/playlist.m3u8",
+		"https://edge.live.rbg.tum.de/itocm2.cit.tum.de/65059/STREAM_VERSION_COMBINED/playlist.m3u8",
+		"https://edge.live.rbg.tum.de/vod/../../etc/playlist.m3u8",
+	}}, {ID: 11, DeletedAt: ago(2 * month), URLs: [3]string{
+		"https://edge.live.rbg.tum.de/vod/a//b/playlist.m3u8",
+		"https://edge.live.rbg.tum.de/vod/playlist.m3u8",
+		"https://edge.live.rbg.tum.de/vod/a/playlist.m3u8?x=1",
 	}}}
 
 	plan, err := Build(streams, nil, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(plan.Entries) != 0 || len(plan.Skipped) != 3 {
-		t.Fatalf("entries = %v, skipped = %d, want nothing planned and 3 skipped", paths(plan), len(plan.Skipped))
+	if len(plan.Entries) != 0 || len(plan.Skipped) != 6 {
+		t.Fatalf("entries = %v, skipped = %d, want nothing planned and 6 skipped", paths(plan), len(plan.Skipped))
+	}
+}
+
+// The vod-service keys a directory by name, so many streams can share one; it goes
+// only when none of them is left.
+func TestNameKeyedDirectoriesAreListedAndShared(t *testing.T) {
+	vodRoot, _, opt := setup(t)
+	mp4 := func(name string) string { return "https://edge.live.rbg.tum.de/vod/" + name + "/playlist.m3u8" }
+	write(t, filepath.Join(vodRoot, "SoSe22_2022_05_27.mp4", "segment0000.ts"), "x")
+	write(t, filepath.Join(vodRoot, "gone_2022.mp4", "segment0000.ts"), "yy")
+	streams := []Stream{
+		{ID: 1, DeletedAt: ago(12 * month), URLs: [3]string{mp4("SoSe22_2022_05_27.mp4")}},
+		{ID: 2, URLs: [3]string{mp4("SoSe22_2022_05_27.mp4")}}, // same name, still live
+		{ID: 3, DeletedAt: ago(12 * month), URLs: [3]string{mp4("gone_2022.mp4")}},
+	}
+
+	plan, err := Build(streams, nil, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := filepath.Join(vodRoot, "gone_2022.mp4")
+	if got := paths(plan); len(got) != 2 || got[0] != want {
+		t.Fatalf("entries = %v, want only %s and its segment", got, want)
+	}
+}
+
+// A kept directory nested inside a candidate would be deleted with it, and a candidate
+// inside a kept directory is part of what it serves.
+func TestNestedDirectoriesAreNotDeletedFromUnderAKeptOne(t *testing.T) {
+	vodRoot, _, opt := setup(t)
+	u := func(rel string) string { return "https://edge.live.rbg.tum.de/vod/" + rel + "/playlist.m3u8" }
+	write(t, filepath.Join(vodRoot, "a", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "a", "b", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "c", "d", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "c", "playlist.m3u8"), "x")
+	streams := []Stream{
+		{ID: 1, DeletedAt: ago(2 * month), URLs: [3]string{u("a")}}, // a kept stream lives in a/b
+		{ID: 2, URLs: [3]string{u("a/b")}},
+		{ID: 3, DeletedAt: ago(2 * month), URLs: [3]string{u("c/d")}}, // inside the kept c
+		{ID: 4, URLs: [3]string{u("c")}},
+	}
+
+	plan, err := Build(streams, nil, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Entries) != 0 || len(plan.Skipped) != 2 {
+		t.Fatalf("entries = %v, skipped = %d, want both kept", paths(plan), len(plan.Skipped))
 	}
 }
 
@@ -397,5 +452,53 @@ func TestTheDirectoryKeepsTheStreamVersionPrefix(t *testing.T) {
 	}
 	if got := paths(plan); len(got) != 2 || got[0] != want {
 		t.Fatalf("entries = %v, want %s and its segment only", got, want)
+	}
+}
+
+func courseVod(course, id, version string) string {
+	return "https://edge.live.rbg.tum.de/vod/" + course + "/" + id + "/" + version + "/playlist.m3u8"
+}
+
+// Stream 12278 of course 239 on the production volume: three versions under
+// /vod/239/12278/, each with a playlist and numbered segments.
+func TestListsTheCourseStreamLayout(t *testing.T) {
+	vodRoot, _, opt := setup(t)
+	for _, v := range []string{"COMB", "CAM", "PRES"} {
+		write(t, filepath.Join(vodRoot, "239", "12278", v, "playlist.m3u8"), "x")
+		write(t, filepath.Join(vodRoot, "239", "12278", v, "segment0000.ts"), "yy")
+	}
+	s := Stream{ID: 12278, CourseID: 239, DeletedAt: ago(12 * month), URLs: [3]string{
+		courseVod("239", "12278", "COMB"), courseVod("239", "12278", "PRES"), courseVod("239", "12278", "CAM"),
+	}}
+
+	plan, err := Build([]Stream{s}, nil, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.Dirs != 3 || plan.Files != 6 || len(plan.Skipped) != 0 {
+		t.Fatalf("dirs, files, skipped = %d, %d, %d, want 3, 6, 0: %v", plan.Dirs, plan.Files, len(plan.Skipped), paths(plan))
+	}
+
+	Execute(plan)
+	if exists(filepath.Join(vodRoot, "239", "12278")) {
+		t.Error("the stream's directory is still there")
+	}
+}
+
+// Copies of old recordings name the original's course and stream, even in another course.
+func TestACopyProtectsTheCourseStreamLayoutToo(t *testing.T) {
+	vodRoot, _, opt := setup(t)
+	write(t, filepath.Join(vodRoot, "239", "12278", "COMB", "playlist.m3u8"), "x")
+	streams := []Stream{
+		{ID: 12278, CourseID: 239, DeletedAt: ago(12 * month), URLs: [3]string{courseVod("239", "12278", "COMB")}},
+		{ID: 70000, CourseID: 484, URLs: [3]string{courseVod("239", "12278", "COMB")}},
+	}
+
+	plan, err := Build(streams, nil, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Entries) != 0 || len(plan.Skipped) != 1 {
+		t.Fatalf("entries = %v, skipped = %d, want the directory kept", paths(plan), len(plan.Skipped))
 	}
 }

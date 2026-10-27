@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,13 +22,18 @@ import (
 	"time"
 )
 
-// vodURL matches the playlist URLs the runner reports, https://<edge>/vod/<streamID>/
-// STREAM_VERSION_<X>/playlist.m3u8, which edge serves from <vodRoot>/<streamID>/
-// STREAM_VERSION_<X>/. The directory keeps the full enum name, prefix included: the
-// runner joins the same string into the path and the URL. Older shapes (/vod/<name>.mp4/, old edge hosts, external LRZ URLs) do not
-// say reliably where their files are, or share a directory by name; they never match
-// and are reported as skipped rather than guessed at.
-var vodURL = regexp.MustCompile(`^https?://[^/]+/vod/([0-9]+)/(STREAM_VERSION_[A-Z_]+)/playlist\.m3u8$`)
+// A playlist URL on the edge, https://<edge>/vod/<dir>/playlist.m3u8, is served from
+// <vodRoot>/<dir>/. That one rule covers every layout the volume has seen: the current
+// <streamID>/STREAM_VERSION_<X>/ (the runner joins the same string into path and URL),
+// the older <courseID>/<streamID>/<COMB|CAM|PRES>/, and the name-keyed <name>.mp4/ of
+// the vod-service. URLs on any other host, or outside /vod/, are not on this volume
+// and never match; they are reported as skipped rather than guessed at.
+var (
+	// currentLayout and courseLayout pick the stream ID out of the two layouts that name one, so a live stream
+	// can protect the directories carrying its own ID while its URL is still blank.
+	currentLayout = regexp.MustCompile(`^([0-9]+)/STREAM_VERSION_[A-Z_]+$`)
+	courseLayout  = regexp.MustCompile(`^[0-9]+/([0-9]+)/(COMB|CAM|PRES)$`)
+)
 
 // Stream is the part of a stream the planner needs.
 type Stream struct {
@@ -87,9 +93,10 @@ type Plan struct {
 
 // Options say where files live and which streams count as reapable.
 type Options struct {
-	// VODRoot holds <streamID>/STREAM_VERSION_<X>/ directories. Empty: VOD directories are not
-	// planned.
+	// VODRoot is what the edge serves as /vod/. Empty: VOD directories are not planned.
 	VODRoot string
+	// EdgeHost is the host whose /vod/ URLs point into VODRoot.
+	EdgeHost string
 	// MassRoot bounds File paths: nothing outside it is ever listed.
 	MassRoot string
 	// Cutoff: only streams soft-deleted before it are reapable, so un-deleting a course
@@ -97,9 +104,32 @@ type Options struct {
 	Cutoff time.Time
 }
 
-type dirKey struct{ id, version string }
+// dirKey is a stream version's directory relative to the VOD root, slash-separated.
+type dirKey string
 
-func (k dirKey) path(root string) string { return filepath.Join(root, k.id, k.version) }
+func (k dirKey) path(root string) string { return filepath.Join(root, filepath.FromSlash(string(k))) }
+
+// ownerID is the stream a directory is named after, or "" when its name carries none.
+func ownerID(k dirKey) string {
+	if m := currentLayout.FindStringSubmatch(string(k)); m != nil {
+		return m[1]
+	}
+	if m := courseLayout.FindStringSubmatch(string(k)); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
+// ancestors lists the directories above k, nearest last, excluding the root.
+func (k dirKey) ancestors() []dirKey {
+	var out []dirKey
+	for i, c := range k {
+		if c == '/' {
+			out = append(out, k[:i])
+		}
+	}
+	return out
+}
 
 type owners struct {
 	streams []uint
@@ -121,7 +151,10 @@ func (o *owners) add(s Stream) {
 
 // kept is what the streams that stay still use.
 type kept struct {
-	dirs  map[dirKey][]uint
+	dirs map[dirKey][]uint
+	// under maps a directory to the kept directories nested below it, which deleting
+	// it would take along.
+	under map[dirKey][]uint
 	ids   map[string]uint
 	files map[string][]uint
 }
@@ -158,14 +191,17 @@ func Build(streams []Stream, files []File, opt Options) (*Plan, error) {
 // keptBy collects what every other stream still uses. Live streams, and ones deleted
 // too recently, protect their files even when a deleted stream names the same ones.
 func (p *planner) keptBy(streams []Stream, files []File) kept {
-	k := kept{dirs: map[dirKey][]uint{}, ids: map[string]uint{}, files: map[string][]uint{}}
+	k := kept{dirs: map[dirKey][]uint{}, under: map[dirKey][]uint{}, ids: map[string]uint{}, files: map[string][]uint{}}
 	for _, s := range streams {
 		if _, ok := p.candidate[s.ID]; ok {
 			continue
 		}
 		for _, u := range s.URLs {
-			if d, ok := parseVOD(u); ok {
+			if d, ok := parseVOD(u, p.opt.EdgeHost); ok {
 				k.dirs[d] = append(k.dirs[d], s.ID)
+				for _, a := range d.ancestors() {
+					k.under[a] = append(k.under[a], s.ID)
+				}
 			}
 		}
 		// A stream keeps the directories named after its own ID even while its URL is
@@ -199,9 +235,9 @@ func (p *planner) collect(files []File) (map[dirKey]*owners, map[string]*owners)
 			if u == "" {
 				continue
 			}
-			k, ok := parseVOD(u)
+			k, ok := parseVOD(u, p.opt.EdgeHost)
 			if !ok {
-				p.skip(u, []uint{s.ID}, "not a current-format VOD URL, location unknown")
+				p.skip(u, []uint{s.ID}, "not served from the edge's /vod/, so not on this volume")
 				continue
 			}
 			if p.opt.VODRoot == "" {
@@ -250,6 +286,20 @@ func (p *planner) skip(path string, streams []uint, reason string) {
 	p.plan.Skipped = append(p.plan.Skipped, Skipped{Path: path, StreamIDs: streams, Reason: reason})
 }
 
+// keptBelow lists the kept streams that make deleting the directory unsafe: those using
+// it, one nested in it, or one it is nested in.
+func (p *planner) keptBelow(k dirKey) []uint {
+	by := append([]uint(nil), p.kept.dirs[k]...)
+	by = append(by, p.kept.under[k]...)
+	for _, a := range k.ancestors() {
+		by = append(by, p.kept.dirs[a]...)
+	}
+	if id, ok := p.kept.ids[ownerID(k)]; ok {
+		by = append(by, id)
+	}
+	return by
+}
+
 func (p *planner) planDirs(dirs map[dirKey]*owners) error {
 	keys := make([]dirKey, 0, len(dirs))
 	for k := range dirs {
@@ -267,10 +317,7 @@ func (p *planner) planDirs(dirs map[dirKey]*owners) error {
 		if err != nil {
 			return err
 		}
-		by := p.kept.dirs[k]
-		if id, ok := p.kept.ids[k.id]; ok {
-			by = append(by, id)
-		}
+		by := p.keptBelow(k)
 		if len(by) > 0 {
 			p.skip(path, o.streams, fmt.Sprintf("still used by stream %s", idList(by)))
 			continue
@@ -397,12 +444,26 @@ func Execute(plan *Plan) Result {
 	return res
 }
 
-func parseVOD(u string) (dirKey, bool) {
-	m := vodURL.FindStringSubmatch(u)
-	if m == nil {
-		return dirKey{}, false
+func parseVOD(raw, host string) (dirKey, bool) {
+	u, err := url.Parse(raw)
+	if err != nil || host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Host != host || u.RawQuery != "" || u.Fragment != "" {
+		return "", false
 	}
-	return dirKey{id: m[1], version: m[2]}, true
+	rel, ok := strings.CutPrefix(u.Path, "/vod/")
+	if !ok {
+		return "", false
+	}
+	rel, ok = strings.CutSuffix(rel, "/playlist.m3u8")
+	if !ok || rel == "" {
+		return "", false
+	}
+	// The path comes from a database column; nothing in it may step out of the root.
+	for _, seg := range strings.Split(rel, "/") {
+		if seg == "" || seg == "." || seg == ".." || strings.ContainsAny(seg, "\\\x00") {
+			return "", false
+		}
+	}
+	return dirKey(rel), true
 }
 
 // within reports whether p is strictly below root, lexically.

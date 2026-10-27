@@ -128,7 +128,7 @@ type Config struct {
 	Paths struct {
 		Static string `yaml:"static"`
 		Mass   string `yaml:"mass"`
-		// Vod is where the runner writes <streamID>/STREAM_VERSION_<X>/ directories, mounted
+		// Vod is the directory the edge serves as /vod/ (the runner's STORAGE_PATH), mounted
 		// into this server for reaping the media of deleted streams. Optional: empty
 		// disables reaping.
 		Vod      string `yaml:"vod"`
