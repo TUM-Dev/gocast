@@ -35,6 +35,7 @@ func reapAPI(t *testing.T, streams []dao.ReapStream, files []dao.ReapFile) (*API
 		dao:         dao.DaoWrapper{MediaReapDao: reap, AuditDao: audits},
 		log:         slog.Default(),
 		vodStorage:  vod,
+		vodEdgeHost: "edge.live.rbg.tum.de",
 		massStorage: mass,
 	}
 	return api, root, got
@@ -202,5 +203,19 @@ func TestReapDeletedMediaNeverExecutesInTestEnv(t *testing.T) {
 	}
 	if len(*audits) != 0 {
 		t.Errorf("audits = %+v, want none", *audits)
+	}
+}
+
+// Without the edge host every URL would be skipped as foreign and the dry run would read
+// as "nothing to delete"; that has to be an error instead.
+func TestReapDeletedMediaNeedsToKnowTheEdgeHost(t *testing.T) {
+	api, _, _ := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
+	api.vodEdgeHost = ""
+	prev := tools.Cfg.VodURLTemplate
+	tools.Cfg.VodURLTemplate = ""
+	t.Cleanup(func() { tools.Cfg.VodURLTemplate = prev })
+
+	if _, err := api.ReapDeletedMedia(ctxAs(user(1, "A", "a@example.org", model.AdminType)), &protobuf.ReapDeletedMediaRequest{}); err == nil {
+		t.Fatal("answered without knowing which host serves /vod/")
 	}
 }

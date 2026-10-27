@@ -59,7 +59,7 @@ mail:
   # smimekeypassword: changeme # only if the key is password protected
 paths:
   mass: /share
-  # vod: /vod # optional: the runner's <streamID>/STREAM_VERSION_<X>/ directories (its STORAGE_PATH), mounted read-write
+  # vod: /vod # optional: the edge's /vod/ directory (the runner's STORAGE_PATH), mounted read-write
   #   here to delete the video files of deleted streams under Admin > Maintenance > Deleted Media
   static: /var/www/public
   branding: /etc/TUM-Live/branding

@@ -62,7 +62,9 @@ type API struct {
 	// Where the runner's VOD directories are mounted, and the dry run kept for paging;
 	// see WithVODStorage and ReapDeletedMedia.
 	vodStorage string
-	reapCache  reapCache
+	// The host whose /vod/ URLs point into vodStorage. Empty: taken from vodURLTemplate.
+	vodEdgeHost string
+	reapCache   reapCache
 	// Pushes per-stream events to the realtime socket. New gives every API one of its
 	// own; WithRealtimeHub shares it with the producers outside this package.
 	hub realtimehub.Hub

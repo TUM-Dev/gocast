@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,8 +32,8 @@ const (
 	reapPlanTTL = 15 * time.Minute
 )
 
-// WithVODStorage sets where the runner's <streamID>/STREAM_VERSION_<X>/ directories are mounted
-// into this server. Optional: without it ReapDeletedMedia answers 503, since reaping
+// WithVODStorage sets where the edge's /vod/ directory (the runner's and the vod-service's
+// recordings) is mounted into this server. Optional: without it ReapDeletedMedia answers 503, since reaping
 // needs to see the files it lists.
 func WithVODStorage(dir string) Option {
 	return func(a *API) { a.vodStorage = dir }
@@ -178,8 +180,13 @@ func (a *API) reapPlan() (*mediareap.Plan, error) {
 		inFiles = append(inFiles, mediareap.File{StreamID: f.StreamID, Path: f.Path, Deleted: f.DeletedAt.Valid})
 	}
 
+	if a.vodStorage != "" && a.edgeHost() == "" {
+		// Every VOD URL would be skipped as foreign, which reads as "nothing to delete".
+		return nil, e.WithStatus(http.StatusServiceUnavailable, errors.New("vodURLTemplate is not configured, so the edge host of VOD URLs is unknown"))
+	}
 	plan, err := mediareap.Build(in, inFiles, mediareap.Options{
 		VODRoot:  a.vodStorage,
+		EdgeHost: a.edgeHost(),
 		MassRoot: a.massStorage,
 		Cutoff:   time.Now().Add(-reapGracePeriod),
 	})
@@ -213,4 +220,17 @@ func uints(ids []uint) []uint32 {
 		out = append(out, uint32(id))
 	}
 	return out
+}
+
+// edgeHost is the host whose /vod/ playlist URLs are served from the VOD volume: the one
+// new recordings get, which vodURLTemplate carries (https://<edge>/vod/%s.mp4/...).
+func (a *API) edgeHost() string {
+	if a.vodEdgeHost != "" {
+		return a.vodEdgeHost
+	}
+	u, err := url.Parse(strings.ReplaceAll(tools.Cfg.VodURLTemplate, "%s", "x"))
+	if err != nil {
+		return ""
+	}
+	return u.Host
 }
