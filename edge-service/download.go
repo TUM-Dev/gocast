@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -19,7 +20,28 @@ func contentDisposition(name string) string {
 	return "attachment"
 }
 
+// maxConcurrentDownloads bounds the remuxes running at once: each one holds a
+// lecture-sized temp file until it has been sent, so unbounded downloads can fill the disk
+// and fail every other download with it.
+const maxConcurrentDownloads = 5
+
+// downloadRetryAfter is what rejected clients are told to wait; a remux takes up to about
+// a minute, so by then a slot has usually freed.
+const downloadRetryAfter = 60
+
+var downloadSlots = make(chan struct{}, maxConcurrentDownloads)
+
+// rejectDownloadBusy answers 503 with a Retry-After. It is rejected instead of queued: a
+// queued request sends no bytes for as long as it waits, which proxies and browsers time
+// out and which looks like a hang. The CORS header lets the watch page read the status.
+func rejectDownloadBusy(w http.ResponseWriter) {
+	w.Header().Set("Retry-After", strconv.Itoa(downloadRetryAfter))
+	http.Error(w, "too many downloads are running, try again in a minute", http.StatusServiceUnavailable)
+}
+
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	// Set before anything can fail, so the page can also read a 403 or 503 from the probe.
+	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 	var jwtClaims *JWTPlaylistClaims
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
@@ -29,6 +51,27 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 			jwtClaims = claims
 		}
 	}
+	// A probe lets the watch page learn whether a download would be accepted before it
+	// navigates to it: a rejected navigation would replace the page with the error. It
+	// takes no slot, so it can still race with other downloads; the real request is
+	// checked again below.
+	if r.URL.Query().Get("probe") != "" {
+		if len(downloadSlots) >= cap(downloadSlots) {
+			rejectDownloadBusy(w)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	select {
+	case downloadSlots <- struct{}{}:
+		defer func() { <-downloadSlots }()
+	default:
+		rejectDownloadBusy(w)
+		return
+	}
+
 	if jwtClaims != nil {
 		vodsDownloaded.WithLabelValues(jwtClaims.StreamID, jwtClaims.CourseID).Inc()
 	}
