@@ -437,6 +437,8 @@ mail:
   # smimekeypassword: changeme # only if the key is password protected
 paths:
   mass: /share
+  # vod: /vod # optional: the runner's <streamID>/<VERSION>/ directories (its STORAGE_PATH), mounted read-write
+  #   here to delete the video files of deleted streams under Admin > Maintenance > Deleted Media
   static: /var/www/public
   branding: /etc/TUM-Live/branding
 weburl: https://live.rbg.tum.de

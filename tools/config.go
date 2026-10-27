@@ -126,8 +126,12 @@ type Config struct {
 		IdpColor       string   `yaml:"idpColor"`
 	} `yaml:"saml"`
 	Paths struct {
-		Static   string `yaml:"static"`
-		Mass     string `yaml:"mass"`
+		Static string `yaml:"static"`
+		Mass   string `yaml:"mass"`
+		// Vod is where the runner writes <streamID>/<VERSION>/ directories, mounted
+		// into this server for reaping the media of deleted streams. Optional: empty
+		// disables reaping.
+		Vod      string `yaml:"vod"`
 		Branding string `yaml:"branding"`
 	} `yaml:"paths"`
 	Auths struct {
