@@ -14,6 +14,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func reapAPI(t *testing.T, streams []dao.ReapStream, files []dao.ReapFile) (*API, string, *[]model.Audit) {
@@ -171,5 +172,35 @@ func TestReapDeletedMediaWithoutStorageAnswers503(t *testing.T) {
 	api := &API{log: slog.Default()}
 	if _, err := api.ReapDeletedMedia(ctxAs(user(1, "A", "a@example.org", model.AdminType)), &protobuf.ReapDeletedMediaRequest{}); err == nil {
 		t.Fatal("answered without any storage configured")
+	}
+}
+
+// A --test-env server holds a copy of the database against prod's storage; it may list
+// what would go but must never delete.
+func TestReapDeletedMediaNeverExecutesInTestEnv(t *testing.T) {
+	api, root, audits := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
+	seg := filepath.Join(root, "vod", "10", "COMBINED", "00000.ts")
+	writeReapFile(t, seg)
+	ctx := ctxAs(user(1, "A", "a@example.org", model.AdminType))
+
+	dry, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prev := tools.TestEnv
+	tools.TestEnv = tools.TestEnvPolicy{Enabled: true}
+	t.Cleanup(func() { tools.TestEnv = prev })
+
+	if _, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{}); err != nil {
+		t.Errorf("a dry run was refused in --test-env: %v", err)
+	}
+	if _, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{Execute: true, PlanToken: dry.PlanToken}); err == nil {
+		t.Fatal("executed in --test-env")
+	}
+	if _, err := os.Stat(seg); err != nil {
+		t.Error("a file was removed in --test-env")
+	}
+	if len(*audits) != 0 {
+		t.Errorf("audits = %+v, want none", *audits)
 	}
 }

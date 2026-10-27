@@ -13,6 +13,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/mediareap"
 )
 
@@ -77,6 +78,12 @@ func (a *API) ReapDeletedMedia(ctx context.Context, req *protobuf.ReapDeletedMed
 		return a.reapDryRun(req)
 	}
 
+	// --test-env serves a copy of the production database against prod's storage. The
+	// copy ages, so its idea of what is deleted and what is still referenced can be
+	// wrong, and a delete there would hit files production uses. Listing stays allowed.
+	if tools.TestEnv.Enabled {
+		return nil, e.WithStatus(http.StatusForbidden, errors.New("deleting media is disabled in --test-env"))
+	}
 	if req.GetPlanToken() == "" {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("run a dry run first and pass its plan_token"))
 	}
