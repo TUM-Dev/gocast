@@ -97,6 +97,10 @@ func TestCourseAdminRefusesCourseZero(t *testing.T) {
 			_, err := api.DeleteCourse(ctx, &protobuf.DeleteCourseRequest{})
 			return err
 		},
+		"exportCourseVideos": func() error {
+			_, err := api.ExportCourseVideos(ctx, &protobuf.ExportCourseVideosRequest{})
+			return err
+		},
 		"listCourseAdmins": func() error {
 			_, err := api.ListCourseAdmins(ctx, &protobuf.ListCourseAdminsRequest{})
 			return err

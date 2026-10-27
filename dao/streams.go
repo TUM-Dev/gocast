@@ -29,6 +29,7 @@ type StreamsDao interface {
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetAllStreams() ([]model.Stream, error)
+	GetRecordedStreamsForExport(ctx context.Context, courseID uint) ([]model.Stream, error)
 	ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
@@ -327,6 +328,19 @@ func (d streamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier st
 func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
+	return res, err
+}
+
+// GetRecordedStreamsForExport returns the recorded streams of a course, oldest first, with only
+// the columns a download link needs. GetCourseById would also preload progress, sections and
+// files of every stream, which an export never reads.
+func (d streamsDao) GetRecordedStreamsForExport(ctx context.Context, courseID uint) ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.WithContext(ctx).
+		Select("id", "course_id", "name", "start", "recording", "playlist_url", "playlist_url_cam", "playlist_url_pres").
+		Where("course_id = ? AND recording = ?", courseID, true).
+		Order("start asc, id asc").
+		Find(&res).Error
 	return res, err
 }
 

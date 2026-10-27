@@ -2254,6 +2254,53 @@
         ]
       }
     },
+    "/courses/{courseId}/export/videos": {
+      "get": {
+        "summary": "List download links for every recorded video of a course.",
+        "description": "Returns one signed download link per recorded lecture and version, with a ready-made file name. All available versions (combined, presentation, camera) are listed by default; pass a kind to narrow it to one. Versions a lecture does not have are skipped. The links expire after a few hours, so fetch them one after another and call this again for a long course. Requires administering the course.",
+        "operationId": "CourseService_exportCourseVideos",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufExportCourseVideosResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "kind",
+            "description": "Which version to export. Unspecified means every available version.\n\n - WATCH_VIEW_KIND_COMBINED: Presentation and camera in one picture.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "WATCH_VIEW_KIND_UNSPECIFIED",
+              "WATCH_VIEW_KIND_COMBINED",
+              "WATCH_VIEW_KIND_PRESENTATION",
+              "WATCH_VIEW_KIND_CAMERA"
+            ],
+            "default": "WATCH_VIEW_KIND_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
     "/courses/{courseId}/integrations": {
       "get": {
         "summary": "List applications authorized for a course.",
@@ -7141,6 +7188,23 @@
         }
       }
     },
+    "protobufCourseVideoExport": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "What the file should be saved as; unique within the response."
+        },
+        "url": {
+          "type": "string",
+          "description": "A signed link to the edge's download endpoint."
+        }
+      }
+    },
     "protobufCreateCourseRequest": {
       "type": "object",
       "properties": {
@@ -7379,6 +7443,18 @@
         },
         "course": {
           "type": "string"
+        }
+      }
+    },
+    "protobufExportCourseVideosResponse": {
+      "type": "object",
+      "properties": {
+        "videos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseVideoExport"
+          }
         }
       }
     },
