@@ -9,6 +9,7 @@ import {
   fetchAdministeredCourses,
   fetchCourseAdmin,
   fetchCourseIntegrationGrants,
+  fetchCourseVideoExport,
   fetchLectureHallSettings,
   groupBySemester,
   inviteCourseParticipants,
@@ -19,6 +20,7 @@ import {
   searchUsersForCourse,
   updateCourseSettings,
   updateLectureHallSettings,
+  videoExportScript,
 } from "./course-admin";
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -260,5 +262,35 @@ describe("the sidebar's course tree", () => {
 
     expect(groups.map((g) => g.label)).toEqual(["Winter 2022/23", "Summer 2022", "Winter 2021/22"]);
     expect(groups[1].courses.map((c) => c.id)).toEqual([1, 4]);
+  });
+});
+
+describe("course video export", () => {
+  it("asks for the version and maps the links", async () => {
+    respondWith({ videos: [{ streamId: 3, fileName: "a_COMB.mp4", url: "https://edge/x.m3u8?jwt=j&download=1" }] });
+
+    const videos = await fetchCourseVideoExport(5, "CAMERA");
+
+    expect(lastCall().url).toContain("/courses/5/export/videos?kind=WATCH_VIEW_KIND_CAMERA");
+    expect(videos).toEqual([{ streamId: 3, fileName: "a_COMB.mp4", url: "https://edge/x.m3u8?jwt=j&download=1" }]);
+  });
+
+  it("asks for every version unless one is chosen", async () => {
+    respondWith({ videos: [] });
+
+    await fetchCourseVideoExport(5);
+
+    expect(lastCall().url).toMatch(/\/courses\/5\/export\/videos$/);
+  });
+
+  it("writes a resumable, quoted script that survives a failed file", () => {
+    const script = videoExportScript([
+      { streamId: 1, fileName: "it's.mp4", url: "https://edge/a.m3u8?jwt=j&download=1" },
+    ]);
+
+    expect(script).toContain("get 'it'\\''s.mp4' 'https://edge/a.m3u8?jwt=j&download=1'\n");
+    expect(script).toContain("curl -fL -C - --retry 10 -o \"$1.part\"");
+    expect(script).not.toContain("set -e");
+    expect(script.endsWith("exit $failed\n")).toBe(true);
   });
 });
