@@ -22,11 +22,12 @@ import (
 )
 
 // vodURL matches the playlist URLs the runner reports, https://<edge>/vod/<streamID>/
-// STREAM_VERSION_<VERSION>/playlist.m3u8, which edge serves from <vodRoot>/<streamID>/
-// <VERSION>/. Older shapes (/vod/<name>.mp4/, old edge hosts, external LRZ URLs) do not
+// STREAM_VERSION_<X>/playlist.m3u8, which edge serves from <vodRoot>/<streamID>/
+// STREAM_VERSION_<X>/. The directory keeps the full enum name, prefix included: the
+// runner joins the same string into the path and the URL. Older shapes (/vod/<name>.mp4/, old edge hosts, external LRZ URLs) do not
 // say reliably where their files are, or share a directory by name; they never match
 // and are reported as skipped rather than guessed at.
-var vodURL = regexp.MustCompile(`^https?://[^/]+/vod/([0-9]+)/STREAM_VERSION_([A-Z_]+)/playlist\.m3u8$`)
+var vodURL = regexp.MustCompile(`^https?://[^/]+/vod/([0-9]+)/(STREAM_VERSION_[A-Z_]+)/playlist\.m3u8$`)
 
 // Stream is the part of a stream the planner needs.
 type Stream struct {
@@ -86,7 +87,7 @@ type Plan struct {
 
 // Options say where files live and which streams count as reapable.
 type Options struct {
-	// VODRoot holds <streamID>/<VERSION>/ directories. Empty: VOD directories are not
+	// VODRoot holds <streamID>/STREAM_VERSION_<X>/ directories. Empty: VOD directories are not
 	// planned.
 	VODRoot string
 	// MassRoot bounds File paths: nothing outside it is ever listed.

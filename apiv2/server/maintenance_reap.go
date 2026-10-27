@@ -30,7 +30,7 @@ const (
 	reapPlanTTL = 15 * time.Minute
 )
 
-// WithVODStorage sets where the runner's <streamID>/<VERSION>/ directories are mounted
+// WithVODStorage sets where the runner's <streamID>/STREAM_VERSION_<X>/ directories are mounted
 // into this server. Optional: without it ReapDeletedMedia answers 503, since reaping
 // needs to see the files it lists.
 func WithVODStorage(dir string) Option {

@@ -59,8 +59,8 @@ func setup(t *testing.T) (vodRoot, massRoot string, opt Options) {
 
 func TestListsEveryFileOfAReapableStream(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"), "abc")
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "00000.ts"), "12345")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "abc")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "00000.ts"), "12345")
 
 	plan, err := Build([]Stream{{ID: 10, CourseID: 1, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}}}, nil, opt)
 	if err != nil {
@@ -68,9 +68,9 @@ func TestListsEveryFileOfAReapableStream(t *testing.T) {
 	}
 
 	want := []string{
-		filepath.Join(vodRoot, "10", "COMBINED"),
-		filepath.Join(vodRoot, "10", "COMBINED", "00000.ts"),
-		filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"),
+		filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED"),
+		filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "00000.ts"),
+		filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"),
 	}
 	if got := paths(plan); !slices.Equal(got, want) {
 		t.Fatalf("entries = %v, want %v", got, want)
@@ -82,7 +82,7 @@ func TestListsEveryFileOfAReapableStream(t *testing.T) {
 
 func TestDryRunChangesNothing(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	f := filepath.Join(vodRoot, "10", "COMBINED", "00000.ts")
+	f := filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "00000.ts")
 	write(t, f, "x")
 
 	if _, err := Build([]Stream{{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}}}, nil, opt); err != nil {
@@ -96,7 +96,7 @@ func TestDryRunChangesNothing(t *testing.T) {
 // A copy keeps the original's URL. Deleting the original must not take the copy's video.
 func TestALiveCopyProtectsADeletedOriginalsFiles(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "x")
 	streams := []Stream{
 		{ID: 10, CourseID: 1, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}},
 		{ID: 20, CourseID: 2, URLs: [3]string{vod("10")}}, // a copy
@@ -118,7 +118,7 @@ func TestALiveCopyProtectsADeletedOriginalsFiles(t *testing.T) {
 // Deleted recently enough to still be restored counts as in use.
 func TestACopyInTheGracePeriodProtectsToo(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "x")
 	streams := []Stream{
 		{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}},
 		{ID: 20, DeletedAt: ago(time.Hour), URLs: [3]string{vod("10")}},
@@ -135,7 +135,7 @@ func TestACopyInTheGracePeriodProtectsToo(t *testing.T) {
 
 func TestOnceEveryReferenceIsDeletedTheDirIsListedOnceForAll(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "x")
 	streams := []Stream{
 		{ID: 10, CourseID: 1, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}},
 		{ID: 20, CourseID: 2, DeletedAt: ago(3 * month), URLs: [3]string{vod("10")}},
@@ -156,7 +156,7 @@ func TestOnceEveryReferenceIsDeletedTheDirIsListedOnceForAll(t *testing.T) {
 
 func TestTheGracePeriodIsRespected(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "10", "COMBINED", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "x")
 
 	plan, err := Build([]Stream{{ID: 10, DeletedAt: ago(month - time.Hour), URLs: [3]string{vod("10")}}}, nil, opt)
 	if err != nil {
@@ -286,12 +286,12 @@ func TestAFileThatIsGoneIsNotListed(t *testing.T) {
 
 func TestExecuteRemovesExactlyThePlanAndTheTokenTracksIt(t *testing.T) {
 	vodRoot, massRoot, opt := setup(t)
-	dir := filepath.Join(vodRoot, "10", "COMBINED")
+	dir := filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED")
 	thumb := filepath.Join(massRoot, "a.jpg")
 	write(t, filepath.Join(dir, "playlist.m3u8"), "x")
 	write(t, filepath.Join(dir, "00000.ts"), "yy")
 	write(t, thumb, "z")
-	keep := filepath.Join(vodRoot, "11", "COMBINED", "playlist.m3u8")
+	keep := filepath.Join(vodRoot, "11", "STREAM_VERSION_COMBINED", "playlist.m3u8")
 	write(t, keep, "k")
 	streams := []Stream{
 		{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}},
@@ -328,7 +328,7 @@ func TestExecuteRemovesExactlyThePlanAndTheTokenTracksIt(t *testing.T) {
 // Files that appeared after the dry run were not reviewed, so they survive.
 func TestExecuteLeavesFilesAddedAfterThePlan(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	dir := filepath.Join(vodRoot, "10", "COMBINED")
+	dir := filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED")
 	write(t, filepath.Join(dir, "playlist.m3u8"), "x")
 	plan, err := Build([]Stream{{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{vod("10")}}}, nil, opt)
 	if err != nil {
@@ -350,7 +350,7 @@ func TestExecuteLeavesFilesAddedAfterThePlan(t *testing.T) {
 // A live stream whose URL is still blank owns the directories named after its ID.
 func TestALiveStreamProtectsItsOwnIDEvenWithoutAURL(t *testing.T) {
 	vodRoot, _, opt := setup(t)
-	write(t, filepath.Join(vodRoot, "9", "COMBINED", "playlist.m3u8"), "x")
+	write(t, filepath.Join(vodRoot, "9", "STREAM_VERSION_COMBINED", "playlist.m3u8"), "x")
 	streams := []Stream{
 		{ID: 9},
 		{ID: 10, DeletedAt: ago(2 * month), URLs: [3]string{vod("9")}},
@@ -369,7 +369,7 @@ func TestALiveStreamProtectsItsOwnIDEvenWithoutAURL(t *testing.T) {
 func TestAFileInsideTheVODRootIsListedOnce(t *testing.T) {
 	vodRoot, _, opt := setup(t)
 	opt.MassRoot = filepath.Dir(vodRoot)
-	seg := filepath.Join(vodRoot, "10", "COMBINED", "00000.ts")
+	seg := filepath.Join(vodRoot, "10", "STREAM_VERSION_COMBINED", "00000.ts")
 	write(t, seg, "x")
 
 	plan, err := Build(
@@ -380,5 +380,22 @@ func TestAFileInsideTheVODRootIsListedOnce(t *testing.T) {
 	}
 	if plan.Files != 1 {
 		t.Fatalf("files = %d, want 1", plan.Files)
+	}
+}
+
+// The runner joins the enum name, prefix included, into the path: this is the layout
+// found on the production volume (/srv/TUM-Live/vod/62170/STREAM_VERSION_COMBINED/00000.ts).
+func TestTheDirectoryKeepsTheStreamVersionPrefix(t *testing.T) {
+	vodRoot, _, opt := setup(t)
+	want := filepath.Join(vodRoot, "62170", "STREAM_VERSION_COMBINED")
+	write(t, filepath.Join(want, "00000.ts"), "x")
+	write(t, filepath.Join(vodRoot, "62170", "COMBINED", "00000.ts"), "not the runner's layout")
+
+	plan, err := Build([]Stream{{ID: 62170, DeletedAt: ago(2 * month), URLs: [3]string{vod("62170")}}}, nil, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := paths(plan); len(got) != 2 || got[0] != want {
+		t.Fatalf("entries = %v, want %s and its segment only", got, want)
 	}
 }

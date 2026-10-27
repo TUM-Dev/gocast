@@ -63,7 +63,7 @@ func writeReapFile(t *testing.T, path string) {
 
 func TestReapDeletedMediaIsADryRunByDefault(t *testing.T) {
 	api, root, audits := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
-	seg := filepath.Join(root, "vod", "10", "COMBINED", "00000.ts")
+	seg := filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00000.ts")
 	writeReapFile(t, seg)
 
 	resp, err := api.ReapDeletedMedia(ctxAs(user(1, "A", "a@example.org", model.AdminType)), &protobuf.ReapDeletedMediaRequest{})
@@ -87,8 +87,8 @@ func TestReapDeletedMediaIsADryRunByDefault(t *testing.T) {
 
 func TestReapDeletedMediaPagesThroughTheDryRun(t *testing.T) {
 	api, root, _ := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
-	writeReapFile(t, filepath.Join(root, "vod", "10", "COMBINED", "00000.ts"))
-	writeReapFile(t, filepath.Join(root, "vod", "10", "COMBINED", "00001.ts"))
+	writeReapFile(t, filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00000.ts"))
+	writeReapFile(t, filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00001.ts"))
 	ctx := ctxAs(user(1, "A", "a@example.org", model.AdminType))
 
 	first, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{PageSize: 2})
@@ -110,7 +110,7 @@ func TestReapDeletedMediaPagesThroughTheDryRun(t *testing.T) {
 
 func TestReapDeletedMediaExecuteNeedsTheDryRunsToken(t *testing.T) {
 	api, root, audits := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
-	seg := filepath.Join(root, "vod", "10", "COMBINED", "00000.ts")
+	seg := filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00000.ts")
 	writeReapFile(t, seg)
 	ctx := ctxAs(user(1, "A", "a@example.org", model.AdminType))
 
@@ -150,14 +150,14 @@ func TestReapDeletedMediaExecuteNeedsTheDryRunsToken(t *testing.T) {
 // was reviewed no longer describes what would be deleted.
 func TestReapDeletedMediaRefusesWhenTheFilesChangedSinceTheDryRun(t *testing.T) {
 	api, root, _ := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
-	writeReapFile(t, filepath.Join(root, "vod", "10", "COMBINED", "00000.ts"))
+	writeReapFile(t, filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00000.ts"))
 	ctx := ctxAs(user(1, "A", "a@example.org", model.AdminType))
 
 	dry, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	late := filepath.Join(root, "vod", "10", "COMBINED", "00001.ts")
+	late := filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00001.ts")
 	writeReapFile(t, late)
 
 	if _, err := api.ReapDeletedMedia(ctx, &protobuf.ReapDeletedMediaRequest{Execute: true, PlanToken: dry.PlanToken}); err == nil {
@@ -179,7 +179,7 @@ func TestReapDeletedMediaWithoutStorageAnswers503(t *testing.T) {
 // what would go but must never delete.
 func TestReapDeletedMediaNeverExecutesInTestEnv(t *testing.T) {
 	api, root, audits := reapAPI(t, []dao.ReapStream{deletedStream(10, reapURL)}, nil)
-	seg := filepath.Join(root, "vod", "10", "COMBINED", "00000.ts")
+	seg := filepath.Join(root, "vod", "10", "STREAM_VERSION_COMBINED", "00000.ts")
 	writeReapFile(t, seg)
 	ctx := ctxAs(user(1, "A", "a@example.org", model.AdminType))
 
