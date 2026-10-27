@@ -628,6 +628,15 @@ service CourseService {
     };
   }
 
+  rpc exportCourseVideos(ExportCourseVideosRequest) returns (ExportCourseVideosResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/export/videos"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List download links for every recorded video of a course."
+      description: "Returns one signed download link per recorded lecture and version, with a ready-made file name. All available versions (combined, presentation, camera) are listed by default; pass a kind to narrow it to one. Versions a lecture does not have are skipped. The links expire after a few hours, so fetch them one after another and call this again for a long course. Requires administering the course."
+    };
+  }
+
   rpc listCourseAudits(ListCourseAuditsRequest) returns (ListAuditsResponse) {
     option (google.api.http) = {get: "/courses/{course_id}/audits"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -2799,6 +2808,24 @@ message DeleteCourseRequest {
 
 message RedoCoursePostProcessingRequest {
   uint32 course_id = 1;
+}
+
+message ExportCourseVideosRequest {
+  uint32 course_id = 1;
+  // Which version to export. Unspecified means every available version.
+  WatchViewKind kind = 2;
+}
+
+message ExportCourseVideosResponse {
+  repeated CourseVideoExport videos = 1;
+}
+
+message CourseVideoExport {
+  uint32 stream_id = 1;
+  // What the file should be saved as; unique within the response.
+  string file_name = 2;
+  // A signed link to the edge's download endpoint.
+  string url = 3;
 }
 
 // An account as the course page shows it to the course's administrators.
