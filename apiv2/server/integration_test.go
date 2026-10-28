@@ -371,6 +371,54 @@ func TestGetIntegrationRecordingHandsOutTheVersionTheWatchPageStartsWith(t *test
 	}
 }
 
+func TestGetIntegrationRecordingHandsOutTheRequestedVersion(t *testing.T) {
+	all := model.Stream{PlaylistUrl: "https://edge/comb.m3u8", PlaylistUrlPRES: "https://edge/pres.m3u8", PlaylistUrlCAM: "https://edge/cam.m3u8"}
+	for name, test := range map[string]struct {
+		stream    model.Stream
+		mode      model.SourceMode
+		requested protobuf.VideoType
+		want      string
+	}{
+		"presentation of a hall recorded combined": {stream: all, mode: model.SourceModeCOMB, requested: protobuf.VideoType_PRES, want: "https://edge/pres.m3u8?jwt=signed"},
+		"camera of a hall recorded combined":       {stream: all, mode: model.SourceModeCOMB, requested: protobuf.VideoType_CAM, want: "https://edge/cam.m3u8?jwt=signed"},
+		"combined without a combined playlist":     {stream: model.Stream{PlaylistUrlPRES: all.PlaylistUrlPRES}, mode: model.SourceModeCOMB, requested: protobuf.VideoType_COMB},
+		"camera the hall does not record":          {stream: all, mode: model.SourceModePRESOnly, requested: protobuf.VideoType_CAM},
+	} {
+		t.Run(name, func(t *testing.T) {
+			signed := stubIntegrationSigner(t, nil)
+			ctrl := gomock.NewController(t)
+			integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+			coursesDao := mock_dao.NewMockCoursesDao(ctrl)
+			stream := test.stream
+			stream.Model, stream.CourseID, stream.LectureHallID, stream.Recording = gorm.Model{ID: 55}, 456, 3, true
+			course := model.Course{Model: gorm.Model{ID: 456}}
+			course.SetSourcePreference([]model.SourcePreference{{LectureHallID: 3, SourceMode: test.mode}})
+			integrationGrantDao.EXPECT().GetIntegrationGrantStream(gomock.Any(), uint(123), uint(7), uint(55)).Return(stream, nil)
+			coursesDao.EXPECT().GetCourseById(gomock.Any(), uint(456)).Return(course, nil)
+			version := model.StreamVersion(test.requested.String())
+			if test.want != "" {
+				streamsDao.EXPECT().GetTranscodingProgressByVersion(version, uint(55)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+			}
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: integrationGrantDao, StreamsDao: streamsDao, CoursesDao: coursesDao}, log: slog.Default()}
+			ctx := context.WithValue(context.Background(), callerKey{}, &caller{integration: &model.Integration{ID: 7}})
+
+			response, err := api.GetIntegrationRecording(ctx, &protobuf.GetIntegrationRecordingRequest{GrantId: 123, StreamId: 55, StreamVersion: &test.requested})
+
+			if test.want == "" {
+				assert.Equal(t, codes.NotFound, status.Code(err))
+				assert.Equal(t, "recording version not found", status.Convert(err).Message())
+				assert.Empty(t, *signed)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, test.want, response.GetPlaylistUrl())
+			require.Len(t, *signed, 1)
+			assert.Equal(t, test.want, *playlistOf(&(*signed)[0], version)+"?jwt=signed")
+		})
+	}
+}
+
 func TestGetIntegrationRecordingHidesCourseLookupFailure(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	integrationGrantDao := mock_dao.NewMockIntegrationGrantDao(ctrl)

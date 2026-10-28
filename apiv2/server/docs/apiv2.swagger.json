@@ -3820,7 +3820,7 @@
     "/integration/grants/{grantId}/recordings/{streamId}": {
       "get": {
         "summary": "Get a recording of an authorized course.",
-        "description": "Returns the conversion state and a signed playlist of one lecture that is visible to students, in the version the watch page starts with.",
+        "description": "Returns the conversion state and a signed playlist of one lecture that is visible to students, in the requested version or else the one the watch page starts with.",
         "operationId": "IntegrationService_getIntegrationRecording",
         "responses": {
           "200": {
@@ -3850,6 +3850,19 @@
             "required": true,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "streamVersion",
+            "description": "The version to hand out. Not Found when the lecture has no playlist of it or the\ncourse does not record it in the lecture hall. Without it, the version the watch\npage starts with.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "COMB",
+              "PRES",
+              "CAM"
+            ],
+            "default": "COMB"
           }
         ],
         "tags": [
@@ -7541,7 +7554,7 @@
       "properties": {
         "playlistUrl": {
           "type": "string",
-          "description": "The playlist the watch page starts with for this recording when the viewer chose no\nview: combined, else presentation, else camera, of the versions the course records\nin the lecture hall. Signed like there for seven hours with downloads off. Empty\nwhile the lecture has no recording. As on the watch page, it can still be the live\nplaylist when another version's VOD is ready first, and legacy LRZ playlists are not\nsigned."
+          "description": "The playlist of the requested version, or else the one the watch page starts with\nwhen the viewer chose no view: combined, else presentation, else camera, of the\nversions the course records in the lecture hall. Signed like there for seven hours\nwith downloads off. Empty while the lecture has no recording. As on the watch page,\nit can still be the live playlist when another version's VOD is ready first, and\nlegacy LRZ playlists are not signed."
         },
         "converting": {
           "type": "boolean",

@@ -140,6 +140,8 @@ func local_request_IntegrationService_RevokeIntegrationGrant_0(ctx context.Conte
 	return msg, metadata, err
 }
 
+var filter_IntegrationService_GetIntegrationRecording_0 = &utilities.DoubleArray{Encoding: map[string]int{"grant_id": 0, "stream_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+
 func request_IntegrationService_GetIntegrationRecording_0(ctx context.Context, marshaler runtime.Marshaler, client IntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetIntegrationRecordingRequest
@@ -161,6 +163,12 @@ func request_IntegrationService_GetIntegrationRecording_0(ctx context.Context, m
 	protoReq.StreamId, err = runtime.Uint32(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_IntegrationService_GetIntegrationRecording_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if req.Body != nil {
 		_, _ = io.Copy(io.Discard, req.Body)
@@ -190,6 +198,12 @@ func local_request_IntegrationService_GetIntegrationRecording_0(ctx context.Cont
 	protoReq.StreamId, err = runtime.Uint32(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_IntegrationService_GetIntegrationRecording_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := server.GetIntegrationRecording(ctx, &protoReq)
 	return msg, metadata, err

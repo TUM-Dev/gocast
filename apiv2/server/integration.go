@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -98,10 +99,10 @@ func (a *API) RevokeIntegrationGrant(ctx context.Context, req *protobuf.RevokeIn
 	return &emptypb.Empty{}, nil
 }
 
-// GetIntegrationRecording answers for one version, the one the watch page starts with
-// when the viewer chose none (see integrationRecordingVersion). It hands out that
-// playlist signed without a user like for an anonymous viewer of a public course: the
-// grant is the permission here.
+// GetIntegrationRecording answers for one version, the requested one or else the one
+// the watch page starts with when the viewer chose none (see
+// integrationRecordingVersion). It hands out that playlist signed without a user like
+// for an anonymous viewer of a public course: the grant is the permission here.
 func (a *API) GetIntegrationRecording(ctx context.Context, req *protobuf.GetIntegrationRecordingRequest) (*protobuf.GetIntegrationRecordingResponse, error) {
 	if req.GetGrantId() == 0 || req.GetStreamId() == 0 {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("grant_id and stream_id must be positive"))
@@ -118,10 +119,13 @@ func (a *API) GetIntegrationRecording(ctx context.Context, req *protobuf.GetInte
 		a.log.Error("integration recording lookup failed", "err", err)
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read recording"))
 	}
-	version, playlist, err := a.integrationRecordingVersion(ctx, &stream)
+	version, playlist, err := a.integrationRecordingVersion(ctx, &stream, req.StreamVersion)
 	if err != nil {
 		a.log.Error("integration recording course lookup failed", "err", err, "stream", stream.ID)
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not read recording"))
+	}
+	if req.StreamVersion != nil && playlist == "" {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("recording version not found"))
 	}
 	response := &protobuf.GetIntegrationRecordingResponse{}
 	progress, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(version, stream.ID)
@@ -150,13 +154,14 @@ func (a *API) GetIntegrationRecording(ctx context.Context, req *protobuf.GetInte
 	return response, nil
 }
 
-// integrationRecordingVersion picks the version the watch page starts with when the
-// viewer chose none: the first of combined, presentation and camera that the course
-// records in the lecture hall and that has a playlist (as watchSources). A hall
-// recorded as presentation or camera only has no combined version. Without any
-// playlist yet it is the first version the hall records, whose conversion is the one
-// to report; uploads and self-streams only have the combined version.
-func (a *API) integrationRecordingVersion(ctx context.Context, s *model.Stream) (model.StreamVersion, string, error) {
+// integrationRecordingVersion picks the requested version, or else the version the
+// watch page starts with when the viewer chose none: the first of combined,
+// presentation and camera that the course records in the lecture hall and that has a
+// playlist (as watchSources). A hall recorded as presentation or camera only has no
+// combined version. Without any playlist yet it is the first version the hall records,
+// whose conversion is the one to report; without a hall that is the combined version.
+// A requested version the hall does not record has no playlist.
+func (a *API) integrationRecordingVersion(ctx context.Context, s *model.Stream, requested *protobuf.VideoType) (model.StreamVersion, string, error) {
 	mode := model.SourceModeCOMB
 	if s.LectureHallID != 0 {
 		course, err := a.dao.CoursesDao.GetCourseById(ctx, s.CourseID)
@@ -171,6 +176,13 @@ func (a *API) integrationRecordingVersion(ctx context.Context, s *model.Stream) 
 		versions = []model.StreamVersion{model.PRES}
 	case model.SourceModeCAMOnly:
 		versions = []model.StreamVersion{model.CAM}
+	}
+	if requested != nil {
+		v := model.StreamVersion(requested.String())
+		if !slices.Contains(versions, v) {
+			return v, "", nil
+		}
+		versions = []model.StreamVersion{v}
 	}
 	for _, v := range versions {
 		if url := *playlistOf(s, v); url != "" {
