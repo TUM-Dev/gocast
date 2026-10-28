@@ -8,14 +8,23 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/sethvargo/go-retry"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc/filters"
+	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
@@ -23,6 +32,7 @@ import (
 	"github.com/tum-dev/gocast/runner/pkg/actions"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/pkg/netutil"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 	"github.com/tum-dev/gocast/runner/pkg/vmstat"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -51,11 +61,25 @@ type jobCancels struct {
 type Runner struct {
 	log *slog.Logger
 
-	draining bool
-	JobCount chan int
-	jobsMu   sync.Mutex
-	jobs     map[string]jobCancels
-	discard  map[string]bool
+	// draining is read by the heartbeat goroutine while Drain sets it on a signal.
+	draining atomic.Bool
+
+	// busy counts what must finish before the process may exit: running jobs, uploads
+	// that are still being received and critical notifications that are not delivered yet.
+	// See hold.
+	// pending counts the critical notifications among them, which WaitIdle only waits
+	// for up to notifyGrace.
+	busyMu  sync.Mutex
+	busy    int
+	pending int
+
+	// notifyGrace bounds the wait for pending notifications once all jobs and uploads are
+	// done. Zero means defaultNotifyGrace.
+	notifyGrace time.Duration
+
+	jobsMu  sync.Mutex
+	jobs    map[string]jobCancels
+	discard map[string]bool
 
 	// retryMin and retryMax bound the wait between retries of a failing action, see
 	// retryDelay. Zero means the defaults.
@@ -76,6 +100,18 @@ type Runner struct {
 	connMu        sync.Mutex
 	managerConn   *grpc.ClientConn
 	managerClient protobuf.RunnerManagerServiceClient
+
+	// startRetries holds the cancel of every StreamStart that is still being retried, see
+	// cancelStartRetry.
+	startRetriesMu sync.Mutex
+	startRetries   map[streamVersionKey]context.CancelFunc
+}
+
+// streamVersionKey identifies one version of one stream, which is what a StreamStart and
+// its StreamEnd have in common.
+type streamVersionKey struct {
+	stream  uint64
+	version protobuf.StreamVersion
 }
 
 func NewRunner(v string) *Runner {
@@ -88,10 +124,9 @@ func NewRunner(v string) *Runner {
 	start := time.Now()
 	return &Runner{
 		log:           log,
-		JobCount:      make(chan int),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
-		draining:      false,
+		startRetries:  make(map[streamVersionKey]context.CancelFunc),
 		uploads:       newUploadSlots(),
 		hlsServer:     NewHLSServer(config.Config.SegmentPath, log.WithGroup("HLSServer"), v),
 		stats:         vmstats,
@@ -136,18 +171,7 @@ func (r *Runner) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ticker.C:
-				r.jobsMu.Lock()
-				jobCount := uint64(len(r.jobs))
-				r.jobsMu.Unlock()
-				r.notifications <- &protobuf.Notification{
-					Data: &protobuf.Notification_Heartbeat{
-						Heartbeat: &protobuf.HeartbeatNotification{
-							Hostname: ptr.Take(config.Config.Hostname),
-							Draining: ptr.Take(r.draining),
-							JobCount: ptr.Take(jobCount),
-						},
-					},
-				}
+				r.notifications <- r.heartbeat()
 			case <-ctx.Done():
 				return
 			}
@@ -155,18 +179,30 @@ func (r *Runner) Run(ctx context.Context) {
 	}()
 }
 
-func (r *Runner) Drain(ctx context.Context) {
-	r.log.Info("Runner set to drain.")
-	r.draining = true
-	select {
-	case r.notifications <- &protobuf.Notification{
+// heartbeat reports the runner's liveness, drain state and number of running jobs.
+func (r *Runner) heartbeat() *protobuf.Notification {
+	r.jobsMu.Lock()
+	jobCount := uint64(len(r.jobs))
+	r.jobsMu.Unlock()
+	return &protobuf.Notification{
 		Data: &protobuf.Notification_Heartbeat{
 			Heartbeat: &protobuf.HeartbeatNotification{
 				Hostname: ptr.Take(config.Config.Hostname),
-				Draining: ptr.Take(r.draining),
+				Draining: ptr.Take(r.draining.Load()),
+				JobCount: ptr.Take(jobCount),
 			},
 		},
-	}:
+	}
+}
+
+// Drain tells the manager to stop assigning jobs. ctx must outlive the signal that
+// started the shutdown: the notification is handed to handleNotifications, which has to
+// still be running to take it.
+func (r *Runner) Drain(ctx context.Context) {
+	r.log.Info("Runner set to drain.")
+	r.draining.Store(true)
+	select {
+	case r.notifications <- r.heartbeat():
 	case <-ctx.Done():
 	}
 }
@@ -178,13 +214,20 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to listen", "error", err)
 		os.Exit(1)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     time.Minute,
-		MaxConnectionAge:      time.Minute,
-		MaxConnectionAgeGrace: time.Second * 5,
-		Time:                  time.Minute * 10,
-		Timeout:               time.Second * 20,
-	}))
+	grpcServer := grpc.NewServer(
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle:     time.Minute,
+			MaxConnectionAge:      time.Minute,
+			MaxConnectionAgeGrace: time.Second * 5,
+			Time:                  time.Minute * 10,
+			Timeout:               time.Second * 20,
+		}),
+		// Continues the trace of the manager's request. The live preview is left out: it
+		// is requested every minute for every running stream and belongs to no job.
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithFilter(
+			filters.Not(filters.MethodName("GenerateLivePreview")),
+		))),
+	)
 	protobuf.RegisterRunnerServiceServer(grpcServer, r)
 
 	reflection.Register(grpcServer)
@@ -219,7 +262,12 @@ func (r *Runner) retryDelay(prev time.Duration) time.Duration {
 	return min(prev*2, hi)
 }
 
-// RunAction runs the actions in a in the background and returns the id of the created job.
+// RunAction is RunActionContext for a job that is not part of a trace.
+func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
+	return r.RunActionContext(context.Background(), a, vod, data, logger)
+}
+
+// RunActionContext runs the actions in a in the background and returns the id of the created job.
 // The actions in a keep running after the job's context was cancelled, which is what lets
 // StreamEnd report the end of a stream that was stopped early. The VoD actions are skipped
 // entirely when the stream was ended with discardVod.
@@ -228,36 +276,79 @@ func (r *Runner) retryDelay(prev time.Duration) time.Duration {
 // the cancellation into a VoD is precisely what still has to happen after a stream was
 // ended early, so they must not inherit the cancelled stream context: every
 // exec.CommandContext in them would fail before it started.
-func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
+//
+// parent only supplies the trace the job belongs to, see tracing.Detach.
+func (r *Runner) RunActionContext(parent context.Context, a, vod []actions.Action, data map[string]any, logger *slog.Logger) string {
+	job := uuid.NewV4().String()
 	// create new contexts to avoid cancellation on grpc request termination
-	streamCtx, endStream := context.WithCancel(context.Background())
-	afterCtx, endAfter := context.WithCancel(context.Background())
-	job := uuid.New().String()
-	r.JobCount <- 1
+	jobCtx, jobSpan := tracing.Tracer().Start(tracing.Detach(parent), "runner.job",
+		trace.WithAttributes(append(jobAttributes(data), attribute.String("job.id", job))...))
+	streamCtx, endStream := context.WithCancel(jobCtx)
+	afterCtx, endAfter := context.WithCancel(jobCtx)
+	if jobSpan.SpanContext().IsValid() {
+		logger = logger.With("trace_id", jobSpan.SpanContext().TraceID().String())
+	}
+	release := r.hold()
 	r.jobsMu.Lock()
 	r.jobs[job] = jobCancels{endStream: endStream, endAfter: endAfter}
 	r.jobsMu.Unlock()
+
+	// The actions send their notifications to notify, which stamps them with the job's
+	// trace before handing them on. Without it the manager would handle the results of a
+	// job that ran for hours as traces of their own.
+	notify := make(chan *protobuf.Notification)
+	stopForward := make(chan struct{})
+	forwarded := make(chan struct{})
+	traceParent := tracing.Traceparent(jobCtx)
+	go func() {
+		defer close(forwarded)
+		for {
+			select {
+			case n := <-notify:
+				if traceParent != "" {
+					n.TraceParent = ptr.Take(traceParent)
+				}
+				r.notifications <- n
+			case <-stopForward:
+				return
+			}
+		}
+	}()
+
 	go func() {
 		defer func() {
+			// An action's send returns once the forwarder took the notification, and the
+			// forwarder only looks at stopForward between two of them. Waiting for it
+			// keeps the guarantee that a job hands its last notification to
+			// handleNotifications before it ends, see WaitIdle.
+			close(stopForward)
+			<-forwarded
 			endStream()
 			endAfter()
+			jobSpan.End()
 			r.jobsMu.Lock()
 			delete(r.jobs, job)
 			delete(r.discard, job)
 			r.jobsMu.Unlock()
-			r.JobCount <- -1
+			release()
 		}()
 
 		run := func(ctx context.Context, action actions.Action) {
 			var wait time.Duration
-			for {
-				log := logger.With("action", getFunctionName(action)).With("job", job)
+			name := getFunctionName(action)
+			for attempt := 1; ; attempt++ {
+				log := logger.With("action", name).With("job", job)
 				log.Info("running action")
+				actionCtx, span := tracing.Tracer().Start(ctx, "action."+shortName(name),
+					trace.WithAttributes(attribute.Int("action.attempt", attempt)))
 				s := time.Now()
-				err := action(ctx, log, r.notifications, data, r.Metrics)
+				err := action(actionCtx, log, notify, data, r.Metrics)
 				ran := time.Since(s)
 				log.Info("action completed", "duration", ran.String())
 				if err != nil {
+					span.RecordError(err)
+					span.SetStatus(otelcodes.Error, err.Error())
+					span.End()
 					log.Error("action error", "error", err) // use action specific logger
 					if actions.IsAbortingError(err) {
 						log.Info("action can't continue")
@@ -268,6 +359,8 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 					}
 					wait = r.retryDelay(wait)
 					log.Info("retrying action", "in", wait.String())
+					_, waitSpan := tracing.Tracer().Start(ctx, "action.retry_wait",
+						trace.WithAttributes(attribute.String("action.name", shortName(name)), attribute.String("wait", wait.String())))
 					t := time.NewTimer(wait)
 					select {
 					case <-ctx.Done():
@@ -275,25 +368,54 @@ func (r *Runner) RunAction(a, vod []actions.Action, data map[string]any, logger 
 						t.Stop()
 					case <-t.C:
 					}
+					waitSpan.End()
 				} else {
+					span.End()
 					return // escape retry loop on no error
 				}
 			}
 		}
 
-		for _, action := range a {
-			run(streamCtx, action)
+		phase := func(ctx context.Context, name string, list []actions.Action) {
+			ctx, span := tracing.Tracer().Start(ctx, name)
+			defer span.End()
+			for _, action := range list {
+				run(ctx, action)
+			}
 		}
+
+		phase(streamCtx, "runner.stream", a)
 		if r.discarded(job) {
 			// the recording itself is deliberately left on disk, see livestreamCleanup
 			logger.With("job", job).Info("discarding recording, skipping VoD creation")
+			jobSpan.SetAttributes(attribute.Bool("job.discarded", true))
 			return
 		}
-		for _, action := range vod {
-			run(afterCtx, action)
+		if len(vod) > 0 {
+			phase(afterCtx, "runner.vod", vod)
 		}
 	}()
 	return job
+}
+
+// jobAttributes are the span attributes that identify what a job works on.
+func jobAttributes(data map[string]any) []attribute.KeyValue {
+	var attrs []attribute.KeyValue
+	if id, ok := data["streamID"].(uint64); ok {
+		attrs = append(attrs, attribute.Int64("stream.id", int64(id)))
+	}
+	if v, ok := data["streamVersion"].(string); ok {
+		attrs = append(attrs, attribute.String("stream.version", v))
+	}
+	return attrs
+}
+
+// shortName turns "github.com/tum-dev/gocast/runner/pkg/actions.MkVOD" into "MkVOD".
+func shortName(fn string) string {
+	if i := strings.LastIndex(fn, "."); i >= 0 {
+		return fn[i+1:]
+	}
+	return fn
 }
 
 func (r *Runner) discarded(job string) bool {
@@ -302,21 +424,118 @@ func (r *Runner) discarded(job string) bool {
 	return r.discard[job]
 }
 
-// notificationBackoff returns a fresh backoff for sending n. Backoffs are stateful
-// (retry counter and fibonacci sequence), so every notification needs its own.
-func notificationBackoff(n *protobuf.Notification) retry.Backoff {
-	b := retry.NewFibonacci(1 * time.Second)
-	b = retry.WithJitter(500*time.Millisecond, b)
-
+// isCritical tells whether losing n loses a result: the manager only learns that a stream
+// ended or a VoD is ready from these. The runner may not exit before they are delivered.
+func isCritical(n *protobuf.Notification) bool {
 	switch n.Data.(type) {
 	case *protobuf.Notification_StreamEnd,
 		*protobuf.Notification_StreamStart,
 		*protobuf.Notification_VodReady,
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
+		*protobuf.Notification_SilenceDetected,
 		*protobuf.Notification_VodFailed:
+		return true
+	}
+	return false
+}
+
+// defaultNotifyGrace is how long a runner that is otherwise done waits for the manager to
+// accept the notifications it still holds. It covers the manager being restarted by the
+// same deploy; a notification that is still undelivered after it is not going to be, and
+// waiting on it would keep the node's update hanging until Swarm kills the runner.
+const defaultNotifyGrace = 5 * time.Minute
+
+// hold marks a job or an upload that the runner must not exit before and returns the func
+// that ends it (safe to call more than once). Taking it synchronously before the thing that
+// it covers is handed over leaves no moment in which the runner looks idle.
+func (r *Runner) hold() func() { return r.acquire(&r.busy) }
+
+// holdDelivery is hold for a critical notification that is not delivered yet. Unlike a
+// job it is only waited for a limited time, see WaitIdle.
+func (r *Runner) holdDelivery() func() {
+	releaseBusy := r.acquire(&r.busy)
+	releasePending := r.acquire(&r.pending)
+	return func() { releasePending(); releaseBusy() }
+}
+
+func (r *Runner) acquire(counter *int) func() {
+	r.busyMu.Lock()
+	*counter++
+	r.busyMu.Unlock()
+	var once sync.Once
+	return func() {
+		once.Do(func() {
+			r.busyMu.Lock()
+			*counter--
+			r.busyMu.Unlock()
+		})
+	}
+}
+
+// counts returns the number of holds that must finish and how many of them are critical
+// notifications.
+func (r *Runner) counts() (busy, pending int) {
+	r.busyMu.Lock()
+	defer r.busyMu.Unlock()
+	return r.busy, r.pending
+}
+
+// WaitIdle returns once no job, upload or critical notification is pending. Jobs and
+// uploads are waited for as long as they take; notifications for at most notifyGrace after
+// they are the only thing left, see defaultNotifyGrace.
+//
+// A job hands its last notification to handleNotifications before it ends, and the handler
+// only takes the hold for it after receiving, so a zero count alone could be read in
+// between. Sending a heartbeat through the same channel closes that gap: the handler takes
+// it only once it has finished with everything it received before, and the count is
+// checked again after.
+func (r *Runner) WaitIdle() {
+	grace := r.notifyGrace
+	if grace <= 0 {
+		grace = defaultNotifyGrace
+	}
+	var deadline time.Time
+	for {
+		busy, pending := r.counts()
+		if busy == 0 {
+			r.notifications <- r.heartbeat()
+			busy, pending = r.counts()
+		}
+		switch {
+		case busy == 0:
+			return
+		case busy == pending:
+			// only notifications are left
+			if deadline.IsZero() {
+				deadline = time.Now().Add(grace)
+			}
+			if time.Now().After(deadline) {
+				r.log.Error("giving up on undelivered notifications", "pending", pending, "waited", grace.String())
+				return
+			}
+		default:
+			deadline = time.Time{} // a job or upload is running, the grace starts when it ends
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// notificationBackoff returns a fresh backoff for sending n. Backoffs are stateful
+// (retry counter and fibonacci sequence), so every notification needs its own.
+func notificationBackoff(n *protobuf.Notification) retry.Backoff {
+	b := retry.NewFibonacci(1 * time.Second)
+	b = retry.WithJitter(500*time.Millisecond, b)
+
+	if isCritical(n) {
 		// Critical notifications retry indefinitely until delivered or runner shuts down
 		return retry.WithCappedDuration(30*time.Second, b)
+	}
+	switch n.Data.(type) {
+	case *protobuf.Notification_Heartbeat:
+		// Never retried: the next one is seconds away, and one that is delivered late
+		// carries a state that is outdated by then, see sendNotification.
+		return retry.WithMaxRetries(0, b)
 	case *protobuf.Notification_TranscodingProgress:
 		// Never retried: each one is outdated by the next, and one that is delivered late
 		// could land after the VODReady or VODFailed that ended the conversion.
@@ -326,13 +545,65 @@ func notificationBackoff(n *protobuf.Notification) retry.Backoff {
 	}
 }
 
+// trackStartRetry makes a StreamStart's retries end with its stream version. They are
+// otherwise endless (see notificationBackoff), so when the manager takes long to answer
+// a StreamStart, one that is delivered after the VODReady of the same version makes the
+// manager mark the finished stream live again, with the live playlist and no recording.
+// A StreamEnd for the version cancels the retries of its StreamStart; every other
+// notification gets ctx back unchanged. The returned func releases the tracking.
+func (r *Runner) trackStartRetry(ctx context.Context, n *protobuf.Notification) (context.Context, func()) {
+	switch d := n.Data.(type) {
+	case *protobuf.Notification_StreamEnd:
+		r.cancelStartRetry(streamVersionKey{d.StreamEnd.GetStream().GetId(), d.StreamEnd.GetStreamVersion()})
+	case *protobuf.Notification_StreamStart:
+		key := streamVersionKey{d.StreamStart.GetStream().GetId(), d.StreamStart.GetStreamVersion()}
+		sendCtx, cancel := context.WithCancel(ctx)
+		r.startRetriesMu.Lock()
+		if prev, ok := r.startRetries[key]; ok {
+			prev() // a restarted version supersedes the old start
+		}
+		r.startRetries[key] = cancel
+		r.startRetriesMu.Unlock()
+		return sendCtx, cancel
+	}
+	return ctx, func() {}
+}
+
+func (r *Runner) cancelStartRetry(key streamVersionKey) {
+	r.startRetriesMu.Lock()
+	defer r.startRetriesMu.Unlock()
+	if cancel, ok := r.startRetries[key]; ok {
+		cancel()
+		delete(r.startRetries, key)
+	}
+}
+
 func (r *Runner) handleNotifications(ctx context.Context) {
 	for {
 		select {
 		case n := <-r.notifications:
+			sendCtx, done := r.trackStartRetry(ctx, n)
+			// The hold is taken here, in the loop, and not in the goroutine: WaitIdle relies
+			// on it being taken by the time the loop is back to receiving.
+			release := func() {}
+			if isCritical(n) {
+				release = r.holdDelivery()
+			}
 			go func() {
-				err := retry.Do(ctx, notificationBackoff(n), r.sendNotification(n))
-				if err != nil {
+				defer release()
+				defer done()
+				// Covers the retries, which is how long the manager took to accept the
+				// result. The manager's handling of it is a child of this span.
+				sendCtx, span := r.startDelivery(sendCtx, n)
+				defer span.End()
+				err := retry.Do(sendCtx, notificationBackoff(n), r.sendNotification(n))
+				if err != nil && !isPermanent(err) {
+					span.RecordError(err)
+					span.SetStatus(otelcodes.Error, err.Error())
+				}
+				if err != nil && ctx.Err() == nil && sendCtx.Err() != nil {
+					r.log.Info("gave up on a StreamStart, its stream version ended", "error", err)
+				} else if err != nil && !isPermanent(err) { // those were logged when they were rejected
 					r.log.Error("failed to send notification", "error", err,
 						"type", fmt.Sprintf("%T", n.Data))
 				}
@@ -343,11 +614,30 @@ func (r *Runner) handleNotifications(ctx context.Context) {
 	}
 }
 
+// startDelivery starts the span of delivering n to the manager if n belongs to a trace, and
+// makes it the parent of whatever the manager does with n.
+func (r *Runner) startDelivery(ctx context.Context, n *protobuf.Notification) (context.Context, trace.Span) {
+	if n.GetTraceParent() == "" {
+		return ctx, trace.SpanFromContext(context.Background())
+	}
+	ctx, span := tracing.Tracer().Start(tracing.WithTraceparent(ctx, n.GetTraceParent()),
+		"runner.notify "+strings.TrimPrefix(fmt.Sprintf("%T", n.Data), "*protobuf.Notification_"),
+		trace.WithSpanKind(trace.SpanKindProducer))
+	n.TraceParent = ptr.Take(tracing.Traceparent(ctx))
+	return ctx, span
+}
+
 func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2 context.Context) error {
 	return func(ctx context.Context) error {
 		switch notification.Data.(type) {
 		case *protobuf.Notification_Heartbeat:
-		// pass: logging this is too noisy
+			// A heartbeat built before the drain says the runner accepts jobs. The manager
+			// stores whatever arrives last, so one that is still on its way once draining
+			// started must not overwrite the drain heartbeat.
+			if !notification.GetHeartbeat().GetDraining() && r.draining.Load() {
+				return nil
+			}
+			// pass: logging this is too noisy
 		case *protobuf.Notification_ThumbnailReady:
 			r.log.Debug("send notification", "notification", &protobuf.Notification_ThumbnailReady{
 				ThumbnailReady: &protobuf.ThumbnailReadyNotification{
@@ -368,13 +658,37 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 		if err != nil {
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
+		start := time.Now()
 		_, err = conn.Notify(ctx, notification)
 		if err != nil {
-			r.invalidateManagerConn()
+			// retry.RetryableError hides the cause, and a notification that is never
+			// acknowledged is otherwise invisible: it just keeps being sent.
+			r.log.Warn("notification not delivered, will retry", "type", fmt.Sprintf("%T", notification.Data),
+				"code", status.Code(err).String(), "took", time.Since(start).String(), "error", err)
+			if shouldReconnect(err) {
+				r.invalidateManagerConn(conn)
+			}
+			if isPermanent(err) {
+				// The manager understood the notification and refuses it, repeating it
+				// gets the same answer. Retrying would only keep the runner from exiting.
+				r.log.Error("notification rejected, dropping it", "type", fmt.Sprintf("%T", notification.Data),
+					"code", status.Code(err).String(), "error", err)
+				return err
+			}
 			return retry.RetryableError(fmt.Errorf("send notification: %w", err))
 		}
 		return nil
 	}
+}
+
+// isPermanent tells whether err is an answer of the manager that a retry cannot change,
+// as opposed to the manager or the connection being unavailable.
+func isPermanent(err error) bool {
+	switch status.Code(err) {
+	case codes.NotFound, codes.InvalidArgument:
+		return true
+	}
+	return false
 }
 
 func getFunctionName(i interface{}) string {

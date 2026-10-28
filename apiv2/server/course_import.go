@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
 	campusonline "github.com/RBG-TUM/CAMPUSOnline"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
@@ -139,6 +139,7 @@ func (a *API) ImportCourseImportCourses(ctx context.Context, req *protobuf.Cours
 	}
 
 	results := make([]*protobuf.CourseImportResult, 0, len(req.GetCourses()))
+	var imported []string
 	for _, courseReq := range req.GetCourses() {
 		if !courseReq.GetImport() {
 			continue
@@ -149,9 +150,16 @@ func (a *API) ImportCourseImportCourses(ctx context.Context, req *protobuf.Cours
 			})
 			continue
 		}
+		imported = append(imported, courseReq.GetTitle())
 		results = append(results, &protobuf.CourseImportResult{Title: courseReq.GetTitle(), Success: true})
 	}
 
+	// One entry for the whole import rather than one per course: an import is a single
+	// action, and hundreds of rows would bury the rest of the log.
+	if len(imported) > 0 {
+		a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("imported %d courses (%d, %s): '%s'",
+			len(imported), req.GetYear(), req.GetTerm(), strings.Join(imported, "', '")))
+	}
 	return &protobuf.CourseImportResponse{Results: results}, nil
 }
 

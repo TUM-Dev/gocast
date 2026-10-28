@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -104,7 +104,7 @@ func TestIntegrationCredentialsStaySeparateFromUserCredentials(t *testing.T) {
 }
 
 func TestRedeemIntegrationAuthorizationHashesCanonicalValues(t *testing.T) {
-	code, err := uuid.FromString("685aebd3-45ba-4d4c-91a5-b181932f2ff5")
+	code, err := uuid.Parse("685aebd3-45ba-4d4c-91a5-b181932f2ff5")
 	require.NoError(t, err)
 	state := bytes.Repeat([]byte{4}, 32)
 	codeHash, stateHash := sha256.Sum256(code[:]), sha256.Sum256(state)
@@ -554,4 +554,11 @@ func TestGetIntegrationRecordingReturnsLegacyLRZPlaylistAsTheWatchPagePlaysIt(t 
 
 	require.NoError(t, err)
 	assert.Equal(t, "https://stream.lrz.de/vod/old.m3u8", response.PlaylistUrl)
+}
+
+func TestIsV4RFC4122(t *testing.T) {
+	assert.True(t, isV4RFC4122(uuid.MustParse("685aebd3-45ba-4d4c-91a5-b181932f2ff5")))
+	assert.False(t, isV4RFC4122(uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")), "v1")
+	assert.False(t, isV4RFC4122(uuid.MustParse("018f3c1e-7b2a-7c3d-91a5-b181932f2ff5")), "v7")
+	assert.False(t, isV4RFC4122(uuid.MustParse("685aebd3-45ba-4d4c-c1a5-b181932f2ff5")), "wrong variant")
 }

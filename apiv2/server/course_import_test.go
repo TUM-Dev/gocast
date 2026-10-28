@@ -173,7 +173,9 @@ func TestImportCourseImportCourses(t *testing.T) {
 	})
 
 	t.Run("skips courses not marked for import", func(t *testing.T) {
-		api := &API{log: slog.Default(), dao: dao.DaoWrapper{}}
+		api := &API{log: slog.Default(), dao: dao.DaoWrapper{
+			AuditDao: auditSink(t),
+		}}
 
 		resp, err := api.ImportCourseImportCourses(ctxWithUser(admin), &protobuf.CourseImportRequest{
 			Year: 2025, Term: "W",
@@ -196,7 +198,9 @@ func TestImportCourseImportCourses(t *testing.T) {
 		coursesMock.EXPECT().CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("duplicate slug")).Times(1)
 		coursesMock.EXPECT().CreateCourse(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-		api := &API{log: slog.Default(), dao: dao.DaoWrapper{CoursesDao: coursesMock}}
+		api := &API{log: slog.Default(), dao: dao.DaoWrapper{
+			AuditDao:   auditSink(t),
+			CoursesDao: coursesMock}}
 
 		resp, err := api.ImportCourseImportCourses(ctxWithUser(admin), &protobuf.CourseImportRequest{
 			Year: 2025, Term: "W",
@@ -233,7 +237,9 @@ func TestImportCourseImportCourses(t *testing.T) {
 				return nil
 			}).Times(1)
 
-		api := &API{log: slog.Default(), dao: dao.DaoWrapper{CoursesDao: coursesMock, LectureHallsDao: lectureHallMock}}
+		api := &API{log: slog.Default(), dao: dao.DaoWrapper{
+			AuditDao:   auditSink(t),
+			CoursesDao: coursesMock, LectureHallsDao: lectureHallMock}}
 
 		resp, err := api.ImportCourseImportCourses(ctxWithUser(admin), &protobuf.CourseImportRequest{
 			Year: 2025, Term: "W",

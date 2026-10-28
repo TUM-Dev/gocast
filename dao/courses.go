@@ -8,7 +8,6 @@ import (
 
 	"github.com/TUM-Dev/gocast/model"
 
-	"github.com/RBG-TUM/commons"
 	"gorm.io/gorm"
 )
 
@@ -135,7 +134,7 @@ func (d CoursesDaoImpl) GetAdministeredCoursesByUserId(ctx context.Context, user
 		return nil, err
 	}
 	foundCourses = append(foundCourses, administeredCourses...)
-	foundCourses = commons.Unique(foundCourses, func(c model.Course) uint { return c.ID })
+	foundCourses = model.UniqueCourses(foundCourses)
 	if dbErr == nil {
 		Cache.SetWithTTL(fmt.Sprintf("coursesByUserID%v-%d-%s", userid, year, teachingTerm), foundCourses, 1, time.Minute)
 	}
@@ -328,9 +327,35 @@ func (d CoursesDaoImpl) AddUserToCourse(ctx context.Context, userID uint, course
 	return DB.WithContext(ctx).Exec("insert into course_users (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
+// courseDeleteWindow is how long before its course's own deleted_at a stream may have
+// been deleted and still count as deleted with it: DeleteCourse removes the streams one
+// by one, then the course.
+const courseDeleteWindow = 10 * time.Minute
+
+// UnDeleteCourse restores the course and the streams DeleteCourse deleted with it.
+// Streams removed on their own earlier stay removed: the admin chose that separately.
+// Restoring only the course row would leave a live course with no lectures, and their
+// media would still be reaped as belonging to deleted streams.
 func (d CoursesDaoImpl) UnDeleteCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
-	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
+	return DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var deletedAt gorm.DeletedAt
+		err := tx.Unscoped().Model(&model.Course{}).Select("deleted_at").Where("id = ?", course.ID).Scan(&deletedAt).Error
+		if err != nil {
+			return err
+		}
+		// A course that is not deleted has nothing to restore, streams included.
+		if deletedAt.Valid {
+			err = tx.Unscoped().Model(&model.Stream{}).
+				Where("course_id = ? AND deleted_at IS NOT NULL AND deleted_at >= ? AND deleted_at <= ?",
+					course.ID, deletedAt.Time.Add(-courseDeleteWindow), deletedAt.Time).
+				Update("deleted_at", nil).Error
+			if err != nil {
+				return err
+			}
+		}
+		return tx.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
+	})
 }
 
 func (d CoursesDaoImpl) RemoveAdminFromCourse(userID uint, courseID uint) error {

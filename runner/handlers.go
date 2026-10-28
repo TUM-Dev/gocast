@@ -5,6 +5,7 @@ import (
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +14,7 @@ import (
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
 
-func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
+func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest) (*protobuf.StreamResponse, error) {
 	data := map[string]any{
 		"streamID":      req.GetStreamId(),
 		"streamVersion": protobuf.StreamVersion_name[int32(req.GetVersion())],
@@ -34,7 +35,11 @@ func (r *Runner) RequestStream(_ context.Context, req *protobuf.StreamRequest) (
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
-	jID := r.RunAction(a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	if req.GetDetectSilence() {
+		// Last, and non-fatal on failure: it is a long scan nobody should wait for or retry.
+		vod = append(vod, actions.MkSilence)
+	}
+	jID := r.RunActionContext(ctx, a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
 	r.log.Info("job added", "ID", jID)
 
 	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
@@ -59,7 +64,7 @@ func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequ
 // RequestSectionImages generates a thumbnail for each of the given video sections of an
 // already recorded stream. The images are delivered asynchronously in a
 // SectionImagesReadyNotification, so this only acknowledges the job.
-func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionImageRequest) (*protobuf.SectionImageResponse, error) {
+func (r *Runner) RequestSectionImages(ctx context.Context, req *protobuf.SectionImageRequest) (*protobuf.SectionImageResponse, error) {
 	sections := make([]actions.SectionTimestamp, 0, len(req.GetSections()))
 	for _, s := range req.GetSections() {
 		if err := s.GetStart().CheckValid(); err != nil {
@@ -84,17 +89,26 @@ func (r *Runner) RequestSectionImages(_ context.Context, req *protobuf.SectionIm
 	}
 
 	// A section image job has no VoD phase, so there is nothing to skip on discard.
-	jID := r.RunAction([]actions.Action{actions.MkSectionImages}, nil, data,
+	jID := r.RunActionContext(ctx, []actions.Action{actions.MkSectionImages}, nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "sections", len(sections)))
 	r.log.Info("section image job added", "ID", jID)
 
 	return &protobuf.SectionImageResponse{JobId: ptr.Take(jID)}, nil
 }
 
+// regenerateActions is what RegenerateThumbnail runs: the thumbnail, then the silence scan
+// if asked for. The scan is last because it is the long one.
+func regenerateActions(detectSilence bool) []actions.Action {
+	if detectSilence {
+		return []actions.Action{actions.RegenerateThumb, actions.MkSilence}
+	}
+	return []actions.Action{actions.RegenerateThumb}
+}
+
 // RegenerateThumbnail regenerates the thumbnail for an already-recorded VOD. The
 // result is delivered asynchronously in a ThumbnailReadyNotification, so this only
 // acknowledges the job.
-func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.RegenerateThumbnailRequest) (*protobuf.RegenerateThumbnailResponse, error) {
+func (r *Runner) RegenerateThumbnail(ctx context.Context, req *protobuf.RegenerateThumbnailRequest) (*protobuf.RegenerateThumbnailResponse, error) {
 	if req.GetStreamId() == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
 	}
@@ -109,7 +123,7 @@ func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.Regenerate
 	}
 
 	// A thumbnail regeneration job has no VoD phase, so there is nothing to skip on discard.
-	jID := r.RunAction([]actions.Action{actions.RegenerateThumb}, nil, data,
+	jID := r.RunActionContext(ctx, regenerateActions(req.GetDetectSilence()), nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion()))
 	r.log.Info("thumbnail regeneration job added", "ID", jID)
 
@@ -119,7 +133,7 @@ func (r *Runner) RegenerateThumbnail(_ context.Context, req *protobuf.Regenerate
 // PrepareUpload reserves a slot for a video file upload. The file is then POSTed to the
 // upload endpoint with the returned token; the result is delivered asynchronously in
 // VODReady and ThumbnailReady notifications, so nothing is started here.
-func (r *Runner) PrepareUpload(_ context.Context, req *protobuf.PrepareUploadRequest) (*protobuf.PrepareUploadResponse, error) {
+func (r *Runner) PrepareUpload(ctx context.Context, req *protobuf.PrepareUploadRequest) (*protobuf.PrepareUploadResponse, error) {
 	if req.GetStreamId() == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
 	}
@@ -128,10 +142,11 @@ func (r *Runner) PrepareUpload(_ context.Context, req *protobuf.PrepareUploadReq
 		return nil, status.Errorf(codes.InvalidArgument, "no valid stream version given")
 	}
 
-	token, err := r.uploads.create(req.GetStreamId(), version)
+	token, err := r.uploads.create(req.GetStreamId(), version, req.GetDetectSilence())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "couldn't create upload token")
 	}
+	r.uploads.attachTrace(token, tracing.Traceparent(ctx))
 	return &protobuf.PrepareUploadResponse{
 		Token:      ptr.Take(token),
 		UploadPort: ptr.Take(int32(config.Config.UploadPort)),

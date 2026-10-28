@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
-	uuid "github.com/satori/go.uuid"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -33,34 +31,17 @@ func LoadConfig() {
 const rsaKeySize = 2048
 
 func initConfig() {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("/etc/TUM-Live/")
-	viper.AddConfigPath("$HOME/.TUM-Live")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
-	if err != nil {
-		if errors.Is(err, viper.ConfigFileNotFoundError{}) {
-			logger.Warn("tools.config.LoadConfig: can't find config file", "err", err)
-		} else {
-			panic(fmt.Errorf("fatal error config file: %v", err))
-		}
-	}
-	logger.Info("Using Config file " + viper.ConfigFileUsed())
-	err = viper.Unmarshal(&Cfg)
-	if err != nil {
+	cfgPath, err := loadConfigFile("config", &Cfg)
+	switch {
+	case errors.Is(err, errConfigNotFound):
+		logger.Warn("tools.config.LoadConfig: can't find config file", "err", err)
+	case err != nil:
 		panic(fmt.Errorf("fatal error config file: %v", err))
+	default:
+		logger.Info("Using Config file " + cfgPath)
 	}
 
 	// set defaults
-	if Cfg.WorkerToken == "" {
-		Cfg.WorkerToken = uuid.NewV4().String()
-		viper.Set("workerToken", Cfg.WorkerToken)
-		err = viper.WriteConfig()
-		if err != nil {
-			logger.Warn("Can't write out config ", "err", err)
-		}
-	}
 	if Cfg.JWTKey == nil {
 		logger.Info("Generating new JWT key")
 		JWTKey, err := rsa.GenerateKey(rand.Reader, rsaKeySize)
@@ -73,8 +54,11 @@ func initConfig() {
 				Bytes: x509.MarshalPKCS1PrivateKey(JWTKey),
 			},
 		))
-		viper.Set("jwtKey", armoured)
-		err = viper.WriteConfig()
+		if cfgPath == "" {
+			err = errors.New("no config file to write to")
+		} else {
+			err = setConfigKey(cfgPath, "jwtKey", armoured)
+		}
 		if err != nil {
 			logger.Warn("Can't write out config ", "err", err)
 		}
@@ -142,8 +126,12 @@ type Config struct {
 		IdpColor       string   `yaml:"idpColor"`
 	} `yaml:"saml"`
 	Paths struct {
-		Static   string `yaml:"static"`
-		Mass     string `yaml:"mass"`
+		Static string `yaml:"static"`
+		Mass   string `yaml:"mass"`
+		// Vod is the directory the edge serves as /vod/ (the runner's STORAGE_PATH), mounted
+		// into this server for reaping the media of deleted streams. Optional: empty
+		// disables reaping.
+		Vod      string `yaml:"vod"`
 		Branding string `yaml:"branding"`
 	} `yaml:"paths"`
 	Auths struct {
@@ -167,11 +155,10 @@ type Config struct {
 		Port      string `yaml:"port"`
 		AuthToken string `yaml:"authToken"`
 	}
-	IngestBase  string  `yaml:"ingestBase"`
-	WebUrl      string  `yaml:"webUrl"`
-	WorkerToken string  `yaml:"workerToken"` // used for workers to join the worker pool
-	JWTKey      *string `yaml:"jwtKey"`
-	Meili       *struct {
+	IngestBase string  `yaml:"ingestBase"`
+	WebUrl     string  `yaml:"webUrl"`
+	JWTKey     *string `yaml:"jwtKey"`
+	Meili      *struct {
 		Host   string `yaml:"host"`
 		ApiKey string `yaml:"apiKey"`
 	} `yaml:"meili"`
@@ -187,10 +174,12 @@ type Config struct {
 }
 
 type MailConfig struct {
-	Sender            string `yaml:"sender"`
-	Server            string `yaml:"server"`
-	SMIMECert         string `yaml:"SMIMECert"`
-	SMIMEKey          string `yaml:"SMIMEKey"`
+	Sender    string `yaml:"sender"`
+	Server    string `yaml:"server"`
+	SMIMECert string `yaml:"SMIMECert"`
+	SMIMEKey  string `yaml:"SMIMEKey"`
+	// SMIMEKeyPassword unlocks an encrypted SMIMEKey; leave empty for an unencrypted one.
+	SMIMEKeyPassword  string `yaml:"SMIMEKeyPassword"`
 	MaxMailsPerMinute int    `yaml:"maxMailsPerMinute"`
 }
 

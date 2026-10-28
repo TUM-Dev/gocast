@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
 	"gorm.io/gorm/clause"
 
-	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
@@ -24,13 +24,12 @@ type StreamsDao interface {
 	CreateStreams(streams []model.Stream) error
 	AddVodView(id string) error
 
-	GetDueStreamsForWorkers() []model.Stream
 	GetDueStreamsForRunners() ([]model.Stream, error)
-	GetDuePremieresForWorkers() []model.Stream
 	GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error)
 	GetStreamByTumOnlineID(ctx context.Context, id uint) (stream model.Stream, err error)
 	GetStreamByID(ctx context.Context, id string) (stream model.Stream, err error)
 	GetAllStreams() ([]model.Stream, error)
+	GetRecordedStreamsForExport(ctx context.Context, courseID uint) ([]model.Stream, error)
 	ExecAllStreamsWithCoursesAndSubtitlesBatched(f func([]StreamWithCourseAndSubtitles))
 	GetCurrentLive(ctx context.Context) (currentLive []model.Stream, err error)
 	GetLiveStreamsInLectureHall(lectureHallId uint) ([]model.Stream, error)
@@ -40,7 +39,6 @@ type StreamsDao interface {
 	SetLectureHall(streamIDs []uint, lectureHallID uint) error
 	UnsetLectureHall(streamIDs []uint) error
 	UpdateStream(stream model.Stream) error
-	SaveWorkerForStream(stream model.Stream, worker model.Worker) error
 	SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error
 	GetRunnerJobsForStream(streamID uint) ([]model.StreamRunnerJob, error)
 	ClearRunnerJobsForStream(streamID uint) error
@@ -68,6 +66,8 @@ type StreamsDao interface {
 	ToggleVisibility(streamId uint, private bool) error
 
 	DeleteStream(streamID string)
+	// RemoveStream is DeleteStream that reports a failure, for callers that audit the delete.
+	RemoveStream(streamID string) error
 	DeleteStreamsWithTumID(ids []uint)
 	UpdateLectureSeries(model.Stream) error
 	UpdateLectureSeriesTime(model.Stream) error
@@ -164,26 +164,6 @@ func (d streamsDao) AddVodView(id string) error {
 		return tx.Save(&stat).Error
 	})
 	return err
-}
-
-// GetDueStreamsForWorkers retrieves all streams that due to be streamed in a lecture hall by a worker.
-func (d streamsDao) GetDueStreamsForWorkers() []model.Stream {
-	var res []model.Stream
-	DB.Model(&model.Stream{}).
-		Joins("JOIN courses c ON c.id = streams.course_id").
-		Joins("JOIN lecture_halls lh on streams.lecture_hall_id = lh.id").
-		Where("lecture_hall_id IS NOT NULL AND start BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 10 MINUTE)" +
-			"AND live_now = false AND recording = false AND (ended = false OR ended IS NULL) AND c.deleted_at IS null " +
-			"AND lh.legacy").
-		Scan(&res)
-	return res
-}
-
-func (d streamsDao) GetDuePremieresForWorkers() []model.Stream {
-	var res []model.Stream
-	DB.Preload("Files").
-		Find(&res, "premiere AND start BETWEEN DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND DATE_ADD(NOW(), INTERVAL 5 SECOND) AND live_now = false AND recording = false")
-	return res
 }
 
 func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
@@ -348,6 +328,19 @@ func (d streamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier st
 func (d streamsDao) GetAllStreams() ([]model.Stream, error) {
 	var res []model.Stream
 	err := DB.Find(&res).Error
+	return res, err
+}
+
+// GetRecordedStreamsForExport returns the recorded streams of a course, oldest first, with only
+// the columns a download link needs. GetCourseById would also preload progress, sections and
+// files of every stream, which an export never reads.
+func (d streamsDao) GetRecordedStreamsForExport(ctx context.Context, courseID uint) ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.WithContext(ctx).
+		Select("id", "course_id", "name", "start", "recording", "playlist_url", "playlist_url_cam", "playlist_url_pres").
+		Where("course_id = ? AND recording = ?", courseID, true).
+		Order("start asc, id asc").
+		Find(&res).Error
 	return res, err
 }
 
@@ -572,12 +565,6 @@ func (d streamsDao) UpdateStream(stream model.Stream) error {
 	return err
 }
 
-// SaveWorkerForStream associates a worker with a stream with streamID
-func (d streamsDao) SaveWorkerForStream(stream model.Stream, worker model.Worker) error {
-	defer Cache.Clear()
-	return DB.Model(&stream).Association("StreamWorkers").Append(&worker)
-}
-
 // SaveRunnerJobForStream records that a runner is executing a job for a given stream version.
 func (d streamsDao) SaveRunnerJobForStream(streamID uint, version model.StreamVersion, runnerHostname, jobID string) error {
 	return DB.Create(&model.StreamRunnerJob{
@@ -746,6 +733,12 @@ func (d streamsDao) RemoveTranscodingProgress(streamVersion model.StreamVersion,
 func (d streamsDao) DeleteStream(streamID string) {
 	DB.Where("id = ?", streamID).Delete(&model.Stream{})
 	Cache.Clear()
+}
+
+func (d streamsDao) RemoveStream(streamID string) error {
+	err := DB.Where("id = ?", streamID).Delete(&model.Stream{}).Error
+	Cache.Clear()
+	return err
 }
 
 func (d streamsDao) DeleteStreamsWithTumID(ids []uint) {

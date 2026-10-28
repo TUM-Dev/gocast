@@ -18,6 +18,8 @@ var Config struct {
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
+	// MaxPostProcessing is how many thumbnail regenerations and silence scans run at once.
+	MaxPostProcessing int `env:"MAX_POSTPROCESSING" envDefault:"3"`
 }
 
 func init() {

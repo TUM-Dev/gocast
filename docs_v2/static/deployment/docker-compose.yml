@@ -2,55 +2,6 @@ version: '3.8'
 
 services:
 
-  # See (https://tumlive-docs.pages.dev/docs/deployment/add-worker)
-  worker:
-    image: ghcr.io/tum-dev/gocast/worker:latest
-    networks:
-      - default
-    environment:
-      - Token=<your-organization-token> # TODO: replace this with your organization JWT
-      - MainBase=live.rbg.tum.de
-      - Host={{.Node.Hostname}}
-      - Address=<your-worker-address> # TODO: replace this with the address of your worker (e.g. https://worker.example.com or http://123.123.123.123)
-      - LrzUser=
-      - LrzMail=
-      - LrzPhone=
-      - LrzSubDir=RBG
-      - LrzUploadUrl=<your-vod-service-addr>:8089 # TODO: replace this with the address of your vod service (e.g. http://vodservice:8089)
-      - LogLevel=debug
-      - PersistDir=/persist
-      - VodURLTemplate=<your-edge-server-addr>/vod/%s.mp4/playlist.m3u8 # TODO: replace this with the address of your edge server (e.g. https://edge.example.com)
-    ports:
-      - target: 1935
-        published: 1935
-        mode: host
-        protocol: tcp
-      - target: 8060
-        published: 8060
-        protocol: tcp
-        mode: host
-      - target: 50051
-        published: 50051
-        protocol: tcp
-        mode: host
-      # Uncomment the following lines if the Worker and the Edge server are in different networks
-      # - target: 8085 # The port on which the workers provides its HLS files to the Edge server
-      #   published: 8085
-      #   mode: host
-      #   protocol: tcp
-    volumes:
-      - /path/to/recordings:/recordings
-      - /path/to/persist:/persist
-      - /path/to/mass:/mass
-      - /path/to/workerlog:/var/log/stream
-    deploy:
-      mode: global # replicate to every node
-      placement:
-        constraints:
-          - "node.labels.worker==true"
-      restart_policy:
-        condition: on-failure
-  
   # See (https://tumlive-docs.pages.dev/docs/deployment/add-runner)
   runner:
     image: ghcr.io/tum-dev/gocast/runner:latest
@@ -59,31 +10,32 @@ services:
     environment:
       - LOG_FMT=txt
       - LOG_LEVEL=debug
-      - PORT=50057
-      - GOCAST_SERVER=live.rbg.tum.de:50056
-      - REALHOST={{.Node.Hostname}}
-      - VERSION=dev
-      - TOKEN=<your-organization-token> # TODO: replace this with your organization JWT
+      - PORT=52735 # serves the HLS files of running streams to the edge server
+      - UPLOAD_PORT=8188 # receives uploaded videos from the GoCast server
+      - GOCAST_SERVER=<your-gocast-host>:50056 # TODO: replace this with the address of your GoCast server
+      - REALHOST={{.Node.Hostname}} # the hostname the GoCast server reaches this runner under
+      - EDGE_SERVER=<your-edge-server-addr> # TODO: replace this with the address of your edge server (e.g. https://edge.example.com)
+      - STORAGE_PATH=/storage/mass
+      - SEGMENT_PATH=/storage/live
+      - UPLOAD_PATH=/storage/uploads
     ports:
-      - target: 8187
-        published: 8187
+      - target: 52735
+        published: 52735
         protocol: tcp
         mode: host
-      # Uncomment the following lines to expose the Runner to the public
-      # - target: 50057
-      #   published: 50057
-      #   protocol: tcp
-      #   mode: host
+      - target: 8188
+        published: 8188
+        protocol: tcp
+        mode: host
     volumes:
-      - /path/to/recordings:/recordings
-      - /path/to/persist:/persist
-      - /path/to/mass:/mass
-      - /path/to/workerlog:/var/log/stream
+      - /path/to/live:/storage/live
+      - /path/to/uploads:/storage/uploads
+      - /path/to/mass:/storage/mass
     deploy:
       mode: global # replicate to every node
       placement:
         constraints:
-          - "node.labels.worker==true"
+          - "node.labels.runner==true"
       restart_policy:
         condition: on-failure
 
@@ -105,11 +57,11 @@ services:
       mode: global
       placement:
         constraints:
-          - "node.labels.worker==true"
+          - "node.labels.runner==true"
 
   # See (https://tumlive-docs.pages.dev/docs/deployment/setup-edge)
   edge:
-    image: ghcr.io/tum-dev/gocast/worker-edge:latest
+    image: ghcr.io/tum-dev/gocast/edge-service:latest
     networks:
       - default
     ports:
@@ -169,10 +121,7 @@ services:
         mode: host
 
 volumes:
-  recordings:
-  persist:
   mass:
-  workerlog:
   vod:
   cert:
 

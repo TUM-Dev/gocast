@@ -527,7 +527,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Create a lecture, or a series of them, in a course."
-      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
+      description: "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media). A VOD_UPLOAD takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course."
     };
   }
 
@@ -616,15 +616,33 @@ service CourseService {
     };
   }
 
-  rpc regenerateCourseThumbnails(RegenerateCourseThumbnailsRequest) returns (google.protobuf.Empty) {
+  rpc redoCoursePostProcessing(RedoCoursePostProcessingRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/courses/{course_id}/actions/regenerate-thumbnails"
+      post: "/courses/{course_id}/actions/redo-post-processing"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Course Administration"
-      summary: "Regenerate thumbnails for every VOD in the course."
-      description: "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course."
+      summary: "Redo the post-processing of every VOD in the course."
+      description: "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course, and to detect the silences of each lecture once, on its best version. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course."
+    };
+  }
+
+  rpc exportCourseVideos(ExportCourseVideosRequest) returns (ExportCourseVideosResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/export/videos"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "List download links for every recorded video of a course."
+      description: "Returns one signed download link per recorded lecture and version, with a ready-made file name. All available versions (combined, presentation, camera) are listed by default; pass a kind to narrow it to one. Versions a lecture does not have are skipped. The links expire after a few hours, so fetch them one after another and call this again for a long course. Requires administering the course."
+    };
+  }
+
+  rpc listCourseAudits(ListCourseAuditsRequest) returns (ListAuditsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/audits"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Audits"
+      summary: "List a course's audit log entries."
+      description: "Retrieves one page of the audit log entries about a course and its lectures, newest first. Requires administering the course. Entries from before they were linked to courses are included where their message made the course unambiguous."
     };
   }
 
@@ -1255,24 +1273,6 @@ service AdminService {
     };
   }
 
-  rpc listWorkers(google.protobuf.Empty) returns (ListWorkersResponse) {
-    option (google.api.http) = {get: "/admin/workers"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Workers"
-      summary: "List the encoding workers."
-      description: "Retrieves every registered worker with its current liveness, workload and VM stats, plus the token new workers authenticate with. Requires the server.administer permission."
-    };
-  }
-
-  rpc deleteWorker(DeleteWorkerRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {delete: "/admin/workers/{worker_id}"};
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: "Workers"
-      summary: "Delete a worker."
-      description: "Removes a worker registration. A worker that is still running re-registers on its next heartbeat. Requires the server.administer permission."
-    };
-  }
-
   rpc listMaintenanceCronJobs(google.protobuf.Empty) returns (ListMaintenanceCronJobsResponse) {
     option (google.api.http) = {get: "/admin/maintenance/cron"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -1327,6 +1327,18 @@ service AdminService {
       tags: "Maintenance"
       summary: "Dismiss a failed email."
       description: "Deletes a failed email; it is not retried afterwards. Requires the server.administer permission."
+    };
+  }
+
+  rpc reapDeletedMedia(ReapDeletedMediaRequest) returns (ReapDeletedMediaResponse) {
+    option (google.api.http) = {
+      post: "/admin/maintenance/reap-deleted-media"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Maintenance"
+      summary: "List or delete the media of soft-deleted streams."
+      description: "Without execute this is a dry run: it lists every file and directory that executing would delete and changes nothing. Executing needs the plan_token of a dry run and refuses if the plan has changed since. Files still referenced by a live stream or a copy are never listed. Requires the server.administer permission."
     };
   }
 
@@ -1941,7 +1953,8 @@ message Stream {
   bool liveNow = 16;
   google.protobuf.Timestamp live_now_timestamp = 17;
   bool recording = 18;
-  bool premiere = 19;
+  reserved 19;
+  reserved "premiere";
   bool ended = 20;
   uint32 vod_views = 21;
   uint32 start_offset = 22;
@@ -2247,51 +2260,6 @@ message ListRunnersResponse {
 }
 
 ///////////////////////////////
-//////// WORKER_MESSAGE ///////
-///////////////////////////////
-
-// Worker is the older, pre-runner equivalent: it also transcodes, but is keyed by a
-// self-generated UUID rather than hostname and carries VM stats the runner does not.
-message Worker {
-  string worker_id = 1;
-  string host = 2;
-  string version = 3;
-  // Derived from last_seen: dead after six minutes without a heartbeat. Sent
-  // computed so a client cannot disagree with the scheduler.
-  bool alive = 4;
-  // How much the worker has to do: +1 per silence detection job, +2 per converting
-  // job, +3 per streaming job.
-  uint32 workload = 5;
-  // The jobs currently running, as a comma-separated summary the worker sends itself.
-  string status = 6;
-  // VM stats, self-reported by the worker; empty until it has sent a heartbeat.
-  string cpu = 7;
-  string memory = 8;
-  string disk = 9;
-  string uptime = 10;
-  google.protobuf.Timestamp last_seen = 11;
-}
-
-///////////////////////////////
-//////// WORKER_REQUEST ///////
-///////////////////////////////
-
-message DeleteWorkerRequest {
-  string worker_id = 1;
-}
-
-///////////////////////////////
-/////// WORKER_RESPONSE ///////
-///////////////////////////////
-
-message ListWorkersResponse {
-  repeated Worker workers = 1;
-  // The token a new worker authenticates its gRPC registration with. Configuration,
-  // not a per-caller secret -- server.administer already gates the whole page.
-  string worker_token = 2;
-}
-
-///////////////////////////////
 ///// USER_ADMIN_MESSAGE //////
 ///////////////////////////////
 
@@ -2428,6 +2396,59 @@ message ListMaintenanceEmailFailuresResponse {
 
 message DeleteMaintenanceEmailFailureRequest {
   uint32 id = 1;
+}
+
+message ReapDeletedMediaRequest {
+  // execute false is a dry run: nothing is deleted. A bare request can never delete.
+  bool execute = 1;
+  // plan_token is required to execute: the token of the dry run the admin reviewed.
+  string plan_token = 2;
+  // offset and page_size page through the dry run's entries. page_size 0 means 500.
+  uint32 offset = 3;
+  uint32 page_size = 4;
+}
+
+enum ReapEntryKind {
+  REAP_ENTRY_KIND_UNSPECIFIED = 0;
+  // A stream version's directory.
+  REAP_ENTRY_KIND_VOD_DIR = 1;
+  // A file inside such a directory.
+  REAP_ENTRY_KIND_VOD_FILE = 2;
+  // A File row's path: thumbnail, section image, attachment.
+  REAP_ENTRY_KIND_FILE = 3;
+}
+
+message ReapEntry {
+  ReapEntryKind kind = 1;
+  string path = 2;
+  uint64 bytes = 3;
+  repeated uint32 stream_ids = 4;
+  repeated uint32 course_ids = 5;
+  google.protobuf.Timestamp deleted_at = 6;
+}
+
+// ReapSkipped is something that looked reapable and was left alone, with the reason.
+message ReapSkipped {
+  string path = 1;
+  repeated uint32 stream_ids = 2;
+  string reason = 3;
+}
+
+message ReapDeletedMediaResponse {
+  // entries is one page of the plan; empty when executing.
+  repeated ReapEntry entries = 1;
+  // skipped is sent on the first page only.
+  repeated ReapSkipped skipped = 2;
+  uint32 total_entries = 3;
+  uint32 total_dirs = 4;
+  uint32 total_files = 5;
+  uint64 total_bytes = 6;
+  string plan_token = 7;
+  // Set when executing: what was actually removed, and what could not be.
+  bool executed = 8;
+  uint32 deleted_files = 9;
+  uint64 deleted_bytes = 10;
+  repeated string errors = 11;
 }
 
 ///////////////////////////////
@@ -2603,6 +2624,18 @@ message ListAuditsRequest {
   // admin page used.
   uint32 limit = 1;
   uint32 offset = 2;
+  // Only entries of this kind, as AuditEntry.type renders it ("User Deleted"). Empty
+  // for every kind; an unknown name is a 400 rather than an empty page.
+  string type = 3;
+}
+
+message ListCourseAuditsRequest {
+  uint32 course_id = 1;
+  // Defaults to 10 server-side when omitted or zero.
+  uint32 limit = 2;
+  uint32 offset = 3;
+  // Only entries of this kind, as in ListAuditsRequest.type.
+  string type = 4;
 }
 
 ///////////////////////////////
@@ -2611,6 +2644,8 @@ message ListAuditsRequest {
 
 message ListAuditsResponse {
   repeated AuditEntry audits = 1;
+  // How many entries match the request's filter, ignoring limit and offset.
+  uint32 total = 2;
 }
 
 ///////////////////////////////
@@ -2836,8 +2871,26 @@ message DeleteCourseRequest {
   uint32 course_id = 1;
 }
 
-message RegenerateCourseThumbnailsRequest {
+message RedoCoursePostProcessingRequest {
   uint32 course_id = 1;
+}
+
+message ExportCourseVideosRequest {
+  uint32 course_id = 1;
+  // Which version to export. Unspecified means every available version.
+  WatchViewKind kind = 2;
+}
+
+message ExportCourseVideosResponse {
+  repeated CourseVideoExport videos = 1;
+}
+
+message CourseVideoExport {
+  uint32 stream_id = 1;
+  // What the file should be saved as; unique within the response.
+  string file_name = 2;
+  // A signed link to the edge's download endpoint.
+  string url = 3;
 }
 
 // An account as the course page shows it to the course's administrators.
@@ -3036,7 +3089,8 @@ message CourseLectureAdmin {
   bool past = 16;
   // A version is still transcoding.
   bool converting = 17;
-  bool premiere = 18;
+  reserved 18;
+  reserved "premiere";
   // The recorded versions there are: any of COMB, PRES and CAM.
   repeated string vod_versions = 19;
   // The recording's length in seconds, 0 when not known.
@@ -3131,8 +3185,9 @@ enum LectureCreationKind {
   LECTURE_CREATION_KIND_LIVESTREAM = 0;
   // A recording uploaded afterwards through POST .../streams/{stream_id}/media.
   LECTURE_CREATION_KIND_VOD_UPLOAD = 1;
-  // A recording a worker streams as if live, starting at the lecture's start.
-  LECTURE_CREATION_KIND_PREMIERE = 2;
+  // 2 was PREMIERE, a recording streamed as if live. It needed a worker.
+  reserved 2;
+  reserved "LECTURE_CREATION_KIND_PREMIERE";
 }
 
 message CreateLecturesRequest {
@@ -3142,8 +3197,8 @@ message CreateLecturesRequest {
   LectureCreationKind kind = 3;
   // The first lecture's start. Required unless ad_hoc.
   google.protobuf.Timestamp start = 4;
-  // How long each lecture runs. Required for a livestream; a VOD_UPLOAD or
-  // PREMIERE given 0 gets an hour.
+  // How long each lecture runs. Required for a livestream; a
+  // VOD_UPLOAD given 0 gets an hour.
   uint32 duration_minutes = 5;
   // 0 for none: a self-streamed livestream, and always for the other kinds.
   uint32 lecture_hall_id = 6;

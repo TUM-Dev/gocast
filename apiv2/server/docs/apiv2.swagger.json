@@ -89,6 +89,13 @@
             "required": false,
             "type": "integer",
             "format": "int64"
+          },
+          {
+            "name": "type",
+            "description": "Only entries of this kind, as AuditEntry.type renders it (\"User Deleted\"). Empty\nfor every kind; an unknown name is a 400 rather than an empty page.",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -790,6 +797,40 @@
         ]
       }
     },
+    "/admin/maintenance/reap-deleted-media": {
+      "post": {
+        "summary": "List or delete the media of soft-deleted streams.",
+        "description": "Without execute this is a dry run: it lists every file and directory that executing would delete and changes nothing. Executing needs the plan_token of a dry run and refuses if the plan has changed since. Files still referenced by a live stream or a copy are never listed. Requires the server.administer permission.",
+        "operationId": "AdminService_reapDeletedMedia",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufReapDeletedMediaResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufReapDeletedMediaRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Maintenance"
+        ]
+      }
+    },
     "/admin/maintenance/transcoding-failures": {
       "get": {
         "summary": "List transcoding failures.",
@@ -1443,63 +1484,6 @@
         ]
       }
     },
-    "/admin/workers": {
-      "get": {
-        "summary": "List the encoding workers.",
-        "description": "Retrieves every registered worker with its current liveness, workload and VM stats, plus the token new workers authenticate with. Requires the server.administer permission.",
-        "operationId": "AdminService_listWorkers",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/protobufListWorkersResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "Workers"
-        ]
-      }
-    },
-    "/admin/workers/{workerId}": {
-      "delete": {
-        "summary": "Delete a worker.",
-        "description": "Removes a worker registration. A worker that is still running re-registers on its next heartbeat. Requires the server.administer permission.",
-        "operationId": "AdminService_deleteWorker",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "workerId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "Workers"
-        ]
-      }
-    },
     "/bookmarks": {
       "get": {
         "summary": "Get bookmarks by stream ID.",
@@ -1982,11 +1966,11 @@
         ]
       }
     },
-    "/courses/{courseId}/actions/regenerate-thumbnails": {
+    "/courses/{courseId}/actions/redo-post-processing": {
       "post": {
-        "summary": "Regenerate thumbnails for every VOD in the course.",
-        "description": "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.",
-        "operationId": "CourseService_regenerateCourseThumbnails",
+        "summary": "Redo the post-processing of every VOD in the course.",
+        "description": "Asks a runner to redo the thumbnail for every available version (combined, camera, presentation) of every recorded lecture in the course, and to detect the silences of each lecture once, on its best version. Runs in the background; this returns as soon as the jobs are queued. Requires administering the course.",
+        "operationId": "CourseService_redoCoursePostProcessing",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -2015,7 +1999,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CourseServiceregenerateCourseThumbnailsBody"
+              "$ref": "#/definitions/CourseServiceredoCoursePostProcessingBody"
             }
           }
         ],
@@ -2208,6 +2192,61 @@
         ]
       }
     },
+    "/courses/{courseId}/audits": {
+      "get": {
+        "summary": "List a course's audit log entries.",
+        "description": "Retrieves one page of the audit log entries about a course and its lectures, newest first. Requires administering the course. Entries from before they were linked to courses are included where their message made the course unambiguous.",
+        "operationId": "CourseService_listCourseAudits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListAuditsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "description": "Defaults to 10 server-side when omitted or zero.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "type",
+            "description": "Only entries of this kind, as in ListAuditsRequest.type.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Audits"
+        ]
+      }
+    },
     "/courses/{courseId}/copy": {
       "post": {
         "summary": "Copy a course into another semester.",
@@ -2242,6 +2281,53 @@
             "schema": {
               "$ref": "#/definitions/CourseServicecopyCourseBody"
             }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/export/videos": {
+      "get": {
+        "summary": "List download links for every recorded video of a course.",
+        "description": "Returns one signed download link per recorded lecture and version, with a ready-made file name. All available versions (combined, presentation, camera) are listed by default; pass a kind to narrow it to one. Versions a lecture does not have are skipped. The links expire after a few hours, so fetch them one after another and call this again for a long course. Requires administering the course.",
+        "operationId": "CourseService_exportCourseVideos",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufExportCourseVideosResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "kind",
+            "description": "Which version to export. Unspecified means every available version.\n\n - WATCH_VIEW_KIND_COMBINED: Presentation and camera in one picture.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "WATCH_VIEW_KIND_UNSPECIFIED",
+              "WATCH_VIEW_KIND_COMBINED",
+              "WATCH_VIEW_KIND_PRESENTATION",
+              "WATCH_VIEW_KIND_CAMERA"
+            ],
+            "default": "WATCH_VIEW_KIND_UNSPECIFIED"
           }
         ],
         "tags": [
@@ -2689,7 +2775,7 @@
     "/courses/{courseId}/streams": {
       "post": {
         "summary": "Create a lecture, or a series of them, in a course.",
-        "description": "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media); a PREMIERE is a recording a worker streams as if live at start, from a file the server expects under mass storage. A VOD_UPLOAD or PREMIERE takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.",
+        "description": "Creates one lecture at start, plus one more per date in date_series, all sharing a new series identifier when there is more than one. Each runs duration_minutes from its start. The kind decides what the lecture is: a LIVESTREAM is streamed from its lecture hall, or with hall 0 by the lecturer with the stream key it gets; a VOD_UPLOAD waits for its recording to be uploaded (POST .../streams/{stream_id}/media). A VOD_UPLOAD takes no hall (400) and may leave duration_minutes 0, which gives it an hour in the schedule. ad_hoc starts a livestream two minutes from now, ignoring start, and takes no date_series. A missing title, start or (for a livestream) duration, a repeated date and an unknown hall answer 400. Creates all or nothing, and answers the created lectures. Requires administering the course.",
         "operationId": "CourseService_createLectures",
         "responses": {
           "200": {
@@ -5722,7 +5808,7 @@
         "durationMinutes": {
           "type": "integer",
           "format": "int64",
-          "description": "How long each lecture runs. Required for a livestream; a VOD_UPLOAD or\nPREMIERE given 0 gets an hour."
+          "description": "How long each lecture runs. Required for a livestream; a\nVOD_UPLOAD given 0 gets an hour."
         },
         "lectureHallId": {
           "type": "integer",
@@ -5794,7 +5880,7 @@
         }
       }
     },
-    "CourseServiceregenerateCourseThumbnailsBody": {
+    "CourseServiceredoCoursePostProcessingBody": {
       "type": "object"
     },
     "CourseServicerequestLectureSubtitlesBody": {
@@ -6989,9 +7075,6 @@
           "type": "boolean",
           "description": "A version is still transcoding."
         },
-        "premiere": {
-          "type": "boolean"
-        },
         "vodVersions": {
           "type": "array",
           "items": {
@@ -7189,6 +7272,23 @@
       "properties": {
         "token": {
           "type": "string"
+        }
+      }
+    },
+    "protobufCourseVideoExport": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "What the file should be saved as; unique within the response."
+        },
+        "url": {
+          "type": "string",
+          "description": "A signed link to the edge's download endpoint."
         }
       }
     },
@@ -7430,6 +7530,18 @@
         },
         "course": {
           "type": "string"
+        }
+      }
+    },
+    "protobufExportCourseVideosResponse": {
+      "type": "object",
+      "properties": {
+        "videos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseVideoExport"
+          }
         }
       }
     },
@@ -7893,11 +8005,10 @@
       "type": "string",
       "enum": [
         "LECTURE_CREATION_KIND_LIVESTREAM",
-        "LECTURE_CREATION_KIND_VOD_UPLOAD",
-        "LECTURE_CREATION_KIND_PREMIERE"
+        "LECTURE_CREATION_KIND_VOD_UPLOAD"
       ],
       "default": "LECTURE_CREATION_KIND_LIVESTREAM",
-      "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media.\n - LECTURE_CREATION_KIND_PREMIERE: A recording a worker streams as if live, starting at the lecture's start."
+      "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media."
     },
     "protobufLectureFileAdmin": {
       "type": "object",
@@ -8137,6 +8248,11 @@
             "type": "object",
             "$ref": "#/definitions/protobufAuditEntry"
           }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How many entries match the request's filter, ignoring limit and offset."
         }
       }
     },
@@ -8401,22 +8517,6 @@
         }
       }
     },
-    "protobufListWorkersResponse": {
-      "type": "object",
-      "properties": {
-        "workers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/protobufWorker"
-          }
-        },
-        "workerToken": {
-          "type": "string",
-          "description": "The token a new worker authenticates its gRPC registration with. Configuration,\nnot a per-caller secret -- server.administer already gates the whole page."
-        }
-      }
-    },
     "protobufMaintenanceEmailFailure": {
       "type": "object",
       "properties": {
@@ -8500,6 +8600,149 @@
           "type": "string"
         }
       }
+    },
+    "protobufReapDeletedMediaRequest": {
+      "type": "object",
+      "properties": {
+        "execute": {
+          "type": "boolean",
+          "description": "execute false is a dry run: nothing is deleted. A bare request can never delete."
+        },
+        "planToken": {
+          "type": "string",
+          "description": "plan_token is required to execute: the token of the dry run the admin reviewed."
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int64",
+          "description": "offset and page_size page through the dry run's entries. page_size 0 means 500."
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "protobufReapDeletedMediaResponse": {
+      "type": "object",
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufReapEntry"
+          },
+          "description": "entries is one page of the plan; empty when executing."
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufReapSkipped"
+          },
+          "description": "skipped is sent on the first page only."
+        },
+        "totalEntries": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalDirs": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalFiles": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "planToken": {
+          "type": "string"
+        },
+        "executed": {
+          "type": "boolean",
+          "description": "Set when executing: what was actually removed, and what could not be."
+        },
+        "deletedFiles": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "deletedBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "protobufReapEntry": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/protobufReapEntryKind"
+        },
+        "path": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "courseIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "protobufReapEntryKind": {
+      "type": "string",
+      "enum": [
+        "REAP_ENTRY_KIND_UNSPECIFIED",
+        "REAP_ENTRY_KIND_VOD_DIR",
+        "REAP_ENTRY_KIND_VOD_FILE",
+        "REAP_ENTRY_KIND_FILE"
+      ],
+      "default": "REAP_ENTRY_KIND_UNSPECIFIED",
+      "description": " - REAP_ENTRY_KIND_VOD_DIR: A stream version's directory.\n - REAP_ENTRY_KIND_VOD_FILE: A file inside such a directory.\n - REAP_ENTRY_KIND_FILE: A File row's path: thumbnail, section image, attachment."
+    },
+    "protobufReapSkipped": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "streamIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "ReapSkipped is something that looked reapable and was left alone, with the reason."
     },
     "protobufRedeemIntegrationAuthorizationRequest": {
       "type": "object",
@@ -9034,9 +9277,6 @@
           "format": "date-time"
         },
         "recording": {
-          "type": "boolean"
-        },
-        "premiere": {
           "type": "boolean"
         },
         "ended": {
@@ -9827,51 +10067,6 @@
           "description": "Whether reportStreamIssue can succeed: the deployment has an alert room, the\ncaller is signed in and the stream is held in a lecture hall."
         }
       }
-    },
-    "protobufWorker": {
-      "type": "object",
-      "properties": {
-        "workerId": {
-          "type": "string"
-        },
-        "host": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "alive": {
-          "type": "boolean",
-          "description": "Derived from last_seen: dead after six minutes without a heartbeat. Sent\ncomputed so a client cannot disagree with the scheduler."
-        },
-        "workload": {
-          "type": "integer",
-          "format": "int64",
-          "description": "How much the worker has to do: +1 per silence detection job, +2 per converting\njob, +3 per streaming job."
-        },
-        "status": {
-          "type": "string",
-          "description": "The jobs currently running, as a comma-separated summary the worker sends itself."
-        },
-        "cpu": {
-          "type": "string",
-          "description": "VM stats, self-reported by the worker; empty until it has sent a heartbeat."
-        },
-        "memory": {
-          "type": "string"
-        },
-        "disk": {
-          "type": "string"
-        },
-        "uptime": {
-          "type": "string"
-        },
-        "lastSeen": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "description": "Worker is the older, pre-runner equivalent: it also transcodes, but is keyed by a\nself-generated UUID rather than hostname and carries VM stats the runner does not."
     },
     "rpcStatus": {
       "type": "object",

@@ -356,7 +356,7 @@ func (a *API) EndStream(ctx context.Context, req *protobuf.EndStreamRequest) (*e
 		a.log.Error("can't end the stream", "err", err, "stream", stream.ID)
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("can't end the stream"))
 	}
-	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: ended (discard: %v)", stream.ID, req.GetDiscard()))
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: ended (discard: %v)", stream.ID, req.GetDiscard()), forStream(stream))
 	return &emptypb.Empty{}, nil
 }
 

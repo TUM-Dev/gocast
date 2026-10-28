@@ -67,7 +67,9 @@ func MakeAuthenticatedRequest(auth *string, method string, body string, url stri
 		_ = res.Body.Close()
 	}()
 
-	if res.StatusCode != http.StatusOK {
+	// Any 2xx is a success: PTZ CGIs answer a preset change with 204 No Content, and treating
+	// that as a failure made every redelivered StreamStart move the camera again.
+	if res.StatusCode < 200 || res.StatusCode > 299 {
 		// The body is not read, let alone returned: an error page is not a snapshot, and
 		// handing it back is how it ended up on disk as a .jpg.
 		return nil, res.StatusCode, fmt.Errorf("camera %s: %w: %s", req.URL.Host, ErrUnexpectedStatus, res.Status)

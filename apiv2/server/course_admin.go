@@ -138,7 +138,7 @@ func (a *API) UpdateCourseSettings(ctx context.Context, req *protobuf.UpdateCour
 	}
 
 	// v1 left no trace of a settings change; visibility is worth one.
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' settings: %s", course.Name, course.Slug, strings.Join(changes, ", ")))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' settings: %s", course.Name, course.Slug, strings.Join(changes, ", ")), forCourse(course.ID))
 
 	return courseAdminMessage(course), nil
 }
@@ -206,7 +206,7 @@ func (a *API) CopyCourse(ctx context.Context, req *protobuf.CopyCourseRequest) (
 		}
 	}
 
-	a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("%s:'%s' (%d, %s) copied from [%d]", copied.Slug, copied.Name, copied.Year, copied.TeachingTerm, course.ID))
+	a.audit(ctx, model.AuditCourseCreate, fmt.Sprintf("%s:'%s' (%d, %s) copied from [%d]", copied.Slug, copied.Name, copied.Year, copied.TeachingTerm, course.ID), forCourse(copied.ID))
 
 	return &protobuf.CopyCourseResponse{CourseId: uint32(copied.ID), NumErrors: numErrors}, nil
 }
@@ -219,7 +219,7 @@ func (a *API) DeleteCourse(ctx context.Context, req *protobuf.DeleteCourseReques
 	}
 
 	a.log.Info("deleting course", "course", course.ID)
-	a.audit(ctx, model.AuditCourseDelete, fmt.Sprintf("'%s' (%d, %s)[%d]", course.Name, course.Year, course.TeachingTerm, course.ID))
+	a.audit(ctx, model.AuditCourseDelete, fmt.Sprintf("'%s' (%d, %s)[%d]", course.Name, course.Year, course.TeachingTerm, course.ID), forCourse(course.ID))
 
 	// Reports nothing; it logs what it could not delete and carries on, as in v1.
 	a.dao.CoursesDao.DeleteCourse(course)
@@ -277,7 +277,7 @@ func (a *API) AddCourseAdmin(ctx context.Context, req *protobuf.AddCourseAdminRe
 	// Cached for ten seconds; the new admin's next request should see the course.
 	dao.InvalidateUserCache(user.ID)
 
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' add: %s (%d)", course.Name, course.Slug, user.GetPreferredName(), user.ID))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' add: %s (%d)", course.Name, course.Slug, user.GetPreferredName(), user.ID), forCourse(course.ID))
 
 	return courseAdminUserMessage(user), nil
 }
@@ -314,7 +314,7 @@ func (a *API) RemoveCourseAdmin(ctx context.Context, req *protobuf.RemoveCourseA
 	}
 	dao.InvalidateUserCache(user.ID)
 
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' remove: %s (%d)", course.Name, course.Slug, user.GetPreferredName(), user.ID))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' remove: %s (%d)", course.Name, course.Slug, user.GetPreferredName(), user.ID), forCourse(course.ID))
 
 	return courseAdminUserMessage(*user), nil
 }
@@ -408,7 +408,7 @@ func (a *API) UpdateCourseLectureHallSettings(ctx context.Context, req *protobuf
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s'", course.Name, course.Slug))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s'", course.Name, course.Slug), forCourse(course.ID))
 
 	return &protobuf.ListCourseLectureHallSettingsResponse{
 		LectureHalls: courseLectureHallSettings(course, halls),
@@ -556,6 +556,15 @@ func (a *API) InviteCourseParticipants(ctx context.Context, req *protobuf.Invite
 			result.Error = err.Error()
 		}
 		results = append(results, result)
+	}
+	invited := 0
+	for _, r := range results {
+		if r.Error == "" {
+			invited++
+		}
+	}
+	if invited > 0 {
+		a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' invited %d participants", course.Name, course.Slug, invited), forCourse(course.ID))
 	}
 	return &protobuf.InviteCourseParticipantsResponse{Results: results}, nil
 }

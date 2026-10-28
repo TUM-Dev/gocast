@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestShouldGenerateSubtitles(t *testing.T) {
@@ -131,5 +132,16 @@ func TestValidateCourseName(t *testing.T) {
 		if err := validateCourseName(name); err == nil {
 			t.Errorf("validateCourseName(%s) = nil, want error", label)
 		}
+	}
+}
+
+func TestUniqueCourses(t *testing.T) {
+	a, b, c := Course{Model: gorm.Model{ID: 1}, Name: "first"}, Course{Model: gorm.Model{ID: 2}}, Course{Model: gorm.Model{ID: 1}, Name: "dup"}
+	got := UniqueCourses([]Course{a, b, c})
+	if len(got) != 2 || got[0].Name != "first" || got[1].ID != 2 {
+		t.Errorf("UniqueCourses kept %+v, want the first course 1 then course 2", got)
+	}
+	if got := UniqueCourses(nil); got == nil || len(got) != 0 {
+		t.Errorf("UniqueCourses(nil) = %#v, want an empty non-nil slice", got)
 	}
 }

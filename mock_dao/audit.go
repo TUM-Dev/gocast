@@ -40,6 +40,45 @@ func (m *MockAuditDao) EXPECT() *MockAuditDaoMockRecorder {
 	return m.recorder
 }
 
+// Count mocks base method.
+func (m *MockAuditDao) Count(types ...model.AuditType) (int64, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{}
+	for _, a := range types {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count.
+func (mr *MockAuditDaoMockRecorder) Count(types ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockAuditDao)(nil).Count), types...)
+}
+
+// CountByCourse mocks base method.
+func (m *MockAuditDao) CountByCourse(courseID uint, types ...model.AuditType) (int64, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{courseID}
+	for _, a := range types {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CountByCourse", varargs...)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountByCourse indicates an expected call of CountByCourse.
+func (mr *MockAuditDaoMockRecorder) CountByCourse(courseID any, types ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{courseID}, types...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountByCourse", reflect.TypeOf((*MockAuditDao)(nil).CountByCourse), varargs...)
+}
+
 // Create mocks base method.
 func (m *MockAuditDao) Create(arg0 *model.Audit) error {
 	m.ctrl.T.Helper()
@@ -72,4 +111,24 @@ func (mr *MockAuditDaoMockRecorder) Find(limit, offset any, types ...any) *gomoc
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{limit, offset}, types...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockAuditDao)(nil).Find), varargs...)
+}
+
+// FindByCourse mocks base method.
+func (m *MockAuditDao) FindByCourse(courseID uint, limit, offset int, types ...model.AuditType) ([]model.Audit, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{courseID, limit, offset}
+	for _, a := range types {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindByCourse", varargs...)
+	ret0, _ := ret[0].([]model.Audit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByCourse indicates an expected call of FindByCourse.
+func (mr *MockAuditDaoMockRecorder) FindByCourse(courseID, limit, offset any, types ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{courseID, limit, offset}, types...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByCourse", reflect.TypeOf((*MockAuditDao)(nil).FindByCourse), varargs...)
 }

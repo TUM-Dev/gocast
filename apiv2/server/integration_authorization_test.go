@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"testing"
 	"time"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -109,10 +109,12 @@ func TestDecideApprovesOnlyOwnerOrDelegate(t *testing.T) {
 						codeHash, stateHash, expiresAt = bytes.Clone(gotCode), bytes.Clone(gotState), gotExpiresAt
 						return 19, nil
 					})
+				courseID := course.ID
 				audits.EXPECT().Create(&model.Audit{
-					User:    user,
-					Message: "Example course:'example' authorize integration: Course portal (19)",
-					Type:    model.AuditCourseEdit,
+					User:     user,
+					Message:  "Example course:'example' authorize integration: Course portal (19)",
+					Type:     model.AuditCourseEdit,
+					CourseID: &courseID,
 				}).Return(nil)
 			}
 
@@ -127,12 +129,11 @@ func TestDecideApprovesOnlyOwnerOrDelegate(t *testing.T) {
 			require.NoError(t, err)
 			location, err := url.Parse(response.RedirectUrl)
 			require.NoError(t, err)
-			code, err := uuid.FromString(location.Query().Get("code"))
+			code, err := uuid.Parse(location.Query().Get("code"))
 			require.NoError(t, err)
 			wantCodeHash := sha256.Sum256(code[:])
 			wantStateHash := sha256.Sum256(bytes.Repeat([]byte{3}, 32))
-			assert.Equal(t, uuid.V4, code.Version())
-			assert.Equal(t, uuid.VariantRFC4122, code.Variant())
+			assert.True(t, isV4RFC4122(code))
 			assert.Equal(t, wantCodeHash[:], codeHash)
 			assert.Equal(t, wantStateHash[:], stateHash)
 			assert.WithinDuration(t, time.Now().Add(integrationCodeLifetime), expiresAt, 2*time.Second)

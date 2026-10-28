@@ -25,20 +25,22 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
+
 	"github.com/TUM-Dev/gocast/api"
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera"
+	"github.com/TUM-Dev/gocast/pkg/livepreview"
 	"github.com/TUM-Dev/gocast/pkg/livestate"
+	"github.com/TUM-Dev/gocast/pkg/postprocessing"
 	"github.com/TUM-Dev/gocast/pkg/realtimehub"
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 	"github.com/TUM-Dev/gocast/pkg/search"
 	"github.com/TUM-Dev/gocast/pkg/sectionimages"
-	"github.com/TUM-Dev/gocast/pkg/thumbnails"
 	"github.com/TUM-Dev/gocast/pkg/uploads"
 	"github.com/TUM-Dev/gocast/pkg/voicegrpc"
-	"github.com/TUM-Dev/gocast/pkg/workergrpc"
 	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/tum"
 	"github.com/TUM-Dev/gocast/voice-service/pb"
@@ -72,6 +74,20 @@ func run(ctx context.Context) error {
 		Level: slog.LevelDebug,
 	})).With("service", "main")
 	initAll(initializers)
+
+	// Off unless OTEL_EXPORTER_OTLP_ENDPOINT is set, see tracing.Setup.
+	shutdownTracing, err := tracing.Setup(ctx, "tumlive", VersionTag)
+	if err != nil {
+		logger.Error("tracing disabled", "err", err)
+	} else {
+		defer func() {
+			flushCtx, stop := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer stop()
+			if err := shutdownTracing(flushCtx); err != nil {
+				logger.Error("flushing traces failed", "err", err)
+			}
+		}()
+	}
 
 	web.VersionTag = VersionTag
 	tools.VersionTag = VersionTag
@@ -113,7 +129,6 @@ func run(ctx context.Context) error {
 		&model.IngestServer{},
 		&model.StreamName{},
 		&model.Stream{},
-		&model.Worker{},
 		&model.CameraPreset{},
 		&model.ServerNotification{},
 		&model.File{},
@@ -179,7 +194,6 @@ func run(ctx context.Context) error {
 		runner_manager.WithCamService(camService),
 		runner_manager.WithLiveStateNotifier(livestate.NotifyViewersLiveState),
 	}
-	var subtitleClient pb.SubtitleGeneratorClient
 	// What apiv2 requests subtitles through; nil without a voice service.
 	var apiv2Subtitles pb.SubtitleGeneratorClient
 	if tools.Cfg.VoiceService.Host != "" {
@@ -198,8 +212,6 @@ func run(ctx context.Context) error {
 	if err != nil {
 		logger.Error("Failed to start runner manager", "err", err)
 	}
-
-	workergrpc.ServeWorkerGRPC(subtitleClient, tools.Cfg.VoiceService.AuthToken)
 
 	if tools.TestEnv.Enabled {
 		// The database is a copy of production: its email queue holds mails for real
@@ -282,8 +294,9 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
-		apiv2.WithSectionImages(sectionimages.SectionImages{Dao: dao.NewDaoWrapper(), Manager: manager}),
-		apiv2.WithThumbnails(thumbnails.Thumbnails{Manager: manager}),
+		apiv2.WithVODStorage(tools.Cfg.Paths.Vod),
+		apiv2.WithSectionImages(sectionimages.SectionImages{Manager: manager}),
+		apiv2.WithPostProcessing(postprocessing.PostProcessing{Manager: manager}),
 		apiv2.WithUploads(uploads.Uploads{Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
@@ -363,8 +376,6 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hu
 	_ = tools.Cron.AddFunc("fetchCourses", tum.FetchCourses(daoWrapper), "0 */12 * * *")
 	// Collect livestream stats (viewers) every minute
 	_ = tools.Cron.AddFunc("collectStats", livestate.CollectStats(daoWrapper, hub), "0-59 * * * *")
-	// Look for due streams and notify workers about them
-	_ = tools.Cron.AddFunc("triggerDueStreams", workergrpc.NotifyWorkers(daoWrapper), "0-59 * * * *")
 	_ = tools.Cron.AddFunc("triggerDueStreamsRunner", func() {
 		err := m.TriggerDueStreams()
 		if err != nil {
@@ -376,7 +387,7 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hu
 	// export data to meili search
 	_ = tools.Cron.AddFunc("exportToMeili", tools.NewMeiliExporter(daoWrapper).Export, "30 4 * * *")
 	// fetch live stream previews
-	_ = tools.Cron.AddFunc("fetchLivePreviews", workergrpc.FetchLivePreviews(daoWrapper, m), "*/1 * * * *")
+	_ = tools.Cron.AddFunc("fetchLivePreviews", livepreview.Fetch(daoWrapper, m), "*/1 * * * *")
 	// reap streams stuck in live state due to runner crash or lost notifications
 	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "1/30 * * * *")
 	// apply correct live lights

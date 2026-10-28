@@ -120,7 +120,7 @@ const inputId = computed(() => `lecture-${props.lectureId}-attachment-file`);
       <!-- The label is the visible button; the input stays reachable by keyboard. -->
       <label
         :for="inputId"
-        class="tum-live-button-secondary tum-live-button cursor-pointer px-3 py-1 text-sm focus-within:ring-2"
+        class="tum-live-button-primary tum-live-button cursor-pointer px-3 py-1 text-sm focus-within:ring-2"
         :class="{ 'pointer-events-none opacity-50': uploading }"
       >
         <i class="fas fa-upload mr-1"></i>Upload attachments

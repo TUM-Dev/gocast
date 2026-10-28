@@ -111,7 +111,9 @@ func TestUpdateLecture(t *testing.T) {
 	setup := func(t *testing.T, found model.Stream) (*API, *mock_dao.MockStreamsDao) {
 		streams := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 		streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(found, nil)
-		return &API{dao: dao.DaoWrapper{StreamsDao: streams}, log: slog.Default()}, streams
+		return &API{dao: dao.DaoWrapper{
+			AuditDao:   auditSink(t),
+			StreamsDao: streams}, log: slog.Default()}, streams
 	}
 	ptr := func(s string) *string { return &s }
 

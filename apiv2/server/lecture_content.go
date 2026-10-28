@@ -25,13 +25,13 @@ import (
 )
 
 // SectionImages generates the thumbnails of a lecture's sections. The generation goes
-// to a runner or else a worker, and the worker half lives in pkg/sectionimages, so it
-// is handed in; sectionimages.SectionImages satisfies it. Deleting one needs neither:
+// to a runner, which lives in pkg/sectionimages, so it is handed in;
+// sectionimages.SectionImages satisfies it. Deleting one needs neither:
 // DeleteLectureSection removes the file itself.
 type SectionImages interface {
 	// Generate makes the thumbnails of sections from the recording at playlistURL,
 	// which must be signed. It blocks until the job is handed off.
-	Generate(streamID uint, playlistURL string, course model.Course, sections []model.VideoSection) error
+	Generate(streamID uint, playlistURL string, sections []model.VideoSection) error
 }
 
 // WithSectionImages lets the section endpoints have thumbnails made. Without it the
@@ -111,15 +111,10 @@ func (a *API) lectureSectionOf(stream model.Stream, sectionID uint32) (model.Vid
 // the job takes as long as fetching frames from the recording does. Failures are only
 // logged, the sections themselves being saved.
 //
-// v1 also sent lectures without a recording, which no runner or worker can do anything
+// v1 also sent lectures without a recording, which no runner can do anything
 // with; those are skipped here.
 func (a *API) generateSectionImages(ctx context.Context, stream model.Stream, sections []model.VideoSection) {
 	if a.sectionImages == nil || len(sections) == 0 || stream.PlaylistUrl == "" {
-		return
-	}
-	course, err := a.dao.GetCourseById(ctx, stream.CourseID)
-	if err != nil {
-		a.log.Error("can't load course for section images", "stream", stream.ID, "err", err)
 		return
 	}
 	if err := signPlaylists(&stream, nil, false); err != nil {
@@ -127,7 +122,7 @@ func (a *API) generateSectionImages(ctx context.Context, stream model.Stream, se
 		return
 	}
 	go func() {
-		if err := a.sectionImages.Generate(stream.ID, stream.PlaylistUrl, course, sections); err != nil {
+		if err := a.sectionImages.Generate(stream.ID, stream.PlaylistUrl, sections); err != nil {
 			a.log.Error("failed to generate video section images", "stream", stream.ID, "err", err)
 		}
 	}()
@@ -167,6 +162,7 @@ func (a *API) CreateLectureSections(ctx context.Context, req *protobuf.CreateLec
 	// redoing the old ones costs time and nothing else.
 	a.generateSectionImages(ctx, stream, all)
 
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %d sections added", stream.ID, len(sections)), forStream(stream))
 	out := make([]*protobuf.LectureVideoSectionAdmin, 0, len(all))
 	for _, s := range all {
 		out = append(out, sectionAdmin(s))
@@ -200,6 +196,7 @@ func (a *API) UpdateLectureSection(ctx context.Context, req *protobuf.UpdateLect
 	if err := a.dao.VideoSectionDao.UpdateContent(&section); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: section %d edited", stream.ID, section.ID), forStream(stream))
 	if moved {
 		a.generateSectionImages(ctx, stream, []model.VideoSection{section})
 	}
@@ -225,6 +222,7 @@ func (a *API) DeleteLectureSection(ctx context.Context, req *protobuf.DeleteLect
 	if err := a.dao.VideoSectionDao.Delete(section.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: section %d deleted", stream.ID, section.ID), forStream(stream))
 
 	if section.FileID == 0 {
 		return &emptypb.Empty{}, nil
@@ -293,6 +291,7 @@ func (a *API) DeleteLectureAttachment(ctx context.Context, req *protobuf.DeleteL
 	if err := a.dao.FileDao.DeleteFile(file.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: attachment %d deleted", stream.ID, file.ID), forStream(stream))
 	return &emptypb.Empty{}, nil
 }
 
@@ -317,6 +316,7 @@ func (a *API) DeleteLectureThumbnail(ctx context.Context, req *protobuf.DeleteLe
 	if err := a.dao.FileDao.DeleteFile(thumb.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: custom thumbnail deleted", stream.ID), forStream(stream))
 	return &emptypb.Empty{}, nil
 }
 
@@ -365,6 +365,7 @@ func (a *API) RequestLectureSubtitles(ctx context.Context, req *protobuf.Request
 		}
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: subtitles requested (%s)", stream.ID, req.GetLanguage()), forStream(stream))
 	return &emptypb.Empty{}, nil
 }
 

@@ -163,6 +163,8 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		m.streams.EXPECT().UnsetLectureHall([]uint{7}).Return(nil)
 		m.streams.EXPECT().UpdateStream(gomock.Any()).Return(nil)
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLecture(asCaller(serverAdmin), &protobuf.UpdateLectureRequest{
 			CourseId: 1, StreamId: 7, LectureHallId: ptrU(0),
 		}); err != nil {
@@ -228,6 +230,8 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		})
 		name := "Neu"
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
 			CourseId: 1, StreamId: 7, Name: &name, ChatEnabled: ptrB(true),
 		}); err != nil {
@@ -253,6 +257,8 @@ func TestUpdateLectureSeries(t *testing.T) {
 			})
 
 		hall := uint32(4)
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		_, err := api.UpdateLectureSeries(asCaller(serverAdmin), &protobuf.UpdateLectureSeriesRequest{
 			CourseId: 1, StreamId: 7, Name: &name, LectureHallId: &hall,
 		})
@@ -283,6 +289,8 @@ func TestUpdateLectureSeries(t *testing.T) {
 				return nil
 			})
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLectureSeries(asCaller(lectureAdmin), &protobuf.UpdateLectureSeriesRequest{
 			CourseId: 1, StreamId: 7, Name: &name,
 		}); err != nil {
@@ -327,6 +335,8 @@ func TestUpdateLectureSeriesTime(t *testing.T) {
 		m.streams.EXPECT().UpdateCourseLectureSeriesTime(uint(1), uint(7), "s1",
 			lectureStart.Add(time.Hour), lectureEnd.Add(time.Hour)).Return(nil)
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLectureSeriesTime(asCaller(lectureAdmin), req()); err != nil {
 			t.Fatalf("UpdateLectureSeriesTime: %v", err)
 		}
@@ -369,6 +379,8 @@ func TestUpdateLecturesLectureHall(t *testing.T) {
 		m.halls.EXPECT().GetLectureHallByID(uint(4)).Return(model.LectureHall{Model: gorm.Model{ID: 4}}, nil)
 		m.streams.EXPECT().SetLectureHall([]uint{7, 8}, uint(4)).Return(nil)
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
 			CourseId: 1, StreamIds: []uint32{7, 8}, LectureHallId: 4,
 		}); err != nil {
@@ -381,6 +393,8 @@ func TestUpdateLecturesLectureHall(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
 		m.streams.EXPECT().UnsetLectureHall([]uint{7}).Return(nil)
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.UpdateLecturesLectureHall(asCaller(serverAdmin), &protobuf.UpdateLecturesLectureHallRequest{
 			CourseId: 1, StreamIds: []uint32{7},
 		}); err != nil {
@@ -434,14 +448,27 @@ func TestDeleteLectures(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(second, nil)
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}, Name: "Bier"}, nil)
 		m.audits.EXPECT().Create(gomock.Any()).Return(nil).Times(2)
-		m.streams.EXPECT().DeleteStream("7")
-		m.streams.EXPECT().DeleteStream("8")
+		m.streams.EXPECT().RemoveStream("7").Return(nil)
+		m.streams.EXPECT().RemoveStream("8").Return(nil)
 
 		if _, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
 			CourseId: 1, StreamIds: []uint32{7, 8},
 		}); err != nil {
 			t.Fatalf("DeleteLectures: %v", err)
 		}
+	})
+
+	t.Run("audits nothing for a lecture whose delete failed", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}, Name: "Bier"}, nil)
+		m.streams.EXPECT().RemoveStream("7").Return(errors.New("db down"))
+		// No audit expected: gomock fails the test on an unexpected Create.
+
+		_, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
+			CourseId: 1, StreamIds: []uint32{7},
+		})
+		wantCode(t, err, codes.Unknown)
 	})
 
 	t.Run("deletes nothing when one lecture is another course's", func(t *testing.T) {
@@ -536,8 +563,10 @@ func TestCopyLecture(t *testing.T) {
 		})
 		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
 		// The original, not the copy v1 deleted.
-		m.streams.EXPECT().DeleteStream("7").After(created)
+		m.streams.EXPECT().RemoveStream("7").Return(nil).After(created)
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		resp, err := api.CopyLecture(asCaller(caller), &protobuf.CopyLectureRequest{
 			CourseId: 1, StreamId: 7, TargetCourseId: 3, Move: true,
 		})
@@ -564,6 +593,8 @@ func TestCopyLecture(t *testing.T) {
 			return nil
 		})
 
+		// The audit is not what this subtest is about.
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
 		if _, err := api.CopyLecture(asCaller(caller), &protobuf.CopyLectureRequest{
 			CourseId: 1, StreamId: 7, TargetCourseId: 3,
 		}); err != nil {

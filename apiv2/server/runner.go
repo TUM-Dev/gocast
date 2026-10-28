@@ -3,6 +3,7 @@ package apiv2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -10,6 +11,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	h "github.com/TUM-Dev/gocast/apiv2/helpers"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
+	"github.com/TUM-Dev/gocast/model"
 )
 
 // The hostname is the primary key, and gorm reads a Delete with no condition as
@@ -43,5 +45,6 @@ func (a *API) DeleteRunner(ctx context.Context, req *protobuf.DeleteRunnerReques
 		return nil, e.FromGorm(err, "can't find runner")
 	}
 
+	a.audit(ctx, model.AuditRunner, fmt.Sprintf("'%s' deleted", req.GetHostname()))
 	return &emptypb.Empty{}, nil
 }

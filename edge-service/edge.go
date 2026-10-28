@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -39,6 +41,9 @@ var (
 	allowedRe = regexp.MustCompile(`^/[a-zA-Z0-9.]+/([a-zA-Z0-9_]+/)*([0-9]+|playlist)\.(ts|m3u8)$`) // e.g. /vm123/live/stream/1234.ts
 	// allowedRe = regexp.MustCompile("^.*$") // e.g. /vm123/live/strean/1234.ts
 )
+
+// maxPlaylistSize bounds how much of a playlist is buffered to add the jwt to its segments.
+const maxPlaylistSize = 4 << 20
 
 var port = ":8089"
 
@@ -161,7 +166,16 @@ func (c *JWTPlaylistClaims) GetFileName() string {
 	return fmt.Sprintf("%s.mp4", c.StreamID)
 }
 
+// validateToken validates the jwt of a VoD request, see validateTokenFor.
 func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claims *JWTPlaylistClaims, ok bool) {
+	return validateTokenFor(w, r, download, false)
+}
+
+// validateTokenFor checks the signature, the expiry and that the request path lies within the
+// directory of the playlist the token was issued for. live selects how that directory is derived
+// from the claim: VoD playlists live under /vod on the edge, whereas a live playlist url starts
+// with the runner's hostname (/{runner}/{streamID}/{version}/playlist.m3u8).
+func validateTokenFor(w http.ResponseWriter, r *http.Request, download, live bool) (claims *JWTPlaylistClaims, ok bool) {
 	token := r.URL.Query().Get("jwt")
 	if token == "" {
 		http.Error(w, "Missing JWT", http.StatusForbidden)
@@ -199,8 +213,13 @@ func validateToken(w http.ResponseWriter, r *http.Request, download bool) (claim
 		return nil, false
 	}
 
-	urlParts := strings.Split(allowedPlaylist.Path, "/")
-	allowedPath := "/vod/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
+	var allowedPath string
+	if live {
+		allowedPath = path.Dir(allowedPlaylist.Path)
+	} else {
+		urlParts := strings.Split(allowedPlaylist.Path, "/")
+		allowedPath = "/vod/" + strings.Join(urlParts[2:len(urlParts)-1], "/")
+	}
 	if !strings.HasPrefix(r.URL.Path, allowedPath+"/") {
 		w.WriteHeader(http.StatusForbidden)
 		_, _ = w.Write([]byte("Forbidden. URL doesn't match claim in jwt. " + allowedPath + " vs " + r.URL.Path))
@@ -224,6 +243,8 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
 	var uid string
+	// Deliberately skipped when the public key is missing: if the edge can't reach the
+	// main instance, users must still be able to watch.
 	if jwtPubKey != nil {
 		// validate token; every page access requires a valid jwt.
 		claims, ok := validateToken(w, r, false)
@@ -256,14 +277,7 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 				_, _ = w.Write([]byte("Internal server error. Can't read file: " + f.Name()))
 				return
 			}
-			lines := strings.Split(string(fileContents), "\n")
-			for i, line := range lines {
-				if strings.HasSuffix(line, ".ts") {
-					lines[i] = line + "?jwt=" + r.URL.Query().Get("jwt")
-				}
-			}
-			resp := strings.Join(lines, "\n")
-			_, _ = w.Write([]byte(resp))
+			_, _ = w.Write([]byte(addJWTToSegments(string(fileContents), r.URL.Query().Get("jwt"))))
 			return
 		} else if strings.HasSuffix(r.URL.Path, ".ts") {
 			chunksRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
@@ -278,6 +292,19 @@ func vodHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	usersMap.Put(uid, true)
 	http.StripPrefix("/vod", vodFileServer).ServeHTTP(w, r)
+}
+
+// addJWTToSegments appends the jwt to every .ts line of a playlist. Players resolve the segment
+// urls relative to the playlist and drop its query string, so without this the segment requests
+// would carry no token.
+func addJWTToSegments(playlist, token string) string {
+	lines := strings.Split(playlist, "\n")
+	for i, line := range lines {
+		if trimmed := strings.TrimSuffix(line, "\r"); strings.HasSuffix(trimmed, ".ts") {
+			lines[i] = trimmed + "?jwt=" + url.QueryEscape(token) + line[len(trimmed):]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func handleTLS(mux *http.ServeMux) {
@@ -313,7 +340,7 @@ func handleTLS(mux *http.ServeMux) {
 	}
 }
 
-// edgeHandler proxies requests to TUM-Live-Worker and caches immutable files.
+// edgeHandler proxies requests to TUM-Live runners and caches immutable files.
 func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	if !allowedRe.MatchString(request.URL.Path) {
 		writer.WriteHeader(http.StatusNotFound)
@@ -322,6 +349,35 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	writer.Header().Add("Access-Control-Allow-Origin", allowedOrigin)
+
+	var uid string
+	var token string
+	// Deliberately skipped when the public key is missing: if the edge can't reach the
+	// main instance, users must still be able to watch.
+	if jwtPubKey != nil {
+		// like for vods, every access to a livestream requires a valid jwt.
+		claims, ok := validateTokenFor(writer, request, false, true)
+		if !ok {
+			return
+		}
+		token = request.URL.Query().Get("jwt")
+		if claims.UserID != 0 {
+			uid = fmt.Sprintf("%d", claims.UserID)
+		}
+		if strings.HasSuffix(request.URL.Path, ".m3u8") {
+			playlistsRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
+		} else {
+			chunksRequested.WithLabelValues(claims.StreamID, claims.CourseID).Inc()
+		}
+	}
+	if uid == "" {
+		ip, _, err := net.SplitHostPort(request.RemoteAddr)
+		if err != nil {
+			ip = request.RemoteAddr
+		}
+		uid = ip
+	}
+	usersMap.Put(uid, true)
 
 	urlParts := strings.SplitN(request.URL.Path, "/", 3) // -> ["", "vm123", "live/stream/1234.ts"]
 
@@ -342,6 +398,31 @@ func edgeHandler(writer http.ResponseWriter, request *http.Request) {
 			if _, ok := req.Header["User-Agent"]; !ok {
 				// explicitly disable User-Agent so it's not set to default value
 				req.Header.Set("User-Agent", "")
+			}
+			if token != "" {
+				// the playlist is rewritten below, which needs the complete body uncompressed
+				req.Header.Del("Accept-Encoding")
+				req.Header.Del("Range")
+			}
+		}
+		if token != "" {
+			proxy.ModifyResponse = func(resp *http.Response) error {
+				if resp.StatusCode != http.StatusOK {
+					return nil
+				}
+				body, err := io.ReadAll(io.LimitReader(resp.Body, maxPlaylistSize+1))
+				_ = resp.Body.Close()
+				if err != nil {
+					return err
+				}
+				if len(body) > maxPlaylistSize {
+					return errors.New("playlist from origin is too large")
+				}
+				rewritten := []byte(addJWTToSegments(string(body), token))
+				resp.Body = io.NopCloser(bytes.NewReader(rewritten))
+				resp.ContentLength = int64(len(rewritten))
+				resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
+				return nil
 			}
 		}
 		proxy.ServeHTTP(writer, request)

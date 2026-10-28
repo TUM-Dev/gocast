@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from "vue";
 
 import CourseActionsSection from "@/components/admin/course/CourseActionsSection.vue";
 import CourseAdminsSection from "@/components/admin/course/CourseAdminsSection.vue";
+import CourseAuditSection from "@/components/admin/course/CourseAuditSection.vue";
 import CourseIntegrationGrantsSection from "@/components/admin/course/CourseIntegrationGrantsSection.vue";
 import LectureHallSettingsSection from "@/components/admin/course/LectureHallSettingsSection.vue";
 import {
@@ -256,6 +257,7 @@ const languages: Record<string, string> = { de: "German", en: "English" };
     <CourseAdminsSection :course-id="course.id" />
     <CourseIntegrationGrantsSection :course-id="course.id" />
     <LectureHallSettingsSection :course-id="course.id" />
+    <CourseAuditSection :course-id="course.id" />
     <CourseActionsSection :course="course" />
   </div>
 </template>

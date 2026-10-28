@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -49,6 +50,7 @@ func (a *API) CreateIntegration(ctx context.Context, req *protobuf.CreateIntegra
 	if err := a.dao.IntegrationDao.CreateIntegration(&integration); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditIntegration, fmt.Sprintf("'%s' (%d) created", integration.Name, integration.ID))
 	return &protobuf.CreateIntegrationResponse{
 		Id: uint32(integration.ID), Name: integration.Name, ReturnUrl: integration.ReturnURL, ApiKey: key,
 	}, nil
@@ -65,6 +67,7 @@ func (a *API) RotateIntegrationKey(ctx context.Context, req *protobuf.RotateInte
 	if err := a.dao.IntegrationDao.SetIntegrationAPIKey(uint(req.GetId()), hash); err != nil {
 		return nil, e.FromGorm(err, "integration not found")
 	}
+	a.audit(ctx, model.AuditIntegration, fmt.Sprintf("%d: key rotated", req.GetId()))
 	return &protobuf.RotateIntegrationKeyResponse{ApiKey: key}, nil
 }
 
@@ -75,6 +78,7 @@ func (a *API) RevokeIntegrationKey(ctx context.Context, req *protobuf.RevokeInte
 	if err := a.dao.IntegrationDao.SetIntegrationAPIKey(uint(req.GetId()), nil); err != nil {
 		return nil, e.FromGorm(err, "integration not found")
 	}
+	a.audit(ctx, model.AuditIntegration, fmt.Sprintf("%d: key revoked", req.GetId()))
 	return &emptypb.Empty{}, nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/smtp"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -88,9 +89,11 @@ func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 	logger.Info("sending mail", "to", to, "subject", subject, "body", body)
 	r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
-	signed, err := openssl([]byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert, "-inkey", Cfg.Mail.SMIMEKey)
+	signed, err := signBody(body)
 	if err != nil {
-		fmt.Printf("can't encrypt: %v", err)
+		// Returning matters: sending on with the empty result would deliver a mail
+		// with no body and mark it as sent, so a broken cert silently ate every invite.
+		return fmt.Errorf("signing the mail: %w", err)
 	}
 	msg := "To: " + strings.Join(to, ",") + "\r\n" +
 		"From: " + from + "\r\n" +
@@ -130,8 +133,28 @@ func (m *Mailer) sendMail(addr, from, subject, body string, to []string) error {
 	return c.Quit()
 }
 
-func openssl(stdin []byte, args ...string) ([]byte, error) {
+// signBody S/MIME-signs body. Without any S/MIME config the mail goes out unsigned,
+// so development setups need no certificate; a half-configured or unreadable pair is
+// an error rather than a reason to fall back, so a deploy that lost its cert files
+// shows up as failed sends instead of unsigned mail.
+func signBody(body string) ([]byte, error) {
+	if Cfg.Mail.SMIMECert == "" && Cfg.Mail.SMIMEKey == "" {
+		return []byte("Content-Type: text/plain\r\n\r\n" + body), nil
+	}
+	// The password travels through the environment rather than "-passin pass:...",
+	// which would show up in the process list. -passin is passed even when the
+	// password is empty: without it openssl prompts on /dev/tty for an encrypted
+	// key, which would hang the mailer instead of failing the send.
+	env := append(os.Environ(), smimePasswordEnv+"="+Cfg.Mail.SMIMEKeyPassword)
+	return openssl(env, []byte(body), "smime", "-text", "-sign", "-signer", Cfg.Mail.SMIMECert,
+		"-inkey", Cfg.Mail.SMIMEKey, "-passin", "env:"+smimePasswordEnv)
+}
+
+const smimePasswordEnv = "GOCAST_SMIME_KEY_PASSWORD"
+
+func openssl(env []string, stdin []byte, args ...string) ([]byte, error) {
 	cmd := exec.Command("openssl", args...)
+	cmd.Env = env
 
 	in := bytes.NewReader(stdin)
 	out := &bytes.Buffer{}

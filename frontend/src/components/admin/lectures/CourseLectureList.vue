@@ -243,7 +243,7 @@ watch(
         </button>
         <button
           type="button"
-          class="tum-live-button-primary px-3 py-1 text-sm"
+          class="tum-live-button tum-live-button-primary px-3 py-1 text-sm"
           :aria-expanded="creating"
           @click="creating = !creating"
         >

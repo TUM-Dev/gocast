@@ -7,7 +7,6 @@ cleanup() {
 
     pkill -f "cmd/tumlive" || true
     pkill -f "runner/cmd/runner/main.go" || true
-    pkill -f "worker/cmd/worker" || true
     pkill -f "edge-service" || true
     pkill -f "vod-service/cmd/vod-service" || true
     pkill -f "mediamtx" || true
@@ -89,13 +88,6 @@ OUTPUT_DIR="$MASS" go run ./vod-service/cmd/vod-service &
 until nc -z localhost 8080; do sleep 1; done
 echo "vod-service ready"
 
-LrzUploadUrl="http://localhost:8080" \
-VodURLTemplate="http://localhost:8089/vod/%s.mp4/playlist.m3u8" \
-Token=abc \
-MassStorage="$MASS" \
-go run ./worker/cmd/worker &
-sleep 2
-echo "worker started"
 
 
 go run ./edge-service &

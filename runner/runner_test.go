@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/pkg/actions"
@@ -19,14 +22,12 @@ import (
 )
 
 // newTestRunner builds a Runner with just the state RunAction and RequestStreamEnd touch.
-// JobCount is buffered because RunAction sends on it synchronously; in production Run
-// drains it from the heartbeat loop.
 func newTestRunner() *Runner {
 	return &Runner{
 		log:           slog.New(slog.NewTextHandler(io.Discard, nil)),
-		JobCount:      make(chan int, 64),
 		jobs:          make(map[string]jobCancels),
 		discard:       make(map[string]bool),
+		startRetries:  make(map[streamVersionKey]context.CancelFunc),
 		notifications: make(chan *protobuf.Notification, 64),
 		retryMin:      time.Millisecond,
 		retryMax:      4 * time.Millisecond,
@@ -299,7 +300,7 @@ func drainBackoff(b interface{ Next() (time.Duration, bool) }, limit int) int {
 }
 
 func TestNotificationBackoffIsNotSharedBetweenNotifications(t *testing.T) {
-	n := &protobuf.Notification{Data: &protobuf.Notification_Heartbeat{}}
+	n := &protobuf.Notification{} // takes the default, limited number of retries
 
 	for i := 0; i < 3; i++ {
 		if got := drainBackoff(notificationBackoff(n), 100); got != 10 {
@@ -474,5 +475,131 @@ func TestRunActionWaitsBetweenRetries(t *testing.T) {
 		if gap := times[i].Sub(times[i-1]); gap < 40*time.Millisecond {
 			t.Errorf("retry %d came after %v, want at least the backoff", i, gap)
 		}
+	}
+}
+
+// A StreamStart the manager is slow to acknowledge is retried for as long as it takes. One
+// that is still retried after the stream version's VODReady makes the manager mark the
+// finished stream live again, so its StreamEnd has to stop the retries.
+func TestStreamEndCancelsStartRetries(t *testing.T) {
+	r := newTestRunner()
+	start := func(stream uint64, v protobuf.StreamVersion) *protobuf.Notification {
+		return &protobuf.Notification{Data: &protobuf.Notification_StreamStart{
+			StreamStart: &protobuf.StreamStartNotification{Stream: &protobuf.StreamInfo{Id: ptr.Take(stream)}, StreamVersion: ptr.Take(v)},
+		}}
+	}
+	end := func(stream uint64, v protobuf.StreamVersion) *protobuf.Notification {
+		return &protobuf.Notification{Data: &protobuf.Notification_StreamEnd{
+			StreamEnd: &protobuf.StreamEndNotification{Stream: &protobuf.StreamInfo{Id: ptr.Take(stream)}, StreamVersion: ptr.Take(v)},
+		}}
+	}
+	pres, cam := protobuf.StreamVersion_STREAM_VERSION_PRESENTATION, protobuf.StreamVersion_STREAM_VERSION_CAMERA
+
+	presCtx, _ := r.trackStartRetry(context.Background(), start(7, pres))
+	camCtx, _ := r.trackStartRetry(context.Background(), start(7, cam))
+	otherCtx, _ := r.trackStartRetry(context.Background(), start(8, pres))
+
+	endCtx, _ := r.trackStartRetry(context.Background(), end(7, pres))
+	if endCtx.Err() != nil {
+		t.Error("a StreamEnd must not be cancelled itself")
+	}
+	if presCtx.Err() == nil {
+		t.Error("StreamStart of an ended version is still retried")
+	}
+	if camCtx.Err() != nil || otherCtx.Err() != nil {
+		t.Error("StreamEnd cancelled the StreamStart of another version or stream")
+	}
+}
+
+// Only an unavailable connection is replaced. A cancelled or timed out call says nothing
+// about the connection, and closing it would abort every other call running on it.
+func TestShouldReconnect(t *testing.T) {
+	for code, want := range map[codes.Code]bool{
+		codes.Unavailable:      true,
+		codes.Canceled:         false,
+		codes.DeadlineExceeded: false,
+		codes.Internal:         false,
+		codes.NotFound:         false,
+		codes.OK:               false,
+	} {
+		if got := shouldReconnect(status.Error(code, "x")); got != want {
+			t.Errorf("shouldReconnect(%v) = %v, want %v", code, got, want)
+		}
+	}
+	if shouldReconnect(nil) {
+		t.Error("shouldReconnect(nil) = true")
+	}
+}
+
+// Many notifications fail together when the connection breaks. Each of them reports it, but
+// only the first may replace the connection: the others hold the old client and must not
+// close the new one, which would abort the calls that already moved over to it.
+func TestInvalidateManagerConnReplacesOnlyOnce(t *testing.T) {
+	dial := func() (*grpc.ClientConn, protobuf.RunnerManagerServiceClient) {
+		conn, err := grpc.NewClient("127.0.0.1:1", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = conn.Close() })
+		return conn, protobuf.NewRunnerManagerServiceClient(conn)
+	}
+	r := newTestRunner()
+	oldConn, oldClient := dial()
+	r.managerConn, r.managerClient = oldConn, oldClient
+
+	r.invalidateManagerConn(oldClient)
+	if r.managerConn != nil || r.managerClient != nil {
+		t.Fatal("the failed connection was not dropped")
+	}
+	if oldConn.GetState() == connectivity.Shutdown {
+		t.Error("the replaced connection was closed at once, aborting the calls still running on it")
+	}
+
+	newConn, newClient := dial()
+	r.managerConn, r.managerClient = newConn, newClient
+	r.invalidateManagerConn(oldClient) // a late failure from a call on the old connection
+	if r.managerClient != newClient || newConn.GetState() == connectivity.Shutdown {
+		t.Error("a failure on the old connection replaced the new one")
+	}
+}
+
+// A draining runner must say so, and say how many jobs it is still waiting for: the
+// manager stops assigning jobs on the flag and shows the count to whoever is deploying.
+func TestDrainAnnouncesDrainingWithTheRunningJobs(t *testing.T) {
+	r := newTestRunner()
+	r.jobs["a"] = jobCancels{}
+	r.jobs["b"] = jobCancels{}
+
+	if r.heartbeat().GetHeartbeat().GetDraining() {
+		t.Fatal("a runner that was not told to drain reports draining")
+	}
+
+	r.Drain(context.Background())
+
+	hb := (<-r.notifications).GetHeartbeat()
+	if hb == nil || !hb.GetDraining() {
+		t.Fatalf("Drain sent %v, want a draining heartbeat", hb)
+	}
+	if hb.GetJobCount() != 2 {
+		t.Errorf("drain heartbeat job count = %d, want 2", hb.GetJobCount())
+	}
+	// the periodic heartbeats after it must not flip the runner back to accepting jobs
+	if !r.heartbeat().GetHeartbeat().GetDraining() {
+		t.Error("heartbeat after Drain does not report draining")
+	}
+}
+
+// Drain must not block a shutdown whose context is already gone, nobody reads then.
+func TestDrainGivesUpWhenContextIsDone(t *testing.T) {
+	r := newTestRunner()
+	r.notifications = make(chan *protobuf.Notification) // unbuffered, no reader
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	done := make(chan struct{})
+	go func() { r.Drain(ctx); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Drain blocked on a cancelled context")
 	}
 }

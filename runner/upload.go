@@ -14,6 +14,7 @@ import (
 
 	"github.com/tum-dev/gocast/runner/config"
 	"github.com/tum-dev/gocast/runner/pkg/actions"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
 )
 
 // uploadTokenTTL is how long a PrepareUpload token can be traded in. The server
@@ -24,10 +25,24 @@ const uploadTokenTTL = 10 * time.Minute
 // ImportVOD leaves, see its playlistURL. A variable so the tests can swap the import out.
 var importActions = []actions.Action{actions.ImportVOD, actions.RegenerateThumb}
 
+// uploadActions is importActions, followed by the silence scan if asked for.
+func uploadActions(detectSilence bool) []actions.Action {
+	if !detectSilence {
+		return importActions
+	}
+	// Copied: appending to the shared slice could write into its spare capacity.
+	return append(append([]actions.Action(nil), importActions...), actions.MkSilence)
+}
+
 type uploadSlot struct {
 	streamID uint64
 	version  string
-	expires  time.Time
+	// detectSilence is whether the import is followed by a silence scan.
+	detectSilence bool
+	// traceparent is the trace of the PrepareUpload call, which the import job joins. The
+	// upload itself arrives on a plain HTTP request that carries none.
+	traceparent string
+	expires     time.Time
 }
 
 // uploadSlots hands out the single-use tokens the upload endpoint accepts. The endpoint
@@ -43,7 +58,7 @@ func newUploadSlots() *uploadSlots {
 	return &uploadSlots{slots: make(map[string]uploadSlot), now: time.Now}
 }
 
-func (u *uploadSlots) create(streamID uint64, version string) (string, error) {
+func (u *uploadSlots) create(streamID uint64, version string, detectSilence bool) (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("generate upload token: %w", err)
@@ -58,8 +73,18 @@ func (u *uploadSlots) create(streamID uint64, version string) (string, error) {
 			delete(u.slots, t)
 		}
 	}
-	u.slots[token] = uploadSlot{streamID: streamID, version: version, expires: u.now().Add(uploadTokenTTL)}
+	u.slots[token] = uploadSlot{streamID: streamID, version: version, detectSilence: detectSilence, expires: u.now().Add(uploadTokenTTL)}
 	return token, nil
+}
+
+// attachTrace makes the job of the upload that redeems token part of the trace traceparent.
+func (u *uploadSlots) attachTrace(token, traceparent string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if s, ok := u.slots[token]; ok {
+		s.traceparent = traceparent
+		u.slots[token] = s
+	}
 }
 
 // take redeems a token. It is consumed even if the upload then fails: the server asks
@@ -104,6 +129,11 @@ func (r *Runner) uploadHandler() http.Handler {
 // handleUpload stores the file of the multipart body and starts the import. As with the
 // worker's upload endpoint it answers once the file is on disk, not once it is converted.
 func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
+	// A runner that is draining must not exit while the body is still arriving. The job
+	// RunAction creates holds the runner itself, and it takes that hold before returning,
+	// so there is no gap between this hold and that one.
+	defer r.hold()()
+
 	slot, ok := r.uploads.take(req.PathValue("token"))
 	if !ok {
 		http.Error(w, "unknown or expired upload token", http.StatusNotFound)
@@ -156,7 +186,7 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		"streamVersion": slot.version,
 		"uploadPath":    file,
 	}
-	jID := r.RunAction(importActions, nil, data, log)
+	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)
 	w.WriteHeader(http.StatusOK)
 }

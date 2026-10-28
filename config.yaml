@@ -96,16 +96,17 @@ mail:
   server: mailrelay.example.org
   smimecert: /path/to/cert.pem
   smimekey: /path/to/key.pem
+  # smimekeypassword: changeme # only if the key is password protected
   maxMailsPerMinute: 10
 paths:
   mass: runner/storage # to make development easier, files will end up here were streams also are
+  vod: runner/storage # the directory the edge serves as /vod/ (the runner's STORAGE_PATH); lets the maintenance page reap deleted streams' media
   static: /var/www/static
   branding: /branding
 voiceservice:
   host: localhost
   port: 50055
 weburl: https://live.rbg.tum.de
-workertoken: abc
 meili:
   host: http://localhost:7700
   apiKey: MASTER_KEY

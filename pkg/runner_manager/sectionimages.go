@@ -27,32 +27,16 @@ type SectionImageRequest struct {
 	Sections    []model.VideoSection
 }
 
-// GenerateSectionImages generates the thumbnails for the given video sections.
-//
-// Section image generation is being moved from the workers to the runners. Until every
-// deployment runs runners, fallback - the legacy worker path - is used whenever no
-// runner takes the job. m may be nil when no runner manager is configured.
-func GenerateSectionImages(m *Manager, req SectionImageRequest, fallback func() error) error {
-	if len(req.Sections) == 0 {
-		return nil
-	}
-	if m != nil {
-		err := m.RequestSectionImages(context.Background(), req)
-		if err == nil {
-			return nil
-		}
-		m.logger.Warn("no runner took the section images job, falling back to a worker", "stream", req.StreamID, "err", err)
-	}
-	return fallback()
-}
-
 // RequestSectionImages asks a runner to generate thumbnails for the given video sections.
 // The runner answers asynchronously with a SectionImagesReadyNotification, which
 // saveSectionImages then stores, so this returns as soon as the job is accepted.
-func (m *Manager) RequestSectionImages(ctx context.Context, req SectionImageRequest) error {
+func (m *Manager) RequestSectionImages(ctx context.Context, req SectionImageRequest) (err error) {
 	if len(req.Sections) == 0 {
 		return nil
 	}
+	unversioned := protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(req.StreamID), unversioned), "manager.request_section_images", streamAttrs(uint64(req.StreamID), unversioned)...)
+	defer endSpan(span, &err)
 
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {

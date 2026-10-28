@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -84,6 +85,8 @@ func (a *API) CreateToken(ctx context.Context, req *protobuf.CreateTokenRequest)
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
+	// Never the secret: the log is readable long after the token is.
+	a.audit(ctx, model.AuditTokenCreate, fmt.Sprintf("scope %s, expires: %s", scope, tokenExpiry(expires)))
 	return &protobuf.TokenSecret{Token: secret}, nil
 }
 
@@ -110,8 +113,16 @@ func (a *API) DeleteToken(ctx context.Context, req *protobuf.DeleteTokenRequest)
 	if err := a.dao.TokenDao.DeleteToken(id); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	a.audit(ctx, model.AuditTokenDelete, fmt.Sprintf("%d (scope %s, owner %d)", token.ID, token.Scope, token.UserID))
 
 	return &emptypb.Empty{}, nil
+}
+
+func tokenExpiry(expires sql.NullTime) string {
+	if !expires.Valid {
+		return "never"
+	}
+	return expires.Time.Format("2006-01-02 15:04")
 }
 
 func tokenMessage(token dao.AllTokensDto) *protobuf.Token {

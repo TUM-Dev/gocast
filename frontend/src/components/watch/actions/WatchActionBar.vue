@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 
 import KeyboardShortcuts from "@/components/KeyboardShortcuts.vue";
 import { WatchLayout, type StreamWatch } from "@/gen/server/apiv2_pb";
-import { announceDownload } from "@/lib/download-notice";
+import { startDownload } from "@/lib/download-notice";
 import type { PlayerController } from "@/lib/player/controller";
 import {
   attachmentLink,
@@ -72,8 +72,11 @@ async function copyHls(): Promise<void> {
 }
 
 const itemClass =
-  "flex items-center gap-2 rounded px-2 py-1 text-left text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-600";
-const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-center rounded";
+  "text-3 flex items-center gap-2 rounded px-2 py-1 text-left text-xs font-semibold transition-colors hover:bg-gray-200 dark:hover:bg-gray-600";
+// Kept in step with the trigger in ActionMenu and the one in ReactionsButton.
+const buttonClass =
+  "group text-4 hover:text-1 flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-black/5 active:scale-95 dark:hover:bg-white/10";
+const iconClass = "fa-solid text-lg transition-transform motion-safe:group-hover:scale-110";
 </script>
 
 <template>
@@ -84,7 +87,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
     data-testid="watch-action-bar"
   >
     <button type="button" :class="buttonClass" title="Share" aria-label="Share" @click="shareOpen = true">
-      <i class="fa-solid fa-share-nodes text-lg"></i>
+      <i :class="[iconClass, 'fa-share-nodes']"></i>
     </button>
 
     <ActionMenu v-if="attachmentLinks.length > 0 || downloads.length > 0" label="Attachments and downloads" icon="fa-file-arrow-down">
@@ -108,7 +111,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
         :href="d.url"
         download
         :class="itemClass"
-        @click="announceDownload"
+        @click.prevent="startDownload(d.url)"
       >
         <i class="fa-solid fa-download text-xs text-gray-500 dark:text-gray-200"></i>
         <span>Download {{ d.friendlyName }}</span>
@@ -143,7 +146,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
       aria-label="Copy HLS URL"
       @click="copyHls"
     >
-      <i class="fa-solid text-lg" :class="copied ? 'fa-check' : 'fa-link'"></i>
+      <i :class="[iconClass, copied ? 'fa-check' : 'fa-link']"></i>
     </button>
 
     <button
@@ -153,7 +156,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
       aria-label="Keyboard shortcuts"
       @click="shortcutsOpen = true"
     >
-      <i class="fa-solid fa-keyboard text-lg"></i>
+      <i :class="[iconClass, 'fa-keyboard']"></i>
     </button>
 
     <button
@@ -164,7 +167,7 @@ const buttonClass = "text-4 hover:text-1 flex h-8 w-8 items-center justify-cente
       aria-label="Report a problem"
       @click="issueOpen = true"
     >
-      <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+      <i :class="[iconClass, 'fa-triangle-exclamation']"></i>
     </button>
 
     <ReactionsButton v-if="live && viewer.signedIn" :stream-id="streamId" />

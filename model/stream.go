@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/now"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+
+	"github.com/TUM-Dev/gocast/tools/timing"
 )
 
 type Stream struct {
@@ -37,7 +37,6 @@ type Stream struct {
 	LiveNow                bool      `gorm:"not null"`
 	LiveNowTimestamp       time.Time `gorm:"default:null;column:live_now_timestamp"`
 	Recording              bool
-	Premiere               bool `gorm:"default:null"`
 	Ended                  bool `gorm:"default:null"`
 	Chats                  []Chat
 	Stats                  []Stat
@@ -50,7 +49,6 @@ type Stream struct {
 	ThumbInterval          uint32 `gorm:"default:null"`
 	StreamName             string
 	Duration               sql.NullInt32    `gorm:"default:null"`
-	StreamWorkers          []Worker         `gorm:"many2many:stream_workers;"`
 	StreamProgresses       []StreamProgress `gorm:"foreignKey:StreamID"`
 	VideoSections          []VideoSection
 	TranscodingProgresses  []TranscodingProgress `gorm:"foreignKey:StreamID"`
@@ -153,7 +151,7 @@ func (s *Stream) GetThumbIdForSource(source string) uint {
 			return file.ID
 		}
 	}
-	log.WithField("fileType", fileType).Warn("Could not find thumbnail for file type")
+	logger.Warn("Could not find thumbnail for file type", "fileType", fileType)
 	return FILETYPE_INVALID
 }
 
@@ -279,10 +277,10 @@ func (s *Stream) ParsableLiveNowTimestamp() string {
 }
 
 func (s *Stream) FriendlyNextDate() string {
-	if now.With(s.Start).EndOfDay().Equal(now.EndOfDay()) {
+	if timing.EndOfDay(s.Start).Equal(timing.EndOfDay(time.Now())) {
 		return fmt.Sprintf("Today, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
-	if now.With(s.Start).EndOfDay().Equal(now.With(time.Now().Add(time.Hour * 24)).EndOfDay()) {
+	if timing.EndOfDay(s.Start).Equal(timing.EndOfDay(time.Now().Add(time.Hour * 24))) {
 		return fmt.Sprintf("Tomorrow, %02d:%02d", s.Start.Hour(), s.Start.Minute())
 	}
 	return s.Start.Format("Mon, January 02. 15:04")

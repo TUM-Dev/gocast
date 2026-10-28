@@ -41,6 +41,9 @@ message StreamRequest {
   // The input is published by a lecturer (RTMP ingest), who decides when the stream is over,
   // not the schedule.
   bool self_stream = 8;
+  // Scan the finished VoD for silences and report them. All versions of a stream share their
+  // audio, so the server asks for this on exactly one of them.
+  bool detect_silence = 9;
 }
 
 message StreamResponse {
@@ -75,6 +78,9 @@ message RegenerateThumbnailRequest {
   uint64 stream_id = 1;
   StreamVersion version = 2;
   string playlist_url = 3;
+  // Also scan the VoD for silences, see StreamRequest.detect_silence. The playlist_url is
+  // read for that too.
+  bool detect_silence = 4;
 }
 
 message RegenerateThumbnailResponse {
@@ -84,6 +90,8 @@ message RegenerateThumbnailResponse {
 message PrepareUploadRequest {
   uint64 stream_id = 1;
   StreamVersion version = 2;
+  // Scan the imported VoD for silences, see StreamRequest.detect_silence.
+  bool detect_silence = 3;
 }
 
 message PrepareUploadResponse {

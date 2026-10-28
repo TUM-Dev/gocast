@@ -1,9 +1,8 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/spf13/viper"
 )
 
 var BrandingCfg Branding
@@ -26,22 +25,15 @@ func getDefaultBranding() Branding {
 // InitBranding initializes the global branding configuration variable `BrandingCfg`. If the config file doesn't exist
 // it will be set to the result of `getDefaultBranding()`.
 func InitBranding() {
-	v := viper.New()
-	v.SetConfigName("branding")
-	v.SetConfigType("yaml")
-	v.AddConfigPath("/etc/TUM-Live/")
-	v.AddConfigPath("$HOME/.TUM-Live")
-	v.AddConfigPath(".")
-
 	branding := getDefaultBranding()
 
-	err := v.ReadInConfig()
-	if err == nil {
-		err = v.Unmarshal(&branding)
-		logger.Info("Using branding.yaml.")
-		if err != nil {
-			panic(fmt.Errorf("fatal error branding file: %v", err))
-		}
+	path, err := loadConfigFile("branding", &branding)
+	switch {
+	case errors.Is(err, errConfigNotFound):
+	case err != nil:
+		panic(fmt.Errorf("fatal error branding file: %v", err))
+	default:
+		logger.Info("Using " + path)
 	}
 
 	BrandingCfg = branding

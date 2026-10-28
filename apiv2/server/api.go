@@ -49,8 +49,8 @@ type API struct {
 	// optional: see WithSectionImages, WithSubtitleGenerator and WithMassStorage.
 	sectionImages SectionImages
 	// Regenerating a VOD's own large thumbnail, as opposed to a section's; see
-	// WithThumbnails. Optional: nil means RegenerateCourseThumbnails answers 503.
-	thumbnails Thumbnails
+	// WithPostProcessing. Optional: nil means RedoCoursePostProcessing answers 503.
+	postProcessing PostProcessing
 	// Where an uploaded recording is converted; see WithUploads. Optional: nil means
 	// uploading a lecture's media answers 503.
 	uploads Uploads
@@ -59,6 +59,12 @@ type API struct {
 	subtitles     pb.SubtitleGeneratorClient
 	subtitlesAuth string
 	massStorage   string
+	// Where the runner's VOD directories are mounted, and the dry run kept for paging;
+	// see WithVODStorage and ReapDeletedMedia.
+	vodStorage string
+	// The host whose /vod/ URLs point into vodStorage. Empty: taken from vodURLTemplate.
+	vodEdgeHost string
+	reapCache   reapCache
 	// Pushes per-stream events to the realtime socket. New gives every API one of its
 	// own; WithRealtimeHub shares it with the producers outside this package.
 	hub realtimehub.Hub

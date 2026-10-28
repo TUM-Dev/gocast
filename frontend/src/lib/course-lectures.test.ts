@@ -216,7 +216,6 @@ function lecture(overrides: Partial<CourseLecture> = {}): CourseLecture {
     recording: false,
     past: false,
     converting: false,
-    premiere: false,
     vodVersions: [],
     durationSeconds: 0,
     files: [],
@@ -249,11 +248,10 @@ describe("lectureState and lectureBadges", () => {
     expect(lectureBadges(lecture({ past: true }))[0]).toMatchObject({ label: "Past", tone: "warn" });
   });
 
-  it("adds private, premiere and chat beside the state", () => {
-    expect(labels(lecture({ private: true, premiere: true, chatEnabled: true }))).toEqual([
+  it("adds private and chat beside the state", () => {
+    expect(labels(lecture({ private: true, chatEnabled: true }))).toEqual([
       "Scheduled",
       "Private",
-      "Premiere",
       "Chat on",
     ]);
   });

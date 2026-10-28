@@ -2,7 +2,6 @@ package apiv2
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
@@ -10,8 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc/metadata"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
@@ -132,18 +131,13 @@ func (a *API) DecideIntegrationAuthorization(ctx context.Context, req *protobuf.
 	if !canAuthorizeCourse(user, course) {
 		return nil, e.WithStatus(http.StatusForbidden, errors.New("you no longer have permission to authorize applications for this course"))
 	}
-	var code uuid.UUID
-	if _, err := rand.Read(code[:]); err != nil {
-		return nil, e.WithStatus(http.StatusInternalServerError, err)
-	}
-	code.SetVersion(uuid.V4)
-	code.SetVariant(uuid.VariantRFC4122)
+	code := uuid.NewV4()
 	codeHash, stateHash := sha256.Sum256(code[:]), sha256.Sum256(stateRaw)
 	grantID, err := a.dao.IntegrationGrantDao.ApproveIntegrationCourse(ctx, integrationID, courseID, codeHash[:], stateHash[:], time.Now().Add(integrationCodeLifetime))
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' authorize integration: %s (%d)", course.Name, course.Slug, integration.Name, grantID))
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' authorize integration: %s (%d)", course.Name, course.Slug, integration.Name, grantID), forCourse(course.ID))
 	return &protobuf.DecideIntegrationAuthorizationResponse{
 		RedirectUrl: integrationReturnURL(integration.ReturnURL, state, "code", code.String()),
 	}, nil

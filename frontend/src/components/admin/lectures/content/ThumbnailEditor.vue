@@ -106,7 +106,7 @@ const inputId = computed(() => `lecture-${props.lectureId}-thumbnail-file`);
       <div class="flex flex-wrap items-center gap-2">
         <label
           :for="inputId"
-          class="tum-live-button-secondary tum-live-button cursor-pointer px-3 py-1 text-sm focus-within:ring-2"
+          class="tum-live-button-primary tum-live-button cursor-pointer px-3 py-1 text-sm focus-within:ring-2"
           :class="{ 'pointer-events-none opacity-50': busy }"
         >
           <i class="fas fa-image mr-1"></i>{{ current ? "Replace thumbnail" : "Upload thumbnail" }}

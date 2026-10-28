@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { AUDITS_PAGE_SIZE, fetchAudits } from "./audits";
+import { AUDITS_PAGE_SIZE, fetchAuditPage, fetchAudits } from "./audits";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -19,7 +19,9 @@ function respondWith(body: unknown, status = 200): void {
   fetchMock.mockImplementation((url: string) => {
     if (String(url).endsWith("/auth/token")) {
       return Promise.resolve(
-        new Response(JSON.stringify({ access_token: "t", expires_in: 900 }), { status: 200 }),
+        new Response(JSON.stringify({ access_token: "t", expires_in: 900 }), {
+          status: 200,
+        }),
       );
     }
     return Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -65,7 +67,14 @@ describe("fetchAudits", () => {
 
   it("survives a system audit with no user", async () => {
     // protojson omits a zero uint32, so userId is simply absent from the JSON.
-    withAudits([{ id: 1, type: "Info", message: "server started", userName: "- System -" }]);
+    withAudits([
+      {
+        id: 1,
+        type: "Info",
+        message: "server started",
+        userName: "- System -",
+      },
+    ]);
 
     const [entry] = await fetchAudits(0);
 
@@ -96,5 +105,47 @@ describe("fetchAudits", () => {
 
     const [url] = fetchMock.mock.calls.at(-1) as [string];
     expect(url).toBe(`/api/v2/admin/audits?limit=${AUDITS_PAGE_SIZE}&offset=0`);
+  });
+});
+
+describe("fetchAuditPage", () => {
+  it("sends the type filter and reads the total", async () => {
+    respondWith({ audits: [], total: 42 });
+
+    const page = await fetchAuditPage(10, 10, "User Deleted");
+
+    expect(page.total).toBe(42);
+    const url = String(
+      fetchMock.mock.calls
+        .map((c) => c[0])
+        .find((u) => String(u).includes("/admin/audits")),
+    );
+    expect(url).toContain("type=User+Deleted");
+    expect(url).toContain("offset=10");
+  });
+
+  it("omits the filter when none is chosen", async () => {
+    respondWith({ audits: [] });
+
+    await fetchAuditPage(0);
+
+    const url = String(
+      fetchMock.mock.calls
+        .map((c) => c[0])
+        .find((u) => String(u).includes("/admin/audits")),
+    );
+    expect(url).not.toContain("type=");
+  });
+
+  it("reads a course's own log from the course's path", async () => {
+    respondWith({ audits: [], total: 3 });
+
+    const page = await fetchAuditPage(0, 10, "Stream Edited", 5);
+
+    expect(page.total).toBe(3);
+    const url = String(fetchMock.mock.calls.map((c) => c[0]).find((u) => String(u).includes("/audits")));
+    expect(url).toContain("/courses/5/audits?");
+    expect(url).not.toContain("/admin/audits");
+    expect(url).toContain("type=Stream+Edited");
   });
 });

@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"slices"
 	"time"
+	"uuid"
 
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
@@ -31,8 +31,8 @@ func (a *API) GetIntegration(ctx context.Context, _ *emptypb.Empty) (*protobuf.G
 }
 
 func (a *API) RedeemIntegrationAuthorization(ctx context.Context, req *protobuf.RedeemIntegrationAuthorizationRequest) (*protobuf.RedeemIntegrationAuthorizationResponse, error) {
-	code, err := uuid.FromString(req.GetCode())
-	if err != nil || code.String() != req.GetCode() || code.Version() != uuid.V4 || code.Variant() != uuid.VariantRFC4122 {
+	code, err := uuid.Parse(req.GetCode())
+	if err != nil || code.String() != req.GetCode() || !isV4RFC4122(code) {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("code must be a canonical version 4 UUID"))
 	}
 	state, ok := validAuthorizationState(req.GetState())
@@ -92,7 +92,7 @@ func (a *API) RevokeIntegrationGrant(ctx context.Context, req *protobuf.RevokeIn
 	if course.ID != 0 {
 		// No user acted; the integration is named in the message instead.
 		message := fmt.Sprintf("%s:'%s' revoke integration grant: %d by integration '%s' (%d)", course.Name, course.Slug, req.GetGrantId(), integration.Name, integration.ID)
-		if err := a.dao.AuditDao.Create(&model.Audit{Message: message, Type: model.AuditCourseEdit}); err != nil {
+		if err := a.dao.AuditDao.Create(&model.Audit{Message: message, Type: model.AuditCourseEdit, CourseID: &course.ID}); err != nil {
 			a.log.Error("can't write audit entry", "err", err, "message", message)
 		}
 	}
@@ -202,4 +202,10 @@ func playlistOf(s *model.Stream, v model.StreamVersion) *string {
 	default:
 		return &s.PlaylistUrl
 	}
+}
+
+// isV4RFC4122 checks the version and variant bits by hand because the standard
+// library's uuid.UUID exposes neither.
+func isV4RFC4122(u uuid.UUID) bool {
+	return u[6]>>4 == 4 && u[8]>>6 == 0b10
 }

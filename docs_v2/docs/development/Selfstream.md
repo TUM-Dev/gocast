@@ -91,7 +91,7 @@ You have to change the `authHTTPAddress` in the `ingest/mediamtx.yml` file by un
   STORAGE_PATH=/home/<path-to-cache-location>/storage/mass SEGMENT_PATH=/home/<path-to-cache-location>/dev/storage/live go run runner/cmd/runner/main.go
   ```
 
-- Start the worker:
+- Start the edge:
 
   ```bash
   # in the root

@@ -21,13 +21,54 @@ const defaultAuditPageSize = 10
 // ListAudits returns one page of the server-wide audit log, newest first. Gated on
 // PermAdministerServer by its policy in services.go.
 func (a *API) ListAudits(ctx context.Context, req *protobuf.ListAuditsRequest) (*protobuf.ListAuditsResponse, error) {
-	limit := int(req.GetLimit())
+	return a.auditPage(req.GetType(), req.GetLimit(), req.GetOffset(),
+		func(limit, offset int, types ...model.AuditType) ([]model.Audit, error) {
+			return a.dao.AuditDao.Find(limit, offset, types...)
+		},
+		func(types ...model.AuditType) (int64, error) { return a.dao.AuditDao.Count(types...) })
+}
+
+// ListCourseAudits returns one page of the audit log entries about a course and its
+// lectures, newest first. Gated on administering the course by its policy in
+// services.go: the log names who did what, which the course's administrators may see
+// of their own course and no other.
+func (a *API) ListCourseAudits(ctx context.Context, req *protobuf.ListCourseAuditsRequest) (*protobuf.ListAuditsResponse, error) {
+	courseID := uint(req.GetCourseId())
+	return a.auditPage(req.GetType(), req.GetLimit(), req.GetOffset(),
+		func(limit, offset int, types ...model.AuditType) ([]model.Audit, error) {
+			return a.dao.AuditDao.FindByCourse(courseID, limit, offset, types...)
+		},
+		func(types ...model.AuditType) (int64, error) { return a.dao.AuditDao.CountByCourse(courseID, types...) })
+}
+
+// auditPage is what ListAudits and ListCourseAudits share: the page defaults, the type
+// filter and the entry mapping. Only where the rows come from differs.
+func (a *API) auditPage(
+	typeName string,
+	limit32, offset32 uint32,
+	find func(limit, offset int, types ...model.AuditType) ([]model.Audit, error),
+	count func(types ...model.AuditType) (int64, error),
+) (*protobuf.ListAuditsResponse, error) {
+	limit := int(limit32)
 	if limit <= 0 {
 		limit = defaultAuditPageSize
 	}
 
-	found, err := a.dao.AuditDao.Find(limit, int(req.GetOffset()), model.GetAllAuditTypes()...)
+	types := model.GetAllAuditTypes()
+	if typeName != "" {
+		typ, ok := model.AuditTypeByName(typeName)
+		if !ok {
+			return nil, e.WithStatus(http.StatusBadRequest, errors.New("unknown audit type"))
+		}
+		types = []model.AuditType{typ}
+	}
+
+	found, err := find(limit, int(offset32), types...)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	total, err := count(types...)
+	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
@@ -36,7 +77,7 @@ func (a *API) ListAudits(ctx context.Context, req *protobuf.ListAuditsRequest) (
 		out = append(out, auditMessage(audit))
 	}
 
-	return &protobuf.ListAuditsResponse{Audits: out}, nil
+	return &protobuf.ListAuditsResponse{Audits: out, Total: uint32(total)}, nil
 }
 
 func auditMessage(audit model.Audit) *protobuf.AuditEntry {

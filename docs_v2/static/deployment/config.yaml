@@ -56,11 +56,13 @@ mail:
   server: mailrelay.my.domain:25 # todo changeme
   smimecert: /path/to/mail.p12.crt.pem
   smimekey: /path/to/mail.p12.key.pem
+  # smimekeypassword: changeme # only if the key is password protected
 paths:
   mass: /share
+  # vod: /vod # optional: the edge's /vod/ directory (the runner's STORAGE_PATH), mounted read-write
+  #   here to delete the video files of deleted streams under Admin > Maintenance > Deleted Media
   static: /var/www/public
   branding: /etc/TUM-Live/branding
-workertoken: abc123 # todo changeme
 weburl: https://live.rbg.tum.de
 monitoring:
   sentryDSN: https://abc@sentry.com/2 # todo changeme

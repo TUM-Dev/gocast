@@ -114,13 +114,14 @@ var services = []service{
 			// updateLecturesLectureHall always -- also needs a server administrator,
 			// checked in the handler since the policy cannot see which fields are set.
 			"listCourseLecturesAdmin":   requiresCourseAdmin(),
+			"listCourseAudits":          requiresCourseAdmin(),
 			"updateLecturesLectureHall": requiresCourseAdmin(),
 			"updateLectureSeries":       requiresCourseAdmin(),
 			"updateLectureSeriesTime":   requiresCourseAdmin(),
 			"deleteLectures":            requiresCourseAdmin(),
 			"deleteLectureSeries":       requiresCourseAdmin(),
 			"copyLecture":               requiresCourseAdmin(),
-			// The handler also refuses a hall for a VOD upload or premiere, and an
+			// The handler also refuses a hall for a VOD upload, and an
 			// unknown one.
 			"createLectures": requiresCourseAdmin(),
 
@@ -137,7 +138,8 @@ var services = []service{
 			"updateCourseSettings":            requiresCourseAdmin(),
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),
-			"regenerateCourseThumbnails":      requiresCourseAdmin(),
+			"redoCoursePostProcessing":        requiresCourseAdmin(),
+			"exportCourseVideos":              requiresCourseAdmin(),
 			"listCourseAdmins":                requiresCourseAdmin(),
 			"addCourseAdmin":                  requiresCourseAdmin(),
 			"removeCourseAdmin":               requiresCourseAdmin(),
@@ -243,10 +245,6 @@ var services = []service{
 			"listRunners":  requires(model.PermAdministerServer),
 			"deleteRunner": requires(model.PermAdministerServer),
 
-			// Workers are the older, pre-runner equivalent; same permission.
-			"listWorkers":  requires(model.PermAdministerServer),
-			"deleteWorker": requires(model.PermAdministerServer),
-
 			// Accounts are a different permission from the rest of the service. Both
 			// belong to admins today; the split is what makes an operator role a
 			// change to the role table rather than to every call site.
@@ -274,6 +272,7 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+			"reapDeletedMedia":                    requires(model.PermAdministerServer),
 
 			// Course import reaches TUMonline directly and creates courses outright;
 			// server-wide, same as runners and info pages.

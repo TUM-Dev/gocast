@@ -1,0 +1,501 @@
+// Package mediareap works out which files on disk belong only to soft-deleted streams,
+// so an admin can see them listed and then reap them.
+//
+// Soft-deleting a stream or course never touches disk. The hazard in reaping afterwards
+// is that files are shared: copying a lecture or course copies the playlist URLs and
+// File paths by value, so a copy keeps pointing at the *original's* files. Reaping is
+// therefore a set difference: everything the deleted streams reference, minus
+// everything any other stream still references.
+package mediareap
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io/fs"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"slices"
+	"strings"
+	"time"
+)
+
+// A playlist URL on the edge, https://<edge>/vod/<dir>/playlist.m3u8, is served from
+// <vodRoot>/<dir>/. That one rule covers every layout the volume has seen: the current
+// <streamID>/STREAM_VERSION_<X>/ (the runner joins the same string into path and URL),
+// the older <courseID>/<streamID>/<COMB|CAM|PRES>/, and the name-keyed <name>.mp4/ of
+// the vod-service. URLs on any other host, or outside /vod/, are not on this volume
+// and never match; they are reported as skipped rather than guessed at.
+var (
+	// currentLayout and courseLayout pick the stream ID out of the two layouts that name one, so a live stream
+	// can protect the directories carrying its own ID while its URL is still blank.
+	currentLayout = regexp.MustCompile(`^([0-9]+)/STREAM_VERSION_[A-Z_]+$`)
+	courseLayout  = regexp.MustCompile(`^[0-9]+/([0-9]+)/(COMB|CAM|PRES)$`)
+)
+
+// Stream is the part of a stream the planner needs.
+type Stream struct {
+	ID        uint
+	CourseID  uint
+	DeletedAt *time.Time
+	// PlaylistUrl, PlaylistUrlPRES and PlaylistUrlCAM.
+	URLs [3]string
+}
+
+// File is a File row of a stream.
+type File struct {
+	StreamID uint
+	Path     string
+	// Deleted marks a soft-deleted File row: it no longer protects its path.
+	Deleted bool
+}
+
+type Kind int
+
+const (
+	// KindVODDir is the directory of one stream version.
+	KindVODDir Kind = iota + 1
+	// KindVODFile is a file inside a KindVODDir.
+	KindVODFile
+	// KindFile is a File row's path: thumbnail, section image, attachment.
+	KindFile
+)
+
+// Entry is one thing the reap removes.
+type Entry struct {
+	Kind      Kind
+	Path      string
+	Bytes     int64
+	StreamIDs []uint
+	CourseIDs []uint
+	DeletedAt time.Time
+}
+
+// Skipped is something that looked reapable but is deliberately left alone.
+type Skipped struct {
+	Path      string
+	StreamIDs []uint
+	Reason    string
+}
+
+// Plan is everything a reap would remove, ordered by path (a directory sorts before its
+// files). Token identifies exactly this content.
+type Plan struct {
+	Entries []Entry
+	Skipped []Skipped
+	Dirs    int
+	Files   int
+	Bytes   int64
+	Token   string
+}
+
+// Options say where files live and which streams count as reapable.
+type Options struct {
+	// VODRoot is what the edge serves as /vod/. Empty: VOD directories are not planned.
+	VODRoot string
+	// EdgeHost is the host whose /vod/ URLs point into VODRoot.
+	EdgeHost string
+	// MassRoot bounds File paths: nothing outside it is ever listed.
+	MassRoot string
+	// Cutoff: only streams soft-deleted before it are reapable, so un-deleting a course
+	// shortly after stays safe.
+	Cutoff time.Time
+}
+
+// dirKey is a stream version's directory relative to the VOD root, slash-separated.
+type dirKey string
+
+func (k dirKey) path(root string) string { return filepath.Join(root, filepath.FromSlash(string(k))) }
+
+// ownerID is the stream a directory is named after, or "" when its name carries none.
+func ownerID(k dirKey) string {
+	if m := currentLayout.FindStringSubmatch(string(k)); m != nil {
+		return m[1]
+	}
+	if m := courseLayout.FindStringSubmatch(string(k)); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
+// ancestors lists the directories above k, nearest last, excluding the root.
+func (k dirKey) ancestors() []dirKey {
+	var out []dirKey
+	for i, c := range k {
+		if c == '/' {
+			out = append(out, k[:i])
+		}
+	}
+	return out
+}
+
+type owners struct {
+	streams []uint
+	courses []uint
+	deleted time.Time
+}
+
+func (o *owners) add(s Stream) {
+	if !slices.Contains(o.streams, s.ID) {
+		o.streams = append(o.streams, s.ID)
+	}
+	if !slices.Contains(o.courses, s.CourseID) {
+		o.courses = append(o.courses, s.CourseID)
+	}
+	if s.DeletedAt != nil && s.DeletedAt.After(o.deleted) {
+		o.deleted = *s.DeletedAt
+	}
+}
+
+// kept is what the streams that stay still use.
+type kept struct {
+	dirs map[dirKey][]uint
+	// under maps a directory to the kept directories nested below it, which deleting
+	// it would take along.
+	under map[dirKey][]uint
+	ids   map[string]uint
+	files map[string][]uint
+}
+
+// planner holds the state of one Build.
+type planner struct {
+	opt       Options
+	candidate map[uint]Stream
+	kept      kept
+	plan      *Plan
+}
+
+// Build computes the plan. It only reads: the filesystem is inspected, never changed.
+func Build(streams []Stream, files []File, opt Options) (*Plan, error) {
+	p := &planner{opt: opt, candidate: map[uint]Stream{}, plan: &Plan{}}
+	for _, s := range streams {
+		if s.DeletedAt != nil && s.DeletedAt.Before(opt.Cutoff) {
+			p.candidate[s.ID] = s
+		}
+	}
+	p.kept = p.keptBy(streams, files)
+
+	dirs, filePaths := p.collect(files)
+	if err := p.planDirs(dirs); err != nil {
+		return nil, err
+	}
+	if err := p.planFiles(filePaths); err != nil {
+		return nil, err
+	}
+	p.finish()
+	return p.plan, nil
+}
+
+// keptBy collects what every other stream still uses. Live streams, and ones deleted
+// too recently, protect their files even when a deleted stream names the same ones.
+func (p *planner) keptBy(streams []Stream, files []File) kept {
+	k := kept{dirs: map[dirKey][]uint{}, under: map[dirKey][]uint{}, ids: map[string]uint{}, files: map[string][]uint{}}
+	for _, s := range streams {
+		if _, ok := p.candidate[s.ID]; ok {
+			continue
+		}
+		for _, u := range s.URLs {
+			if d, ok := parseVOD(u, p.opt.EdgeHost); ok {
+				k.dirs[d] = append(k.dirs[d], s.ID)
+				for _, a := range d.ancestors() {
+					k.under[a] = append(k.under[a], s.ID)
+				}
+			}
+		}
+		// A stream keeps the directories named after its own ID even while its URL is
+		// blank (still transcoding), which a copy's URL may already point at.
+		k.ids[fmt.Sprint(s.ID)] = s.ID
+	}
+	for _, f := range files {
+		if _, ok := p.candidate[f.StreamID]; ok || f.Deleted {
+			continue
+		}
+		c := filepath.Clean(f.Path)
+		k.files[c] = append(k.files[c], f.StreamID)
+	}
+	return k
+}
+
+// collect gathers what the candidate streams reference, with who owns it, and notes
+// what can't be placed on disk.
+func (p *planner) collect(files []File) (map[dirKey]*owners, map[string]*owners) {
+	// Candidate streams, in ID order so the plan (and its token) is deterministic.
+	ids := make([]uint, 0, len(p.candidate))
+	for id := range p.candidate {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+
+	dirs := map[dirKey]*owners{}
+	for _, id := range ids {
+		s := p.candidate[id]
+		for _, u := range s.URLs {
+			if u == "" {
+				continue
+			}
+			k, ok := parseVOD(u, p.opt.EdgeHost)
+			if !ok {
+				p.skip(u, []uint{s.ID}, "not served from the edge's /vod/, so not on this volume")
+				continue
+			}
+			if p.opt.VODRoot == "" {
+				continue
+			}
+			if dirs[k] == nil {
+				dirs[k] = &owners{}
+			}
+			dirs[k].add(s)
+		}
+	}
+
+	filePaths := map[string]*owners{}
+	for _, f := range files {
+		s, ok := p.candidate[f.StreamID]
+		if !ok || !p.filePathUsable(f, s) {
+			continue
+		}
+		c := filepath.Clean(f.Path)
+		if filePaths[c] == nil {
+			filePaths[c] = &owners{}
+		}
+		filePaths[c].add(s)
+	}
+	return dirs, filePaths
+}
+
+// filePathUsable reports whether a File row's path is one to consider for deletion,
+// skipping (and noting) the ones outside the mass storage.
+func (p *planner) filePathUsable(f File, s Stream) bool {
+	c := filepath.Clean(f.Path)
+	switch {
+	case f.Path == "" || strings.HasPrefix(f.Path, "http://") || strings.HasPrefix(f.Path, "https://"):
+		return false
+	case p.opt.VODRoot != "" && within(p.opt.VODRoot, c):
+		// Already listed with its directory; a second entry would double-count it.
+		return false
+	case p.opt.MassRoot == "" || !within(p.opt.MassRoot, c):
+		p.skip(f.Path, []uint{s.ID}, "outside the mass storage directory")
+		return false
+	}
+	return true
+}
+
+func (p *planner) skip(path string, streams []uint, reason string) {
+	p.plan.Skipped = append(p.plan.Skipped, Skipped{Path: path, StreamIDs: streams, Reason: reason})
+}
+
+// keptBelow lists the kept streams that make deleting the directory unsafe: those using
+// it, one nested in it, or one it is nested in.
+func (p *planner) keptBelow(k dirKey) []uint {
+	by := append([]uint(nil), p.kept.dirs[k]...)
+	by = append(by, p.kept.under[k]...)
+	for _, a := range k.ancestors() {
+		by = append(by, p.kept.dirs[a]...)
+	}
+	if id, ok := p.kept.ids[ownerID(k)]; ok {
+		by = append(by, id)
+	}
+	return by
+}
+
+func (p *planner) planDirs(dirs map[dirKey]*owners) error {
+	keys := make([]dirKey, 0, len(dirs))
+	for k := range dirs {
+		keys = append(keys, k)
+	}
+	slices.SortFunc(keys, func(a, b dirKey) int { return strings.Compare(a.path(""), b.path("")) })
+
+	for _, k := range keys {
+		o := dirs[k]
+		path := k.path(p.opt.VODRoot)
+		info, err := os.Lstat(path)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		by := p.keptBelow(k)
+		if len(by) > 0 {
+			p.skip(path, o.streams, fmt.Sprintf("still used by stream %s", idList(by)))
+			continue
+		}
+		if info.Mode()&fs.ModeSymlink != 0 || !info.IsDir() {
+			p.skip(path, o.streams, "not a plain directory")
+			continue
+		}
+		if err := p.walkDir(path, o); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// walkDir lists a directory and everything below it.
+func (p *planner) walkDir(dir string, o *owners) error {
+	p.plan.Entries = append(p.plan.Entries, Entry{Kind: KindVODDir, Path: dir, StreamIDs: o.streams, CourseIDs: o.courses, DeletedAt: o.deleted})
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == dir {
+			return nil
+		}
+		e := Entry{Path: path, StreamIDs: o.streams, CourseIDs: o.courses, DeletedAt: o.deleted}
+		if d.IsDir() {
+			// A nested directory is removed when its files are; it is listed so the
+			// admin sees it.
+			e.Kind = KindVODDir
+		} else {
+			e.Kind = KindVODFile
+			if fi, err := d.Info(); err == nil {
+				e.Bytes = fi.Size()
+			}
+		}
+		p.plan.Entries = append(p.plan.Entries, e)
+		return nil
+	})
+}
+
+func (p *planner) planFiles(filePaths map[string]*owners) error {
+	paths := make([]string, 0, len(filePaths))
+	for path := range filePaths {
+		paths = append(paths, path)
+	}
+	slices.Sort(paths)
+	for _, path := range paths {
+		o := filePaths[path]
+		info, err := os.Lstat(path)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		switch by := p.kept.files[path]; {
+		case len(by) > 0:
+			p.skip(path, o.streams, fmt.Sprintf("still used by stream %s", idList(by)))
+		case !info.Mode().IsRegular():
+			p.skip(path, o.streams, "not a regular file")
+		case !resolvedWithin(p.opt.MassRoot, path):
+			p.skip(path, o.streams, "resolves outside the mass storage directory")
+		default:
+			p.plan.Entries = append(p.plan.Entries, Entry{Kind: KindFile, Path: path, Bytes: info.Size(), StreamIDs: o.streams, CourseIDs: o.courses, DeletedAt: o.deleted})
+		}
+	}
+	return nil
+}
+
+// finish orders the entries and totals them, and derives the token from them.
+func (p *planner) finish() {
+	plan := p.plan
+	slices.SortFunc(plan.Entries, func(a, b Entry) int { return strings.Compare(a.Path, b.Path) })
+	h := sha256.New()
+	for _, e := range plan.Entries {
+		_, _ = fmt.Fprintf(h, "%d\x00%s\x00%d\n", e.Kind, e.Path, e.Bytes)
+		if e.Kind == KindVODDir {
+			plan.Dirs++
+		} else {
+			plan.Files++
+			plan.Bytes += e.Bytes
+		}
+	}
+	plan.Token = hex.EncodeToString(h.Sum(nil))
+}
+
+// Result is what Execute removed.
+type Result struct {
+	Files  int
+	Bytes  int64
+	Errors []string
+}
+
+// Execute removes exactly the entries of the plan: each listed file, then the listed
+// directories once they are empty. A directory that gained files since the plan was
+// built is not emptied (os.Remove refuses), so nothing unreviewed is deleted.
+func Execute(plan *Plan) Result {
+	var res Result
+	for _, e := range plan.Entries {
+		if e.Kind == KindVODDir {
+			continue
+		}
+		if err := os.Remove(e.Path); err != nil && !os.IsNotExist(err) {
+			res.Errors = append(res.Errors, err.Error())
+			continue
+		}
+		res.Files++
+		res.Bytes += e.Bytes
+	}
+	// Deepest first, so nested directories go before their parents.
+	for i := len(plan.Entries) - 1; i >= 0; i-- {
+		e := plan.Entries[i]
+		if e.Kind != KindVODDir {
+			continue
+		}
+		if err := os.Remove(e.Path); err != nil && !os.IsNotExist(err) {
+			res.Errors = append(res.Errors, err.Error())
+			continue
+		}
+		// <id>/ stays behind empty once its last version goes; a non-empty one refuses.
+		_ = os.Remove(filepath.Dir(e.Path))
+	}
+	return res
+}
+
+func parseVOD(raw, host string) (dirKey, bool) {
+	u, err := url.Parse(raw)
+	if err != nil || host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.Host != host || u.RawQuery != "" || u.Fragment != "" {
+		return "", false
+	}
+	rel, ok := strings.CutPrefix(u.Path, "/vod/")
+	if !ok {
+		return "", false
+	}
+	rel, ok = strings.CutSuffix(rel, "/playlist.m3u8")
+	if !ok || rel == "" {
+		return "", false
+	}
+	// The path comes from a database column; nothing in it may step out of the root.
+	for _, seg := range strings.Split(rel, "/") {
+		if seg == "" || seg == "." || seg == ".." || strings.ContainsAny(seg, "\\\x00") {
+			return "", false
+		}
+	}
+	return dirKey(rel), true
+}
+
+// within reports whether p is strictly below root, lexically.
+func within(root, p string) bool {
+	rel, err := filepath.Rel(filepath.Clean(root), p)
+	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// resolvedWithin is within after resolving symlinks in the file's directory, so a
+// symlinked directory inside the mass storage cannot point a path elsewhere.
+func resolvedWithin(root, p string) bool {
+	r, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return false
+	}
+	d, err := filepath.EvalSymlinks(filepath.Dir(p))
+	if err != nil {
+		return false
+	}
+	return within(r, filepath.Join(d, filepath.Base(p)))
+}
+
+func idList(ids []uint) string {
+	slices.Sort(ids)
+	ids = slices.Compact(ids)
+	parts := make([]string, 0, 4)
+	for i, id := range ids {
+		if i == 3 {
+			parts = append(parts, fmt.Sprintf("and %d more", len(ids)-3))
+			break
+		}
+		parts = append(parts, fmt.Sprint(id))
+	}
+	return strings.Join(parts, ", ")
+}

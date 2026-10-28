@@ -137,9 +137,10 @@ func (a *API) CreateCourse(ctx context.Context, req *protobuf.CreateCourseReques
 
 	// After the course exists, unlike v1, so a failed creation leaves no audit entry.
 	if err := a.dao.AuditDao.Create(&model.Audit{
-		User:    user,
-		Message: fmt.Sprintf("%s:'%s' (%d, %s)", course.Slug, course.Name, course.Year, course.TeachingTerm),
-		Type:    model.AuditCourseCreate,
+		User:     user,
+		Message:  fmt.Sprintf("%s:'%s' (%d, %s)", course.Slug, course.Name, course.Year, course.TeachingTerm),
+		Type:     model.AuditCourseCreate,
+		CourseID: &course.ID,
 	}); err != nil {
 		a.log.Error("can't audit course creation", "err", err)
 	}

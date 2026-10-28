@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/RBG-TUM/commons"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 
@@ -208,7 +207,7 @@ func (a *API) GetUserCourses(ctx context.Context, req *protobuf.GetUserCoursesRe
 
 	// A lecturer's enrolled and administered courses overlap, and the lecturer branch
 	// above appends one to the other. Without this the same course is listed twice.
-	courses = commons.Unique(courses, func(c model.Course) uint { return c.ID })
+	courses = model.UniqueCourses(courses)
 
 	resp := make([]*protobuf.Course, len(courses))
 	for i, course := range courses {

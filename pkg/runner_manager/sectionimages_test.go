@@ -190,32 +190,6 @@ func TestRequestSectionImagesNoSections(t *testing.T) {
 	}
 }
 
-// TestGenerateSectionImagesFallback checks that the worker path is only used when no
-// runner manager is available, and never for an empty request.
-func TestGenerateSectionImagesFallback(t *testing.T) {
-	sections := []model.VideoSection{{Model: gorm.Model{ID: 1}, StreamID: 1}}
-
-	t.Run("no manager uses the fallback", func(t *testing.T) {
-		called := false
-		err := GenerateSectionImages(nil, SectionImageRequest{StreamID: 1, PlaylistURL: "x", Sections: sections},
-			func() error { called = true; return nil })
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !called {
-			t.Error("fallback was not called without a runner manager")
-		}
-	})
-
-	t.Run("empty request does nothing", func(t *testing.T) {
-		err := GenerateSectionImages(nil, SectionImageRequest{StreamID: 1},
-			func() error { t.Error("fallback called for an empty request"); return nil })
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-	})
-}
-
 // TestSaveSectionImagesDeletedStream checks that images for a stream deleted in the
 // meantime are dropped rather than failing: the runner retries every error it gets
 // back, so an error here would be retried forever.

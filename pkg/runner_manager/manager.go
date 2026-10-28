@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	log "log/slog"
 	"net"
 	"os"
@@ -26,6 +27,8 @@ import (
 
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/TUM-Dev/gocast/pkg/camera"
 
@@ -49,11 +52,16 @@ type Manager struct {
 	selfStreamLock sync.Mutex
 	massStorage    string
 
+	// camPresLock keeps two compositions of one stream's thumbnails from interleaving: the
+	// CAM and PRES notifications arrive together and each would compose and replace the row.
+	// Composing is quick, so one lock for all streams will do.
+	camPresLock sync.Mutex
+
 	subtitleClient pb.SubtitleGeneratorClient
 	subtitleAuth   string
 
 	camService      CamService
-	camsHandled     map[uint]bool
+	camsHandled     map[uint]int // attempts per stream, see maxCameraAttempts
 	camsHandledLock sync.Mutex
 
 	lightLock sync.Mutex
@@ -84,7 +92,7 @@ func New(dao dao.DaoWrapper, opts ...Option) *Manager {
 			Level: log.LevelDebug,
 		})).With("service", "runner_manager"),
 		streamStartLock: sync.Mutex{},
-		camsHandled:     make(map[uint]bool),
+		camsHandled:     make(map[uint]int),
 		liveNotified:    make(map[uint]bool),
 	}
 	m.applyOpts(opts)
@@ -125,6 +133,7 @@ func (m *Manager) TriggerDueStreams() error {
 			protobuf.StreamVersion_STREAM_VERSION_PRESENTATION,
 			protobuf.StreamVersion_STREAM_VERSION_CAMERA,
 		}
+		silenceVersion := silenceDetectionVersion(lh)
 		for _, version := range versions {
 			// Skip if a runner job already exists for this stream+version (prevents double-triggering)
 			exists, err := m.dao.StreamsDao.HasRunnerJobForStreamVersion(s.ID, modelStreamVersion(version))
@@ -137,7 +146,7 @@ func (m *Manager) TriggerDueStreams() error {
 				continue
 			}
 
-			if err := m.triggerStreamVersion(ctx, s, lh, version); err != nil {
+			if err := m.triggerStreamVersion(ctx, s, lh, version, version == silenceVersion); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -151,7 +160,9 @@ func (m *Manager) TriggerDueStreams() error {
 // triggerStreamVersion starts one version of a stream on a reserved runner. It owns the
 // runner connection for the duration of the call, so that a tick spanning several streams
 // and versions doesn't hold one connection open per iteration.
-func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion) error {
+func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) (err error) {
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(s.ID), version), "manager.trigger_stream", streamAttrs(uint64(s.ID), version)...)
+	defer endSpan(span, &err)
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)
@@ -160,7 +171,7 @@ func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh m
 		_ = conn.Close()
 	}()
 
-	resp, err := m.requestStreamVersion(ctx, s, client, lh, version)
+	resp, err := m.requestStreamVersion(ctx, s, client, lh, version, detectSilence)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
 		return fmt.Errorf("RequestStream %v: %w", version, err)
 	}
@@ -263,12 +274,22 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	return &protobuf.RegisterResponse{}, nil
 }
 
-func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
+func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (resp *protobuf.NotificationResponse, err error) {
+	// Heartbeats come every few seconds from every runner and are not part of any stream.
+	if _, ok := notification.Data.(*protobuf.Notification_Heartbeat); !ok {
+		var span trace.Span
+		ctx, span = startNotifySpan(ctx, notification)
+		defer endSpan(span, &err)
+	}
+	return m.handleNotification(ctx, notification)
+}
+
+func (m *Manager) handleNotification(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "runner not found: %v", err)
+			return nil, lookupError(err, "runner %s", notification.GetHeartbeat().GetHostname())
 		}
 		newDraining := notification.GetHeartbeat().GetDraining()
 		newJobCount := notification.GetHeartbeat().GetJobCount()
@@ -297,9 +318,25 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.saveThumbnail(ctx, notification.GetThumbnailReady())
 	case *protobuf.Notification_SectionImagesReady:
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
+	case *protobuf.Notification_SilenceDetected:
+		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
+}
+
+// lookupError is the gRPC status for a failed lookup of the thing described by format. The
+// runner retries what it is told is temporary and drops what it is told is permanent, so
+// only a record that does not exist may be NotFound: a database that fails for a moment
+// must not make the runner give up on a notification (a thumbnail, say) for good.
+// Internal, and not Unavailable, because the runner takes the latter for a broken
+// connection and replaces it.
+func lookupError(err error, format string, args ...any) error {
+	what := fmt.Sprintf(format, args...)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return status.Errorf(codes.NotFound, "can't find %s: %v", what, err)
+	}
+	return status.Errorf(codes.Internal, "can't look up %s: %v", what, err)
 }
 
 // ErrNoRunner is returned when no runner is alive and accepting jobs.
@@ -358,17 +395,31 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 
 	m.notifyLiveState(stream.ID, true)
 
-	err = m.handleCamera(ctx, stream)
-	if err != nil {
-		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
-	}
-
-	err = m.handleLightsOn(stream)
-	if err != nil {
-		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
+	// The runner retries a StreamStart until it is acknowledged, and this handler used to
+	// answer only after the camera and the lights had been dealt with, which can take many
+	// seconds per call and was serialized behind lightLock. The runner's call then timed
+	// out or was cut off by the connection's max age, so the notification was sent again,
+	// long after the stream had ended in the worst case. Acknowledge as soon as the URL is
+	// saved and do the hardware in the background.
+	// A start that is delivered after the scheduled end is a leftover retry: ffmpeg is
+	// bounded by the end (see the runner's Stream action), so moving the camera or turning
+	// on the lights for it would only disturb whatever is happening in the hall now.
+	if time.Now().Before(stream.End) {
+		go m.setUpHall(context.WithoutCancel(ctx), stream)
 	}
 
 	return nil
+}
+
+// setUpHall points the camera and turns on the lights for a stream that just started.
+// Failures are logged only, they must never keep the stream from going live.
+func (m *Manager) setUpHall(ctx context.Context, stream model.Stream) {
+	if err := m.handleCamera(ctx, stream); err != nil {
+		log.Error("failed to handle camera", "stream", stream.ID, "err", err)
+	}
+	if err := m.handleLightsOn(stream); err != nil {
+		log.Error("failed to turn on lights", "stream", stream.ID, "err", err)
+	}
 }
 
 // notifyLiveState invokes the configured LiveStateNotifier, making sure viewers are only notified
@@ -395,7 +446,7 @@ func (m *Manager) notifyLiveState(streamID uint, live bool) {
 
 var errNotNoLectureSource = fmt.Errorf("no source configured for this lecture hall ip")
 
-func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, lh model.LectureHall, version protobuf.StreamVersion) (*protobuf.StreamResponse, error) {
+func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, client protobuf.RunnerServiceClient, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) (*protobuf.StreamResponse, error) {
 	var ip string
 	switch version {
 	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
@@ -447,10 +498,14 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 		FfmpegOutputOptions: ptr.Take(outputOptions),
 		Input:               ptr.Take(input),
 		SelfStream:          ptr.Take(s.IsSelfStream()),
+		DetectSilence:       ptr.Take(detectSilence),
 	})
 }
 
-func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
+func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) (err error) {
+	version := protobuf.StreamVersion_STREAM_VERSION_COMBINED
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(stream.ID), version), "manager.request_self_stream", streamAttrs(uint64(stream.ID), version)...)
+	defer endSpan(span, &err)
 	if !tools.TestEnv.AllowsStream(stream.CourseID) {
 		m.logger.Warn("Stream rejected, course not allowed in test env", "streamId", stream.ID, "course", stream.CourseID)
 		return errors.New("stream rejected")
@@ -485,7 +540,7 @@ func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) er
 		_ = conn.Close()
 	}()
 
-	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED)
+	resp, err := m.requestStreamVersion(ctx, stream, client, model.LectureHall{}, protobuf.StreamVersion_STREAM_VERSION_COMBINED, true)
 	if err != nil && !errors.Is(err, errNotNoLectureSource) {
 		m.logger.Error("Could not start selfstream", "err", err)
 		return err
@@ -545,7 +600,7 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(req.Stream.GetId(), 10))
 	if err != nil {
-		return status.Errorf(codes.NotFound, "can't find stream for id %d: %v", req.Stream.GetId(), err)
+		return lookupError(err, "stream %d", req.Stream.GetId())
 	}
 
 	fpath := filepath.Join(m.massStorage, "thumbs", stream.Start.Format("2006/01"), fmt.Sprintf("%d", stream.CourseID))
@@ -564,15 +619,12 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't make directory: %v", err)
 	}
 
-	f, err := os.OpenFile(filepath.Join(fpath, file.Filename), os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return status.Errorf(codes.Internal, "can't open file: %v", err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	_, err = f.Write(req.GetThumbnail())
+	// Replaced whole, not rewritten in place: the web UI and composeCamPres read these files,
+	// and a failed write must not leave the previous thumbnail truncated.
+	err = writeFileAtomic(file.Path, func(w io.Writer) error {
+		_, err := w.Write(req.GetThumbnail())
+		return err
+	})
 	if err != nil {
 		return status.Errorf(codes.Internal, "can't write file: %v", err)
 	}
@@ -582,6 +634,9 @@ func (m *Manager) saveThumbnail(ctx context.Context, req *protobuf.ThumbnailRead
 		return status.Errorf(codes.Internal, "can't save thumbnail to db: %v", err)
 	}
 
+	if fileType == model.FILETYPE_THUMB_LG_CAM || fileType == model.FILETYPE_THUMB_LG_PRES {
+		m.composeCamPres(stream.ID, fpath)
+	}
 	return nil
 }
 
@@ -640,7 +695,9 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	return &protobuf.NotificationResponse{}, nil
 }
 
-func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) (err error) {
+	ctx, span := startSpan(ctx, "manager.request_subtitles", streamAttrs(uint64(stream.ID), protobufStreamVersion(version))...)
+	defer endSpan(span, &err)
 	if m.subtitleClient == nil {
 		m.logger.Info("skipping subtitle generation, not configured", "stream-id", stream.ID, "version", version)
 		return nil // nothing to do
@@ -679,23 +736,34 @@ func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, ver
 	return nil
 }
 
+// maxCameraAttempts is how often the camera is set up for one stream: once per stream
+// version, if it keeps failing.
+const maxCameraAttempts = 3
+
 // handleCamera takes care of PTZ camera control and positioning on stream start`
 func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err error) {
 	if stream.IsSelfStream() {
 		return nil
 	}
+	ctx, span := startSpan(ctx, "manager.handle_camera", attribute.Int64("stream.id", int64(stream.ID)))
+	defer endSpan(span, &err)
+	// A StreamStart arrives once per stream version, so a camera that is briefly unreachable
+	// gets a few tries. A failed attempt used to clear the mark entirely, which made every
+	// redelivered StreamStart move the camera again: several streams of one hall then kept
+	// calling their presets against each other every 30 seconds.
 	m.camsHandledLock.Lock()
-	if m.camsHandled[stream.ID] {
+	if m.camsHandled[stream.ID] >= maxCameraAttempts {
 		m.camsHandledLock.Unlock()
 		return nil
 	}
-	m.camsHandled[stream.ID] = true
+	m.camsHandled[stream.ID]++
 	m.camsHandledLock.Unlock()
 
 	defer func() {
-		if err != nil {
+		if err == nil {
+			// done for good, the other versions' StreamStarts must not move it again
 			m.camsHandledLock.Lock()
-			m.camsHandled[stream.ID] = false
+			m.camsHandled[stream.ID] = maxCameraAttempts
 			m.camsHandledLock.Unlock()
 		}
 	}()
@@ -816,15 +884,19 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 	delete(m.camsHandled, streamID)
 	m.camsHandledLock.Unlock()
 
-	if err := m.handleLightsOff(stream); err != nil {
-		log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
-	}
+	// In the background for the same reason as in streamStarted: the runner retries a
+	// StreamEnd until it is acknowledged, and the power control can be slow or unreachable.
+	go func() {
+		if err := m.handleLightsOff(stream); err != nil {
+			log.Error("failed to turn off lights", "stream", stream.ID, "err", err)
+		}
+	}()
 	return nil
 }
 
 // EndStream cancels all runner jobs tracked for the given stream, e.g. when an admin manually
 // stops a stream. It is a no-op if no runner jobs are tracked for the stream (e.g. because it
-// is running on a legacy worker instead).
+// has already ended).
 func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool) error {
 	jobs, err := m.dao.StreamsDao.GetRunnerJobsForStream(streamID)
 	if err != nil {
@@ -872,7 +944,11 @@ func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool)
 	return nil
 }
 
-func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) error {
+func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) (err error) {
+	version := protobufStreamVersion(job.Version)
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(job.StreamID), version), "manager.end_runner_job",
+		append(streamAttrs(uint64(job.StreamID), version), attribute.String("job.id", job.JobID), attribute.Bool("discard_vod", discardVoD))...)
+	defer endSpan(span, &err)
 	runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
 	if err != nil {
 		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
@@ -902,7 +978,7 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 }
 
 func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
-	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()), runnerClientTracing)
 }
 
 // ReapStaleStreams finds streams that are stuck in live state and cleans them up.

@@ -45,6 +45,7 @@ func newContentAPI(t *testing.T) (*API, contentMocks) {
 	return &API{
 		dao: dao.DaoWrapper{
 			StreamsDao: m.streams, CoursesDao: m.courses, VideoSectionDao: m.sections, FileDao: m.files,
+			AuditDao: auditSink(t),
 		},
 		log: slog.Default(),
 	}, m
@@ -79,7 +80,6 @@ var courseOne = model.Course{Model: gorm.Model{ID: 1}, Name: "Course", Year: 202
 type generated struct {
 	streamID uint
 	playlist string
-	course   model.Course
 	sections []model.VideoSection
 }
 
@@ -93,8 +93,8 @@ func newFakeSectionImages() *fakeSectionImages {
 	return &fakeSectionImages{generated: make(chan generated, 4)}
 }
 
-func (f *fakeSectionImages) Generate(streamID uint, playlistURL string, course model.Course, sections []model.VideoSection) error {
-	f.generated <- generated{streamID, playlistURL, course, sections}
+func (f *fakeSectionImages) Generate(streamID uint, playlistURL string, sections []model.VideoSection) error {
+	f.generated <- generated{streamID, playlistURL, sections}
 	return nil
 }
 
@@ -128,7 +128,6 @@ func TestCreateLectureSections(t *testing.T) {
 			return nil
 		})
 		m.sections.EXPECT().GetByStreamId(uint(7)).Return(all, nil)
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 
 		resp, err := api.CreateLectureSections(asCaller(lectureAdmin), &protobuf.CreateLectureSectionsRequest{
 			CourseId: 1, StreamId: 7,
@@ -141,7 +140,7 @@ func TestCreateLectureSections(t *testing.T) {
 			t.Errorf("sections = %v", resp.Sections)
 		}
 		got := receive(t, images.generated)
-		if got.streamID != 7 || got.playlist != "https://edge/comb.m3u8?jwt=signed" || got.course.Name != "Course" || len(got.sections) != 2 {
+		if got.streamID != 7 || got.playlist != "https://edge/comb.m3u8?jwt=signed" || len(got.sections) != 2 {
 			t.Errorf("generated %+v", got)
 		}
 	})
@@ -205,7 +204,6 @@ func TestUpdateLectureSection(t *testing.T) {
 			}
 			return nil
 		})
-		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 
 		if _, err := api.UpdateLectureSection(asCaller(lectureAdmin), &protobuf.UpdateLectureSectionRequest{
 			CourseId: 1, StreamId: 7, SectionId: 3, Description: "New",

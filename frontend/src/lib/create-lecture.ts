@@ -21,7 +21,7 @@ import { fromDateTimeLocal } from "./datetime-local";
 
 /**
  * What is being created. v1's form also had in-browser recording, dropped on purpose
- * (it was experimental), and a premiere flag nothing on the page ever set.
+ * (it was experimental).
  */
 export type CreateMode = "scheduled" | "adhoc" | "vod";
 
@@ -328,7 +328,7 @@ export async function createLectures(courseId: number, request: CreateLecturesRe
   return res.lectures.map(toLecture);
 }
 
-/** Hands a VOD upload's recording to a worker, which transcodes it into that version. */
+/** Hands a VOD upload's recording to a runner, which transcodes it into that version. */
 export async function uploadLectureMedia(
   courseId: number,
   streamId: number,
