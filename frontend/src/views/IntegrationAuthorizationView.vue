@@ -88,6 +88,7 @@ async function decide(decision: "approve" | "cancel"): Promise<void> {
           <ul class="mt-2 grid gap-2">
             <li class="flex items-start"><span class="text-success mr-3" aria-hidden="true">✓</span><span>Identify the selected course</span></li>
             <li class="flex items-start"><span class="text-success mr-3" aria-hidden="true">✓</span><span>Read its name, slug, and visibility</span></li>
+            <li class="flex items-start"><span class="text-success mr-3" aria-hidden="true">✓</span><span>Watch the recordings of this course</span></li>
           </ul>
           <p class="text-5 mt-3 text-sm">It cannot access course settings or private videos.</p>
         </div>
