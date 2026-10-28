@@ -284,11 +284,161 @@ func (x *GetIntegrationGrantResponse) GetVisibility() string {
 	return ""
 }
 
+type GetIntegrationRecordingRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	GrantId  uint32                 `protobuf:"varint,1,opt,name=grant_id,json=grantId,proto3" json:"grant_id,omitempty"`
+	StreamId uint32                 `protobuf:"varint,2,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
+	// The version to hand out. Not Found when the lecture has no playlist of it or the
+	// course does not record it in the lecture hall. Without it, the version the watch
+	// page starts with.
+	StreamVersion *VideoType `protobuf:"varint,3,opt,name=stream_version,json=streamVersion,proto3,enum=protobuf.VideoType,oneof" json:"stream_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIntegrationRecordingRequest) Reset() {
+	*x = GetIntegrationRecordingRequest{}
+	mi := &file_server_integration_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIntegrationRecordingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIntegrationRecordingRequest) ProtoMessage() {}
+
+func (x *GetIntegrationRecordingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_server_integration_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIntegrationRecordingRequest.ProtoReflect.Descriptor instead.
+func (*GetIntegrationRecordingRequest) Descriptor() ([]byte, []int) {
+	return file_server_integration_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetIntegrationRecordingRequest) GetGrantId() uint32 {
+	if x != nil {
+		return x.GrantId
+	}
+	return 0
+}
+
+func (x *GetIntegrationRecordingRequest) GetStreamId() uint32 {
+	if x != nil {
+		return x.StreamId
+	}
+	return 0
+}
+
+func (x *GetIntegrationRecordingRequest) GetStreamVersion() VideoType {
+	if x != nil && x.StreamVersion != nil {
+		return *x.StreamVersion
+	}
+	return VideoType_COMB
+}
+
+type GetIntegrationRecordingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The playlist of the requested version, or else the one the watch page starts with
+	// when the viewer chose no view: combined, else presentation, else camera, of the
+	// versions the course records in the lecture hall. Signed like there for seven hours
+	// with downloads off. Empty while the lecture has no recording. As on the watch page,
+	// it can still be the live playlist when another version's VOD is ready first, and
+	// legacy LRZ playlists are not signed.
+	PlaylistUrl string `protobuf:"bytes,1,opt,name=playlist_url,json=playlistUrl,proto3" json:"playlist_url,omitempty"`
+	// That version is being converted. A re-upload converts while the old playlist is
+	// still served.
+	Converting bool `protobuf:"varint,2,opt,name=converting,proto3" json:"converting,omitempty"`
+	// Percent of the running conversion. Meaningless unless converting.
+	Progress int32 `protobuf:"varint,3,opt,name=progress,proto3" json:"progress,omitempty"`
+	// The last conversion of that version ended without a video.
+	Failed bool `protobuf:"varint,4,opt,name=failed,proto3" json:"failed,omitempty"`
+	// Why, in words for the person who uploaded the video. Only set when failed.
+	Error         string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIntegrationRecordingResponse) Reset() {
+	*x = GetIntegrationRecordingResponse{}
+	mi := &file_server_integration_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIntegrationRecordingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIntegrationRecordingResponse) ProtoMessage() {}
+
+func (x *GetIntegrationRecordingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_server_integration_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIntegrationRecordingResponse.ProtoReflect.Descriptor instead.
+func (*GetIntegrationRecordingResponse) Descriptor() ([]byte, []int) {
+	return file_server_integration_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetIntegrationRecordingResponse) GetPlaylistUrl() string {
+	if x != nil {
+		return x.PlaylistUrl
+	}
+	return ""
+}
+
+func (x *GetIntegrationRecordingResponse) GetConverting() bool {
+	if x != nil {
+		return x.Converting
+	}
+	return false
+}
+
+func (x *GetIntegrationRecordingResponse) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *GetIntegrationRecordingResponse) GetFailed() bool {
+	if x != nil {
+		return x.Failed
+	}
+	return false
+}
+
+func (x *GetIntegrationRecordingResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 var File_server_integration_proto protoreflect.FileDescriptor
 
 const file_server_integration_proto_rawDesc = "" +
 	"\n" +
-	"\x18server/integration.proto\x12\bprotobuf\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"Q\n" +
+	"\x18server/integration.proto\x12\bprotobuf\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x12server/apiv2.proto\"Q\n" +
 	"%RedeemIntegrationAuthorizationRequest\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\"`\n" +
@@ -305,14 +455,30 @@ const file_server_integration_proto_rawDesc = "" +
 	"\x04slug\x18\x03 \x01(\tR\x04slug\x12\x1e\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\tR\n" +
-	"visibility2\xc4\a\n" +
+	"visibility\"\xac\x01\n" +
+	"\x1eGetIntegrationRecordingRequest\x12\x19\n" +
+	"\bgrant_id\x18\x01 \x01(\rR\agrantId\x12\x1b\n" +
+	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12?\n" +
+	"\x0estream_version\x18\x03 \x01(\x0e2\x13.protobuf.VideoTypeH\x00R\rstreamVersion\x88\x01\x01B\x11\n" +
+	"\x0f_stream_version\"\xae\x01\n" +
+	"\x1fGetIntegrationRecordingResponse\x12!\n" +
+	"\fplaylist_url\x18\x01 \x01(\tR\vplaylistUrl\x12\x1e\n" +
+	"\n" +
+	"converting\x18\x02 \x01(\bR\n" +
+	"converting\x12\x1a\n" +
+	"\bprogress\x18\x03 \x01(\x05R\bprogress\x12\x16\n" +
+	"\x06failed\x18\x04 \x01(\bR\x06failed\x12\x14\n" +
+	"\x05error\x18\x05 \x01(\tR\x05error2\xd7\n" +
+	"\n" +
 	"\x12IntegrationService\x12\xaf\x02\n" +
 	"\x1eredeemIntegrationAuthorization\x12/.protobuf.RedeemIntegrationAuthorizationRequest\x1a0.protobuf.RedeemIntegrationAuthorizationResponse\"\xa9\x01\x92Ay\n" +
 	"\fIntegrations\x12$Redeem an integration authorization.\x1aCConsumes a browser approval code for the authenticated integration.\x82\xd3\xe4\x93\x02':\x01*\"\"/integration/authorizations/redeem\x12\x84\x02\n" +
 	"\x13getIntegrationGrant\x12$.protobuf.GetIntegrationGrantRequest\x1a%.protobuf.GetIntegrationGrantResponse\"\x9f\x01\x92Av\n" +
 	"\fIntegrations\x12\x19Get an authorized course.\x1aKReturns fixed metadata for the course authorized by this integration grant.\x82\xd3\xe4\x93\x02 \x12\x1e/integration/grants/{grant_id}\x12\xf4\x02\n" +
 	"\x16revokeIntegrationGrant\x12'.protobuf.RevokeIntegrationGrantRequest\x1a\x16.google.protobuf.Empty\"\x98\x02\x92A\xee\x01\n" +
-	"\fIntegrations\x12\x1cRevoke an integration grant.\x1a\xbf\x01Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated.\x82\xd3\xe4\x93\x02 *\x1e/integration/grants/{grant_id}B\x12Z\x10./apiv2/protobufb\x06proto3"
+	"\fIntegrations\x12\x1cRevoke an integration grant.\x1a\xbf\x01Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated.\x82\xd3\xe4\x93\x02 *\x1e/integration/grants/{grant_id}\x12\x90\x03\n" +
+	"\x17getIntegrationRecording\x12(.protobuf.GetIntegrationRecordingRequest\x1a).protobuf.GetIntegrationRecordingResponse\"\x9f\x02\x92A\xde\x01\n" +
+	"\fIntegrations\x12(Get a recording of an authorized course.\x1a\xa3\x01Returns the conversion state and a signed playlist of one lecture that is visible to students, in the requested version or else the one the watch page starts with.\x82\xd3\xe4\x93\x027\x125/integration/grants/{grant_id}/recordings/{stream_id}B\x12Z\x10./apiv2/protobufb\x06proto3"
 
 var (
 	file_server_integration_proto_rawDescOnce sync.Once
@@ -326,27 +492,33 @@ func file_server_integration_proto_rawDescGZIP() []byte {
 	return file_server_integration_proto_rawDescData
 }
 
-var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_server_integration_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_server_integration_proto_goTypes = []any{
 	(*RedeemIntegrationAuthorizationRequest)(nil),  // 0: protobuf.RedeemIntegrationAuthorizationRequest
 	(*RedeemIntegrationAuthorizationResponse)(nil), // 1: protobuf.RedeemIntegrationAuthorizationResponse
 	(*GetIntegrationGrantRequest)(nil),             // 2: protobuf.GetIntegrationGrantRequest
 	(*RevokeIntegrationGrantRequest)(nil),          // 3: protobuf.RevokeIntegrationGrantRequest
 	(*GetIntegrationGrantResponse)(nil),            // 4: protobuf.GetIntegrationGrantResponse
-	(*emptypb.Empty)(nil),                          // 5: google.protobuf.Empty
+	(*GetIntegrationRecordingRequest)(nil),         // 5: protobuf.GetIntegrationRecordingRequest
+	(*GetIntegrationRecordingResponse)(nil),        // 6: protobuf.GetIntegrationRecordingResponse
+	(VideoType)(0),                                 // 7: protobuf.VideoType
+	(*emptypb.Empty)(nil),                          // 8: google.protobuf.Empty
 }
 var file_server_integration_proto_depIdxs = []int32{
-	0, // 0: protobuf.IntegrationService.redeemIntegrationAuthorization:input_type -> protobuf.RedeemIntegrationAuthorizationRequest
-	2, // 1: protobuf.IntegrationService.getIntegrationGrant:input_type -> protobuf.GetIntegrationGrantRequest
-	3, // 2: protobuf.IntegrationService.revokeIntegrationGrant:input_type -> protobuf.RevokeIntegrationGrantRequest
-	1, // 3: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
-	4, // 4: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
-	5, // 5: protobuf.IntegrationService.revokeIntegrationGrant:output_type -> google.protobuf.Empty
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	7, // 0: protobuf.GetIntegrationRecordingRequest.stream_version:type_name -> protobuf.VideoType
+	0, // 1: protobuf.IntegrationService.redeemIntegrationAuthorization:input_type -> protobuf.RedeemIntegrationAuthorizationRequest
+	2, // 2: protobuf.IntegrationService.getIntegrationGrant:input_type -> protobuf.GetIntegrationGrantRequest
+	3, // 3: protobuf.IntegrationService.revokeIntegrationGrant:input_type -> protobuf.RevokeIntegrationGrantRequest
+	5, // 4: protobuf.IntegrationService.getIntegrationRecording:input_type -> protobuf.GetIntegrationRecordingRequest
+	1, // 5: protobuf.IntegrationService.redeemIntegrationAuthorization:output_type -> protobuf.RedeemIntegrationAuthorizationResponse
+	4, // 6: protobuf.IntegrationService.getIntegrationGrant:output_type -> protobuf.GetIntegrationGrantResponse
+	8, // 7: protobuf.IntegrationService.revokeIntegrationGrant:output_type -> google.protobuf.Empty
+	6, // 8: protobuf.IntegrationService.getIntegrationRecording:output_type -> protobuf.GetIntegrationRecordingResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_server_integration_proto_init() }
@@ -354,13 +526,15 @@ func file_server_integration_proto_init() {
 	if File_server_integration_proto != nil {
 		return
 	}
+	file_server_apiv2_proto_init()
+	file_server_integration_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_integration_proto_rawDesc), len(file_server_integration_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

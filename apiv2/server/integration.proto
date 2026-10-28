@@ -4,6 +4,7 @@ package protobuf;
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "server/apiv2.proto";
 
 option go_package = "./apiv2/protobuf";
 // Application endpoints use API keys rather than a user's session.
@@ -37,6 +38,15 @@ service IntegrationService {
       description: "Revokes this integration's access through the specified grant. A grant that is unknown, belongs to another integration or is already revoked also answers success, so the call can be repeated."
     };
   }
+
+  rpc getIntegrationRecording(GetIntegrationRecordingRequest) returns (GetIntegrationRecordingResponse) {
+    option (google.api.http) = {get: "/integration/grants/{grant_id}/recordings/{stream_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Integrations"
+      summary: "Get a recording of an authorized course."
+      description: "Returns the conversion state and a signed playlist of one lecture that is visible to students, in the requested version or else the one the watch page starts with."
+    };
+  }
 }
 
 message RedeemIntegrationAuthorizationRequest {
@@ -62,4 +72,32 @@ message GetIntegrationGrantResponse {
   string name = 2;
   string slug = 3;
   string visibility = 4;
+}
+
+message GetIntegrationRecordingRequest {
+  uint32 grant_id = 1;
+  uint32 stream_id = 2;
+  // The version to hand out. Not Found when the lecture has no playlist of it or the
+  // course does not record it in the lecture hall. Without it, the version the watch
+  // page starts with.
+  optional VideoType stream_version = 3;
+}
+
+message GetIntegrationRecordingResponse {
+  // The playlist of the requested version, or else the one the watch page starts with
+  // when the viewer chose no view: combined, else presentation, else camera, of the
+  // versions the course records in the lecture hall. Signed like there for seven hours
+  // with downloads off. Empty while the lecture has no recording. As on the watch page,
+  // it can still be the live playlist when another version's VOD is ready first, and
+  // legacy LRZ playlists are not signed.
+  string playlist_url = 1;
+  // That version is being converted. A re-upload converts while the old playlist is
+  // still served.
+  bool converting = 2;
+  // Percent of the running conversion. Meaningless unless converting.
+  int32 progress = 3;
+  // The last conversion of that version ended without a video.
+  bool failed = 4;
+  // Why, in words for the person who uploaded the video. Only set when failed.
+  string error = 5;
 }
