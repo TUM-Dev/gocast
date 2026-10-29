@@ -32,6 +32,8 @@ type UsersDao interface {
 	HasPinnedCourse(model.User, uint) (bool, error)
 	PinCourse(user model.User, course model.Course, pin bool) error
 	UpsertUser(user *model.User) error
+	// TouchLastLogin records a sign-in of the user, now.
+	TouchLastLogin(ctx context.Context, uid uint) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 }
 
@@ -251,4 +253,10 @@ func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 type courseUsers struct {
 	CourseID uint
 	UserID   uint
+}
+
+// TouchLastLogin sets last_login without going through Save: that would rewrite the
+// whole row, and bump updated_at, for what is a single column.
+func (d usersDao) TouchLastLogin(ctx context.Context, uid uint) error {
+	return DB.WithContext(ctx).Model(&model.User{}).Where("id = ?", uid).UpdateColumn("last_login", time.Now()).Error
 }
