@@ -84,6 +84,7 @@ func loginWithUserCredentials(username, password string, usersDao dao.UsersDao) 
 	if u, err := usersDao.GetUserByEmail(context.Background(), username); err == nil {
 		// user with this email found.
 		if match, err := u.ComparePasswordAndHash(password); err == nil && match {
+			recordLogin(usersDao, u.ID)
 			return &tools.SessionData{Userid: u.ID, SamlSubjectID: nil}
 		}
 		return nil
@@ -109,10 +110,19 @@ func loginWithTumCredentials(username, password string, usersDao dao.UsersDao) (
 			return nil, err
 		}
 
+		recordLogin(usersDao, user.ID)
 		return &tools.SessionData{Userid: user.ID, SamlSubjectID: nil}, nil
 	}
 
 	return nil, err
+}
+
+// recordLogin stamps the user's last_login. A failure is logged and otherwise ignored:
+// the credentials were right, and a missed stamp is not worth locking the user out.
+func recordLogin(usersDao dao.UsersDao, uid uint) {
+	if err := usersDao.TouchLastLogin(context.Background(), uid); err != nil {
+		logger.Error("Could not record last login", "err", err, "user", uid)
+	}
 }
 
 // SetLoginRedirectCookie stores where to send the user once they have logged in.

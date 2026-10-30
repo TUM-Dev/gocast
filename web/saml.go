@@ -155,6 +155,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+		recordLogin(daoWrapper.UsersDao, user.ID)
 		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})
 }

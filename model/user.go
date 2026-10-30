@@ -44,9 +44,13 @@ type User struct {
 	LrzID               string         `json:"-"`
 	Role                uint           `gorm:"default:4" json:"-"` // AdminType = 1, LecturerType = 2, GenericType = 3, StudentType  = 4
 	Password            string         `gorm:"default:null" json:"-"`
-	Courses             []Course       `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
-	AdministeredCourses []Course       `gorm:"many2many:course_admins"`         // courses this user is an admin of
-	PinnedCourses       []Course       `gorm:"many2many:pinned_courses"`
+	// LastLogin is when the user last signed in, for deleting accounts that went
+	// inactive. NULL means no login was recorded yet; it is not "never logged in".
+	// Only sign-ins set it: a session that stays valid for days does not.
+	LastLogin           *time.Time `gorm:"index" json:"-"`
+	Courses             []Course   `gorm:"many2many:course_users" json:"-"` // courses a lecturer invited this user to
+	AdministeredCourses []Course   `gorm:"many2many:course_admins"`         // courses this user is an admin of
+	PinnedCourses       []Course   `gorm:"many2many:pinned_courses"`
 
 	Settings  []UserSetting `gorm:"foreignkey:UserID"`
 	Bookmarks []Bookmark    `gorm:"foreignkey:UserID" json:"-"`
