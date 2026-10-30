@@ -7717,7 +7717,7 @@ type Token struct {
 	UserName  string `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	UserEmail string `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
 	UserLrzId string `protobuf:"bytes,4,opt,name=user_lrz_id,json=userLrzId,proto3" json:"user_lrz_id,omitempty"`
-	// "admin" or "lecturer" -- see model.TokenScope*.
+	// Always "lecturer" -- see model.TokenScope*.
 	Scope string `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Unset means no expiration.
 	Expires *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires,proto3" json:"expires,omitempty"`
@@ -7808,8 +7808,7 @@ func (x *Token) GetLastUse() *timestamppb.Timestamp {
 
 type CreateTokenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// "admin" or "lecturer". An admin-scoped token additionally requires the caller
-	// to hold users.manage, which every caller of this RPC already does.
+	// Must be "lecturer", the only scope left; anything else is refused.
 	Scope string `protobuf:"bytes,1,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Unset means no expiration.
 	Expires       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires,proto3" json:"expires,omitempty"`
@@ -21571,7 +21570,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x15searchStreamSubtitles\x12&.protobuf.SearchStreamSubtitlesRequest\x1a'.protobuf.SearchStreamSubtitlesResponse\"\x9f\x03\x92A\xee\x02\n" +
 	"\aStreams\x12&Search the subtitles of one recording.\x1a\xba\x02Finds the lines of the recording's subtitles matching the query, with their position in the recording. Narrower than search, which spans courses and answers with hits carrying their course; this has the stream in the path, checks only that the caller may watch it, and answers 503 while Meilisearch is unreachable.\x82\xd3\xe4\x93\x02'\x12%/streams/{stream_id}/subtitles/search\x12\x83\x03\n" +
 	"\tendStream\x12\x1a.protobuf.EndStreamRequest\x1a\x16.google.protobuf.Empty\"\xc1\x02\x92A\x86\x02\n" +
-	"\aStreams\x12\x12End a live stream.\x1a\xe6\x01Stops the live stream and, unless `discard` is set, keeps what was recorded as the lecture's recording. The stream must be the course's and live. Requires administering the course. Clients learn that it ended from StreamLiveEvent.\x82\xd3\xe4\x93\x021:\x01*\",/courses/{course_id}/streams/{stream_id}/end2\xd0i\n" +
+	"\aStreams\x12\x12End a live stream.\x1a\xe6\x01Stops the live stream and, unless `discard` is set, keeps what was recorded as the lecture's recording. The stream must be the course's and live. Requires administering the course. Clients learn that it ended from StreamLiveEvent.\x82\xd3\xe4\x93\x021:\x01*\",/courses/{course_id}/streams/{stream_id}/end2\xbci\n" +
 	"\fAdminService\x12\xff\x01\n" +
 	"\vlistRunners\x12\x16.google.protobuf.Empty\x1a\x1d.protobuf.ListRunnersResponse\"\xb8\x01\x92A\x9e\x01\n" +
 	"\aRunners\x12\x1dList the transcoding runners.\x1atRetrieves every registered runner with its current liveness and workload. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x10\x12\x0e/admin/runners\x12\x97\x02\n" +
@@ -21637,9 +21636,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\rCourse Import\x12\x1cImport the selected courses.\x1a\xff\x01Creates a course and its streams for each selected course, then emails its main contact an activation (or opt-out) link. A failure importing one course does not stop the others; the response reports each outcome. Requires the server.administer permission.\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/course-import\x12\x99\x02\n" +
 	"\n" +
 	"listTokens\x12\x16.google.protobuf.Empty\x1a\x1c.protobuf.ListTokensResponse\"\xd4\x01\x92A\xbb\x01\n" +
-	"\x06Tokens\x12\x10List API tokens.\x1a\x9e\x01Retrieves every issued token's owner, scope and usage -- never the secret itself, which is shown only once, at creation. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x0f\x12\r/admin/tokens\x12\xc2\x02\n" +
-	"\vcreateToken\x12\x1c.protobuf.CreateTokenRequest\x1a\x15.protobuf.TokenSecret\"\xfd\x01\x92A\xe1\x01\n" +
-	"\x06Tokens\x12\x14Create an API token.\x1a\xc0\x01Creates a token for self-streaming or admin API access and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/admin/tokens\x12\xde\x01\n" +
+	"\x06Tokens\x12\x10List API tokens.\x1a\x9e\x01Retrieves every issued token's owner, scope and usage -- never the secret itself, which is shown only once, at creation. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x0f\x12\r/admin/tokens\x12\xae\x02\n" +
+	"\vcreateToken\x12\x1c.protobuf.CreateTokenRequest\x1a\x15.protobuf.TokenSecret\"\xe9\x01\x92A\xcd\x01\n" +
+	"\x06Tokens\x12\x14Create an API token.\x1a\xac\x01Creates a token for self-streaming and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/admin/tokens\x12\xde\x01\n" +
 	"\vdeleteToken\x12\x1c.protobuf.DeleteTokenRequest\x1a\x16.google.protobuf.Empty\"\x98\x01\x92A{\n" +
 	"\x06Tokens\x12\x14Revoke an API token.\x1a[Deletes a token; it stops authenticating immediately. Requires the users.manage permission.\x82\xd3\xe4\x93\x02\x14*\x12/admin/tokens/{id}\x12\xae\x02\n" +
 	"\x16listNotificationsAdmin\x12\x16.google.protobuf.Empty\x1a(.protobuf.ListNotificationsAdminResponse\"\xd1\x01\x92A\xb1\x01\n" +

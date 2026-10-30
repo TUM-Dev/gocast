@@ -74,7 +74,7 @@ describe("fetchTokens", () => {
   });
 
   it("reads a token that has never expired or been used", async () => {
-    withTokens([{ id: 1, userEmail: "a@b.c", scope: "admin" }]);
+    withTokens([{ id: 1, userEmail: "a@b.c", scope: "lecturer" }]);
 
     const { tokens } = await fetchTokens();
     const [token] = tokens;
@@ -134,11 +134,11 @@ describe("createToken", () => {
   it("sends an expiry date as a Timestamp", async () => {
     respondWith({ token: "generated-secret" });
 
-    await createToken("admin", new Date("2030-06-15T00:00:00Z"));
+    await createToken("lecturer", new Date("2030-06-15T00:00:00Z"));
 
     const [, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
     const body = JSON.parse(init.body as string);
-    expect(body.scope).toBe("admin");
+    expect(body.scope).toBe("lecturer");
     expect(body.expires).toBe("2030-06-15T00:00:00Z");
   });
 });

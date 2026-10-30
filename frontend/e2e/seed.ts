@@ -353,7 +353,7 @@ export const dynamicInfoPage = { slug: "accessibility", title: "Accessibility", 
  * purpose: the listing endpoint never returns it, so no test should expect to see it.
  */
 export const tokens = {
-  seeded: { id: 1, owner: users.admin.username, scope: "admin" },
+  seeded: { id: 1, owner: users.admin.username, scope: "lecturer" },
 } as const;
 
 /**

@@ -198,12 +198,6 @@ var (
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
 	}
-	AdminToken = model.Token{
-		UserID: Admin.ID,
-		User:   Admin,
-		Token:  "ed067f11-1337-4dcd-bfd2-4201b8d751d4",
-		Scope:  model.TokenScopeAdmin,
-	}
 	Attachment = model.File{
 		StreamID: 1969,
 		Path:     "/tmp/test.txt",
@@ -587,19 +581,6 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 		GetLectureHallByID(LectureHall.ID).
 		Return(LectureHall, nil)
 	return lectureHallMock
-}
-
-func GetTokenMock(t *testing.T) dao.TokenDao {
-	tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
-	tokenMock.
-		EXPECT().
-		GetToken(AdminToken.Token).
-		Return(AdminToken, nil)
-	tokenMock.
-		EXPECT().
-		TokenUsed(AdminToken).
-		Return(nil)
-	return tokenMock
 }
 
 func GetFileMock(t *testing.T) dao.FileDao {

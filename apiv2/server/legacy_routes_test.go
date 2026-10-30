@@ -169,9 +169,9 @@ func TestTokenProxy(t *testing.T) {
 				assert.Equal(t, http.StatusBadRequest, rec.Code)
 				assert.JSONEq(t, `{"status":400,"message":"invalid token"}`, rec.Body.String())
 			})
-			t.Run("admin token has the wrong scope", func(t *testing.T) {
+			t.Run("token of another scope", func(t *testing.T) {
 				rec := run(t, prefix+"TOK", func(m mocks) {
-					m.tokens.EXPECT().GetToken("TOK").Return(model.Token{Scope: model.TokenScopeAdmin}, nil)
+					m.tokens.EXPECT().GetToken("TOK").Return(model.Token{Scope: "admin"}, nil)
 				})
 				assert.Equal(t, http.StatusUnauthorized, rec.Code)
 				assert.JSONEq(t, `{"status":401,"message":"invalid scope"}`, rec.Body.String())
@@ -209,49 +209,6 @@ func TestTokenProxy(t *testing.T) {
 			rec := run(t, p, func(m mocks) {})
 			assert.Equal(t, http.StatusTeapot, rec.Code, p)
 		}
-	})
-}
-
-// The live streams endpoint is admin-token only and has no v2 address.
-func TestLiveStreams(t *testing.T) {
-	end := time.Date(2022, 10, 17, 12, 0, 0, 0, time.UTC)
-	setup := func(t *testing.T, tokenOK bool) *gin.Engine {
-		ctrl := gomock.NewController(t)
-		tokens := mock_dao.NewMockTokenDao(ctrl)
-		streams := mock_dao.NewMockStreamsDao(ctrl)
-		courses := mock_dao.NewMockCoursesDao(ctrl)
-		halls := mock_dao.NewMockLectureHallsDao(ctrl)
-		if tokenOK {
-			tokens.EXPECT().GetToken("ADM").Return(model.Token{Scope: model.TokenScopeAdmin}, nil)
-			tokens.EXPECT().TokenUsed(gomock.Any()).Return(nil)
-			streams.EXPECT().GetCurrentLive(gomock.Any()).Return([]model.Stream{
-				{Model: gorm.Model{ID: 1}, CourseID: 40, LectureHallID: 3, PlaylistUrl: "comb", End: end},
-				{Model: gorm.Model{ID: 2}, CourseID: 40, End: end},
-			}, nil)
-			courses.EXPECT().GetCourseById(gomock.Any(), uint(40)).Return(model.Course{Name: "FPV"}, nil).Times(2)
-			halls.EXPECT().GetLectureHallByID(uint(3)).Return(model.LectureHall{Name: "HS1"}, nil)
-		} else {
-			tokens.EXPECT().GetToken(gomock.Any()).Return(model.Token{Scope: model.TokenScopeLecturer}, nil)
-		}
-		a := &API{log: slog.Default(), dao: dao.DaoWrapper{TokenDao: tokens, StreamsDao: streams, CoursesDao: courses, LectureHallsDao: halls}}
-		return legacyRouter(a, tools.TUMLiveContext{})
-	}
-
-	t.Run("lists the live streams for an admin token", func(t *testing.T) {
-		rec := serve(setup(t, true), http.MethodGet, "/api/stream/live?token=ADM", "")
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.JSONEq(t, `[
-			{"ID":1,"CourseName":"FPV","LectureHall":"HS1","COMB":"comb","PRES":"","CAM":"","End":"2022-10-17T12:00:00Z"},
-			{"ID":2,"CourseName":"FPV","LectureHall":"Selfstream","COMB":"","PRES":"","CAM":"","End":"2022-10-17T12:00:00Z"}]`, rec.Body.String())
-	})
-	t.Run("forbidden for any other token", func(t *testing.T) {
-		rec := serve(setup(t, false), http.MethodGet, "/api/stream/live?token=LEC", "")
-		assert.Equal(t, http.StatusForbidden, rec.Code)
-	})
-	t.Run("not served at a v2 address", func(t *testing.T) {
-		a := &API{log: slog.Default()}
-		rec := serve(legacyRouter(a, tools.TUMLiveContext{}), http.MethodGet, "/api/v2/streams/live?token=ADM", "")
-		assert.Equal(t, http.StatusTeapot, rec.Code)
 	})
 }
 

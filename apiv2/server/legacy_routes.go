@@ -20,7 +20,6 @@ const (
 
 	tokenProxyPrefix       = "/api/v2/token/proxy/"
 	legacyTokenProxyPath   = "/api/token/proxy/:token"
-	legacyLiveStreamsPath  = "/api/stream/live"
 	lectureHallSchedule    = "/api/v2/lecture-halls/schedule.ics"
 	legacyLectureHallsPath = "/api/schedule.ics"
 )
@@ -32,10 +31,6 @@ func (a *API) RegisterLegacyRoutes(r gin.IRoutes) {
 	a.RegisterLegacyCalendar(r)
 	r.POST(legacySelfStreamPublishPath, a.handleSelfStreamPublish)
 	r.POST(legacyTokenProxyPath, func(c *gin.Context) { a.handleTokenProxy(c, c.Param("token")) })
-	// Still the admin-token middleware, exactly as in v1: the callers are API users
-	// holding such a token. Their move to the API keys of #1996 is the maintainer's to
-	// schedule, which is why this route has no v2 address.
-	r.GET(legacyLiveStreamsPath, tools.AdminToken(a.dao), a.handleLiveStreams)
 	r.GET(legacyLectureHallsPath, a.handleLectureHallSchedule)
 }
 

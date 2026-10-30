@@ -69,7 +69,7 @@ The protos live in `apiv2/server/`, and both sides generate from them.
 Change one and run both generators, or the Go and TypeScript halves drift.
 
 New API work belongs in `apiv2/` (Protobuf/Connect). The v1 `api/` package is gone; its
-four external URLs (`/api/selfstream/onPublish`, `/api/token/proxy/:token`, `/api/stream/live`,
+three external URLs (`/api/selfstream/onPublish`, `/api/token/proxy/:token`,
 `/api/schedule.ics`) are served from `apiv2/server/legacy_routes.go`, each also at a
 `/api/v2/...` address.
 

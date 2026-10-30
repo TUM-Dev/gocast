@@ -293,29 +293,6 @@ func RequirePermission(p model.Permission) gin.HandlerFunc {
 	}
 }
 
-func AdminToken(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		queryParams := c.Request.URL.Query()
-		token := queryParams.Get("token")
-		t, err := daoWrapper.TokenDao.GetToken(token)
-		if err != nil {
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-			return
-		}
-		if t.Scope != model.TokenScopeAdmin {
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-			return
-		}
-		err = daoWrapper.TokenDao.TokenUsed(t)
-		if err != nil {
-			logger.Warn("error marking token as used", "err", err)
-			return
-		}
-	}
-}
-
 type TUMLiveContext struct {
 	User          *model.User
 	Course        *model.Course

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { fetchConfig } from "@/lib/config";
@@ -13,12 +13,10 @@ import {
   type AdminToken,
   type TokenScope,
 } from "@/lib/tokens";
-import { Role } from "@/lib/users";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * Token management: issuing and revoking the API tokens self-streaming and the admin
- * API authenticate with.
+ * Token management: issuing and revoking the tokens self-streaming authenticates with.
  *
  * A created token's secret is returned exactly once, by createToken, and never
  * again -- not by fetchTokens, not by re-opening this page. That is enforced
@@ -52,10 +50,6 @@ const pendingIds = ref<Set<number>>(new Set());
 function isPending(id: number): boolean {
   return pendingIds.value.has(id);
 }
-
-/** An account holding users.manage may still not be an administrator; admin-scoped
- * tokens are for administrators specifically, same restriction the server enforces. */
-const canCreateAdminScope = computed(() => auth.user?.role === Role.admin);
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
@@ -207,7 +201,7 @@ function formatLastUse(date: Date | null): string {
           <label class="flex flex-col gap-1 text-sm">
             <span class="text-2">Scope</span>
             <select v-model="newScope" class="tum-live-input">
-              <option v-for="scope in TOKEN_SCOPES" :key="scope.value" :value="scope.value" :disabled="scope.value === 'admin' && !canCreateAdminScope">
+              <option v-for="scope in TOKEN_SCOPES" :key="scope.value" :value="scope.value" >
                 {{ scope.label }}
               </option>
             </select>
