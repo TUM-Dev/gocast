@@ -126,6 +126,9 @@ test.describe("creating and revoking a token", () => {
   }) => {
     await login(page, users.admin, "/admin/token");
 
+    // An expiry only this token has: the seeded token is the same user's and the same
+    // scope, so nothing else tells the two rows apart once both are listed.
+    await page.getByLabel("Expiration date (optional)").fill("2099-06-15T12:00");
     await page.getByLabel("Scope").selectOption("lecturer");
     await page.getByRole("button", { name: "Create" }).click();
 
@@ -137,13 +140,12 @@ test.describe("creating and revoking a token", () => {
     const secret = (await secretBox.locator("code").first().textContent())?.trim();
     expect(secret).toBeTruthy();
 
-    // By the name the table shows, not the username: "admin" never appears in "Anja
-    // Admin", and matching it lowercase picks the seeded row by its scope cell instead.
-    // Narrowed to the scope as well, because the seeded token belongs to the same user:
-    // last() would keep matching that one after this row is deleted.
+    // By the name the table shows, not the username, narrowed to the expiry set above:
+    // the seeded token belongs to the same user with the same scope, so neither alone
+    // picks out this row.
     const row = page
       .getByRole("row", { name: new RegExp(users.admin.name) })
-      .filter({ hasText: "lecturer" });
+      .filter({ hasText: "15 Jun 99" });
     await expect(row).toContainText("lecturer");
     // The row never carries the secret text, only the metadata about the token. The
     // guard is only here to narrow string | null for toContainText; that a secret was

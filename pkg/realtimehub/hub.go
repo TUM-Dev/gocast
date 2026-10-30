@@ -1,7 +1,7 @@
 // Package realtimehub fans per-stream events out to the sockets watching a stream.
 //
-// It lives outside api/ and apiv2/ on purpose: the v1 producers that still publish
-// here are deleted with api/, and the socket that consumes it is only one client.
+// It lives outside apiv2/ on purpose: the producers that publish here are not all
+// part of it, and the socket that consumes it is only one client.
 // Producers and consumers see the Hub interface, never the implementation, so the
 // in-process hub can be swapped for a message bus once there is more than one server
 // process without touching either side.

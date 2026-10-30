@@ -39,7 +39,7 @@ func TestListTokens(t *testing.T) {
 			UserName: "Peter Prof", UserLrzID: "ab12cde",
 		},
 		{
-			Token:    model.Token{Model: gorm.Model{ID: 2}, Scope: model.TokenScopeAdmin},
+			Token:    model.Token{Model: gorm.Model{ID: 2}, Scope: model.TokenScopeLecturer},
 			UserMail: "anja@example.org",
 		},
 	}
@@ -95,11 +95,10 @@ func TestCreateTokenRefusesAnInvalidScope(t *testing.T) {
 	}
 }
 
-// Every caller of this RPC already holds users.manage by policy, so in production
-// this can never trigger -- but the handler makes the check anyway rather than
-// trusting the policy layer alone, and that is what this asserts.
-func TestCreateTokenRefusesAdminScopeWithoutPermission(t *testing.T) {
-	lecturer := user(2, "Peter Prof", "peter@example.org", model.LecturerType)
+// The admin scope authenticated API scripts and was removed with them; not even an
+// administrator can issue one any more.
+func TestCreateTokenRefusesTheRemovedAdminScope(t *testing.T) {
+	admin := user(1, "Anja Admin", "anja@example.org", model.AdminType)
 
 	ctrl := gomock.NewController(t)
 	tokenMock := mock_dao.NewMockTokenDao(ctrl)
@@ -107,7 +106,7 @@ func TestCreateTokenRefusesAdminScopeWithoutPermission(t *testing.T) {
 
 	api := &API{dao: dao.DaoWrapper{TokenDao: tokenMock}, log: slog.Default()}
 
-	_, err := api.CreateToken(ctxAs(lecturer), &protobuf.CreateTokenRequest{Scope: model.TokenScopeAdmin})
+	_, err := api.CreateToken(ctxAs(admin), &protobuf.CreateTokenRequest{Scope: "admin"})
 
 	if got := status.Code(err); got != codes.InvalidArgument {
 		t.Errorf("code = %v, want %v", got, codes.InvalidArgument)

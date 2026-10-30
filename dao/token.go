@@ -1,8 +1,6 @@
 package dao
 
 import (
-	"time"
-
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
@@ -16,8 +14,6 @@ type TokenDao interface {
 	GetToken(token string) (model.Token, error)
 	GetTokenByID(id string) (model.Token, error)
 	GetAllTokens(user *model.User) ([]AllTokensDto, error)
-
-	TokenUsed(token model.Token) error
 
 	DeleteToken(id string) error
 }
@@ -67,11 +63,6 @@ func (d tokenDao) GetAllTokens(user *model.User) ([]AllTokensDto, error) {
 	}
 
 	return tokens, nil
-}
-
-// TokenUsed is called when a token is used. It sets the last_used field to the current time.
-func (d tokenDao) TokenUsed(token model.Token) error {
-	return DB.Model(&token).Update("last_use", time.Now()).Error
 }
 
 func (d tokenDao) DeleteToken(id string) error {
