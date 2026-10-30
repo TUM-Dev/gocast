@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -13,6 +12,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/mock_dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 )
 
 func serveShortLink(t *testing.T, coursesDao dao.CoursesDao) *httptest.ResponseRecorder {
@@ -21,10 +21,9 @@ func serveShortLink(t *testing.T, coursesDao dao.CoursesDao) *httptest.ResponseR
 	infoPageDao := mock_dao.NewMockInfoPageDao(ctrl)
 	infoPageDao.EXPECT().GetBySlug("ws").Return(model.InfoPage{}, gorm.ErrRecordNotFound)
 
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
+	router := tools.NewRouter()
 	routes := mainRoutes{DaoWrapper: dao.DaoWrapper{CoursesDao: coursesDao, InfoPageDao: infoPageDao}}
-	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
+	router.HandleFunc("GET /{shortLink}", routes.shortLinkOrInfoPage)
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/ws", nil))

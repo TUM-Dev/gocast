@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
@@ -29,7 +28,7 @@ func TestStreamFileRouteOf(t *testing.T) {
 		{"GET", "/api/v2/streams/7/chat/42", nil},
 		{"GET", "/api/v2/courses/7/files/42", nil},
 	} {
-		got, ok := streamFileRouteOf(httptest.NewRequest(tc.method, tc.path, nil))
+		got, ok := routed(streamFilePath, tc.method, tc.path, streamFileRouteOf)
 		if (tc.want == nil) == ok || (tc.want != nil && got != *tc.want) {
 			t.Errorf("%s %s: got %+v, %v; want %+v", tc.method, tc.path, got, ok, tc.want)
 		}
@@ -37,18 +36,8 @@ func TestStreamFileRouteOf(t *testing.T) {
 }
 
 func serveStreamFile(api *API, req *http.Request) *httptest.ResponseRecorder {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		route, ok := streamFileRouteOf(c.Request)
-		if !ok {
-			c.Status(http.StatusTeapot)
-			return
-		}
-		api.handleStreamFile(c, route)
-	})
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
+	api.Handler().ServeHTTP(rec, req)
 	return rec
 }
 

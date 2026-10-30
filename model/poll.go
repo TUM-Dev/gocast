@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -21,12 +20,4 @@ type PollOption struct {
 
 	Answer string `gorm:"not null" json:"answer"`
 	Votes  []User `gorm:"many2many:poll_option_user_votes" json:"-"`
-}
-
-func (o *PollOption) GetStatsMap(votes int64) gin.H {
-	return gin.H{
-		"ID":     o.ID,
-		"answer": o.Answer,
-		"votes":  votes,
-	}
 }

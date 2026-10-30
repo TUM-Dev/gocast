@@ -4,8 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"testing"
-
-	"github.com/gin-gonic/gin"
 )
 
 func TestRequestErrorError(t *testing.T) {
@@ -34,24 +32,24 @@ func TestRequestErrorToResponse(t *testing.T) {
 	tests := []struct {
 		name string
 		err  RequestError
-		want gin.H
+		want map[string]any
 	}{
 		{
 			name: "carries status, message and cause",
 			err:  RequestError{Status: http.StatusBadRequest, CustomMessage: "can not parse id", Err: errors.New("strconv: bad syntax")},
-			want: gin.H{"status": http.StatusBadRequest, "message": "can not parse id", "error": "strconv: bad syntax"},
+			want: map[string]any{"status": http.StatusBadRequest, "message": "can not parse id", "error": "strconv: bad syntax"},
 		},
 		{
 			// The internal cause must stay out of the body when there is none, so the
 			// client is not handed an empty "error" key to branch on.
 			name: "omits the error key when there is no cause",
 			err:  RequestError{Status: http.StatusForbidden, CustomMessage: "forbidden"},
-			want: gin.H{"status": http.StatusForbidden, "message": "forbidden"},
+			want: map[string]any{"status": http.StatusForbidden, "message": "forbidden"},
 		},
 		{
 			name: "a zero value still renders both required keys",
 			err:  RequestError{},
-			want: gin.H{"status": 0, "message": ""},
+			want: map[string]any{"status": 0, "message": ""},
 		},
 	}
 
