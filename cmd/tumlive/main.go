@@ -154,6 +154,7 @@ func run(ctx context.Context) error {
 		&model.Integration{},
 		&model.IntegrationGrant{},
 		&model.IntegrationAuthorizationCode{},
+		&model.IntegrationRecording{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)

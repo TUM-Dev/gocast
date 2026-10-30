@@ -46,6 +46,7 @@ var services = []service{
 			"getIntegrationGrant":            integrationOnly,
 			"revokeIntegrationGrant":         integrationOnly,
 			"getIntegrationRecording":        integrationOnly,
+			"createIntegrationUpload":        integrationOnly,
 		},
 	},
 	{

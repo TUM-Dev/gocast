@@ -90,7 +90,7 @@ async function decide(decision: "approve" | "cancel"): Promise<void> {
             <li class="flex items-start"><span class="text-success mr-3" aria-hidden="true">✓</span><span>Read its name, slug, and visibility</span></li>
             <li class="flex items-start"><span class="text-success mr-3" aria-hidden="true">✓</span><span>Watch the recordings of this course</span></li>
           </ul>
-          <p class="text-5 mt-3 text-sm">It cannot access course settings or private videos.</p>
+          <p class="text-5 mt-3 text-sm">It cannot access course settings or private videos other than the ones it uploaded.</p>
         </div>
         <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">{{ error }}</p>
         <div class="flex flex-wrap gap-3">

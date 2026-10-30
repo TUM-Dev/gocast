@@ -57,6 +57,22 @@ func (mr *MockIntegrationGrantDaoMockRecorder) ApproveIntegrationCourse(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApproveIntegrationCourse", reflect.TypeOf((*MockIntegrationGrantDao)(nil).ApproveIntegrationCourse), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// CreateIntegrationUpload mocks base method.
+func (m *MockIntegrationGrantDao) CreateIntegrationUpload(arg0 context.Context, arg1, arg2 uint, arg3 string, arg4 model.Stream, arg5 []byte, arg6 time.Time) (model.Stream, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateIntegrationUpload", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret0, _ := ret[0].(model.Stream)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// CreateIntegrationUpload indicates an expected call of CreateIntegrationUpload.
+func (mr *MockIntegrationGrantDaoMockRecorder) CreateIntegrationUpload(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIntegrationUpload", reflect.TypeOf((*MockIntegrationGrantDao)(nil).CreateIntegrationUpload), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+}
+
 // GetAuthorizableCourses mocks base method.
 func (m *MockIntegrationGrantDao) GetAuthorizableCourses(arg0 context.Context, arg1 uint) ([]model.Course, error) {
 	m.ctrl.T.Helper()
