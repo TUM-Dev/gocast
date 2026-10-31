@@ -15,7 +15,7 @@ import (
 
 // The routes of the apiv2 package and of web are registered separately and only meet
 // in newRouter, where a pattern of one can conflict with a pattern of the other: the
-// legacy /api/... addresses sit beside web's "/{shortLink}" and "/".
+// legacy /api/... addresses sit beside web's "/{slug}" and "/".
 func TestNewRouter(t *testing.T) {
 	// web.ConfigRouter refuses to start without a SPA build, as the server does.
 	if _, err := os.Stat("../../web/spa/index.html"); err != nil {

@@ -12,8 +12,8 @@ import NotFoundView from "@/views/NotFoundView.vue";
  * administrator has actually added before rendering it. Anything else is handed back
  * to Go exactly as an unmatched path normally would be, since this component now
  * occupies the path that fallback used to own -- unless this is the page load itself:
- * then web/course.go's shortLinkOrInfoPage has already made the same check, found
- * neither a page nor a course short link, and answered with the shell and a 404, so
+ * then web/course.go's infoPage has already made the same check, found no page, and
+ * answered with the shell and a 404, so
  * the not-found page is shown rather than reloading forever.
  */
 const route = useRoute();
