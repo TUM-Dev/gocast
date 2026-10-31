@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
@@ -19,41 +18,34 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-func TestCourseCalendarRouteOf(t *testing.T) {
-	for _, tc := range []struct {
-		method, path string
-		want         *courseCalendarRoute
-	}{
-		{"GET", "/api/v2/courses/2022/W/fpv/events.ics", &courseCalendarRoute{year: "2022", term: "W", slug: "fpv"}},
-		{"HEAD", "/api/v2/courses/2022/W/fpv/events.ics", &courseCalendarRoute{year: "2022", term: "W", slug: "fpv"}},
-		{"POST", "/api/v2/courses/2022/W/fpv/events.ics", nil},
-		{"GET", "/api/v2/courses/2022/W/fpv", nil},
-		{"GET", "/api/v2/courses/2022/W/fpv/other.ics", nil},
-		{"GET", "/api/v2/courses/2022//fpv/events.ics", nil},
-		{"GET", "/api/v2/courses/1/streams/7/attachments", nil},
-	} {
-		got, ok := courseCalendarRouteOf(httptest.NewRequest(tc.method, tc.path, nil))
-		if (tc.want == nil) == ok || (tc.want != nil && got != *tc.want) {
-			t.Errorf("%s %s: got %+v, %v; want %+v", tc.method, tc.path, got, ok, tc.want)
-		}
-	}
-}
-
 // The feed at both addresses, through the same registrations the server makes: the
-// v2 one by the dispatch Proxy performs, the original one by RegisterLegacyCalendar.
-func calendarRouter(api *API) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		route, ok := courseCalendarRouteOf(c.Request)
-		if !ok {
-			c.Status(http.StatusTeapot)
-			return
-		}
-		api.handleCourseCalendar(c, route.year, route.term, route.slug)
-	})
+// v2 one by Handler, the original one by RegisterLegacyCalendar.
+func calendarRouter(api *API) *tools.Router {
+	r := tools.NewRouter()
+	r.Handle("/api/v2/", api.Handler())
 	api.RegisterLegacyCalendar(r)
 	return r
+}
+
+// Only a GET or HEAD of exactly this path is the feed; the rest of /api/v2/courses/ is
+// the gateway's. None of these may reach the course lookup, which has no expectation.
+func TestCourseCalendarRouting(t *testing.T) {
+	api := &API{dao: dao.DaoWrapper{CoursesDao: mock_dao.NewMockCoursesDao(gomock.NewController(t))}, log: slog.Default()}
+
+	for _, tc := range []struct{ method, path string }{
+		{"POST", "/api/v2/courses/2022/W/fpv/events.ics"},
+		{"GET", "/api/v2/courses/2022/W/fpv"},
+		{"GET", "/api/v2/courses/2022/W/fpv/other.ics"},
+		{"GET", "/api/v2/courses/2022//fpv/events.ics"},
+		{"GET", "/api/v2/courses/1/streams/7/attachments"},
+		{"GET", "/api/download_ics/2022/W/fpv"},
+	} {
+		rec := httptest.NewRecorder()
+		calendarRouter(api).ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+		if rec.Code == http.StatusOK || rec.Header().Get("Content-Type") == "text/calendar" {
+			t.Errorf("%s %s was served as the feed: %d", tc.method, tc.path, rec.Code)
+		}
+	}
 }
 
 func TestCourseCalendar(t *testing.T) {
@@ -128,6 +120,17 @@ func TestCourseCalendar(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("a HEAD request is the feed too", func(t *testing.T) {
+		api := newAPI(t, func(c *mock_dao.MockCoursesDao) {
+			c.EXPECT().GetCourseBySlugYearAndTerm(gomock.Any(), "fpv", "W", 2022).Return(course, nil)
+		})
+		rec := httptest.NewRecorder()
+		calendarRouter(api).ServeHTTP(rec, httptest.NewRequest(http.MethodHead, "/api/v2/courses/2022/W/fpv/events.ics", nil))
+		if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "text/calendar" {
+			t.Errorf("got %d %q", rec.Code, rec.Header().Get("Content-Type"))
+		}
+	})
 
 	t.Run("both addresses answer identically", func(t *testing.T) {
 		api := newAPI(t, func(c *mock_dao.MockCoursesDao) {

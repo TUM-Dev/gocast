@@ -31,6 +31,13 @@ Adding a page means adding its path **both** there and in `frontend/src/router/i
 — the shell renders nothing if the client router doesn't know the route.
 `web/spa_test.go` and `spa-routes.test.ts` cover the contract.
 
+Routing is `net/http`'s `ServeMux`, wrapped by `tools.Router` for middleware groups
+(`router.Group(tools.RequirePermission(...))`). Patterns are `"GET /w/{slug}/{id}"`,
+read with `r.PathValue`; `spaRoutes` keeps the client router's `:param` syntax and
+`muxPattern` converts it. `ServeMux` panics at startup when two patterns overlap and
+neither is more specific, so a new route is checked by `go test ./web ./cmd/tumlive`,
+which register the whole table. There is no compression in the server: Traefik does it.
+
 **The SPA build is mandatory.** The server panics at startup when `web/spa/index.html`
 is missing, and the Docker build runs the Vite build. Run `make spa` (or
 `pnpm --dir frontend run build`) before `go run`, `go build` for shipping, or `go test

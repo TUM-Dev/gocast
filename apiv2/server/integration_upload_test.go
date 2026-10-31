@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -139,18 +138,8 @@ func uploadTicket() (string, []byte) {
 }
 
 func serveIntegrationUpload(api *API, req *http.Request) *httptest.ResponseRecorder {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		ticket, ok := integrationUploadRouteOf(c.Request)
-		if !ok {
-			c.Status(http.StatusTeapot)
-			return
-		}
-		api.handleIntegrationUpload(c, ticket)
-	})
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(closeNotifyingRecorder{rec}, req)
+	api.Handler().ServeHTTP(rec, req)
 	return rec
 }
 

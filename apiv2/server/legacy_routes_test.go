@@ -12,7 +12,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -24,23 +23,18 @@ import (
 	"github.com/TUM-Dev/gocast/tools/testutils"
 )
 
-// legacyRouter wires the routes the way main does: the v2 addresses through the
-// dispatch Proxy performs, the original ones through RegisterLegacyRoutes. The user is
-// what InitContext would have found from the session cookie.
-func legacyRouter(a *API, ctx tools.TUMLiveContext) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Use(testutils.TUMLiveContext(ctx))
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		if !a.legacyRoutes(c) {
-			c.Status(http.StatusTeapot)
-		}
-	})
+// legacyRouter wires the routes the way main does: the v2 addresses through Handler,
+// the original ones through RegisterLegacyRoutes. The user is what InitContext would
+// have found from the session cookie.
+func legacyRouter(a *API, ctx tools.TUMLiveContext) *tools.Router {
+	r := tools.NewRouter()
+	r.Use(testutils.InjectContext(ctx))
+	r.Handle("/api/v2/", a.Handler())
 	a.RegisterLegacyRoutes(r)
 	return r
 }
 
-func serve(r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
+func serve(r http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(body)))
 	return rec
@@ -60,7 +54,7 @@ func TestSelfStreamPublish(t *testing.T) {
 	paths := []string{"/api/v2/selfstream/on-publish", "/api/selfstream/onPublish"}
 	const good = `{"action":"publish","query":"secret=KEY/fpv-7"}`
 
-	setup := func(t *testing.T, streams *mock_dao.MockStreamsDao, courses *mock_dao.MockCoursesDao, ss *fakeSelfStreams) *gin.Engine {
+	setup := func(t *testing.T, streams *mock_dao.MockStreamsDao, courses *mock_dao.MockCoursesDao, ss *fakeSelfStreams) *tools.Router {
 		a := &API{dao: dao.DaoWrapper{StreamsDao: streams, CoursesDao: courses}, log: slog.Default()}
 		if ss != nil {
 			a.selfStreams = ss
@@ -124,7 +118,7 @@ func TestSelfStreamPublish(t *testing.T) {
 			t.Run("only POST", func(t *testing.T) {
 				streams, courses := mocks(t)
 				rec := serve(setup(t, streams, courses, nil), http.MethodGet, path, "")
-				assert.Contains(t, []int{http.StatusNotFound, http.StatusTeapot}, rec.Code)
+				assert.Contains(t, []int{http.StatusNotFound, http.StatusMethodNotAllowed}, rec.Code)
 			})
 		})
 	}
@@ -205,9 +199,10 @@ func TestTokenProxy(t *testing.T) {
 	}
 
 	t.Run("a v2 path with a nested or empty token is not the endpoint", func(t *testing.T) {
+		// It goes to the gateway, which knows no such path.
 		for _, p := range []string{"/api/v2/token/proxy/", "/api/v2/token/proxy/a/b"} {
 			rec := run(t, p, func(m mocks) {})
-			assert.Equal(t, http.StatusTeapot, rec.Code, p)
+			assert.Equal(t, http.StatusNotFound, rec.Code, p)
 		}
 	})
 }
@@ -222,14 +217,13 @@ func TestLectureHallSchedule(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, templ.ExecuteTemplate(&want, "ical.gotemplate", results))
 
-	setup := func(t *testing.T, mock func(*mock_dao.MockLectureHallsDao), ctx *tools.TUMLiveContext) *gin.Engine {
+	setup := func(t *testing.T, mock func(*mock_dao.MockLectureHallsDao), ctx *tools.TUMLiveContext) *tools.Router {
 		halls := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 		mock(halls)
 		a := &API{dao: dao.DaoWrapper{LectureHallsDao: halls}, log: slog.Default()}
 		if ctx == nil {
 			// No middleware at all: the context a deployment always has is missing.
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
+			r := tools.NewRouter()
 			a.RegisterLegacyRoutes(r)
 			return r
 		}

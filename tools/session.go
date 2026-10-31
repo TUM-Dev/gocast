@@ -1,9 +1,9 @@
 package tools
 
 import (
+	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -19,13 +19,13 @@ const SessionTTL = time.Hour * 24 * 7
 // memory and re-mint from the session cookie, so they are far shorter-lived.
 const AccessTokenTTL = time.Minute * 15
 
-func StartSession(c *gin.Context, data *SessionData) {
+func StartSession(w http.ResponseWriter, data *SessionData) {
 	token, err := createToken(data.Userid, data.SamlSubjectID)
 	if err != nil {
 		logger.Error("Could not create token", "err", err)
 		return
 	}
-	c.SetCookie("jwt", token, int(SessionTTL.Seconds()), "/", "", CookieSecure, true)
+	SetCookie(w, "jwt", token, int(SessionTTL.Seconds()), CookieSecure)
 }
 
 // CreateAccessToken mints a short-lived `Authorization: Bearer` credential for the v2

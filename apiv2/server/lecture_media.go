@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/status"
 
@@ -55,24 +54,24 @@ func WithUploads(u Uploads) Option {
 // has been read yet. A runner is reserved before the body is touched, so a refused
 // upload costs nothing, and a lecture that is live is refused, since the VOD of its own
 // stream would race the upload for the same playlist.
-func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream, videoType model.VideoType) {
+func (a *API) proxyLectureMedia(w http.ResponseWriter, r *http.Request, stream model.Stream, videoType model.VideoType) {
 	if !videoType.Valid() {
-		writeUploadError(c, e.WithStatus(http.StatusBadRequest, errors.New("type must be COMB, PRES or CAM")))
+		writeUploadError(w, e.WithStatus(http.StatusBadRequest, errors.New("type must be COMB, PRES or CAM")))
 		return
 	}
 	if stream.LiveNow {
-		writeUploadError(c, e.WithStatus(http.StatusConflict, errors.New("the lecture is live")))
+		writeUploadError(w, e.WithStatus(http.StatusConflict, errors.New("the lecture is live")))
 		return
 	}
 	if a.uploads == nil {
-		writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
+		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
 		return
 	}
 
-	slot, err := a.uploads.Reserve(c.Request.Context(), stream.ID, model.StreamVersion(videoType))
+	slot, err := a.uploads.Reserve(r.Context(), stream.ID, model.StreamVersion(videoType))
 	if err != nil {
 		a.log.Warn("can't reserve a runner for an upload", "stream", stream.ID, "err", err)
-		writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
+		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
 		return
 	}
 
@@ -121,13 +120,13 @@ func (a *API) proxyLectureMedia(c *gin.Context, stream model.Stream, videoType m
 			}
 			return err
 		},
-		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, err error) {
 			a.log.Warn("can't reach runner for upload", "runner", slot.Host, "err", err)
 			dropProgress()
-			writeUploadError(c, e.WithStatus(http.StatusServiceUnavailable, errors.New("the runner taking the upload can't be reached")))
+			writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errors.New("the runner taking the upload can't be reached")))
 		},
 	}
-	proxy.ServeHTTP(c.Writer, c.Request)
+	proxy.ServeHTTP(w, r)
 }
 
 // runnerUploadResponse answers as the gateway answers: {} once the runner has the
@@ -171,6 +170,6 @@ func runnerUploadResponse(resp *http.Response) error {
 // rather than written.
 func uploadErrorBody(err error) (int, []byte) {
 	st := status.Convert(err)
-	body, _ := json.Marshal(gin.H{"code": int(st.Code()), "message": st.Message()})
+	body, _ := json.Marshal(map[string]any{"code": int(st.Code()), "message": st.Message()})
 	return runtime.HTTPStatusFromCode(st.Code()), body
 }

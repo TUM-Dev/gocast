@@ -84,16 +84,18 @@ func gatewayError(t *testing.T, body []byte) (code int, message string) {
 }
 
 func TestLectureMediaRouteOf(t *testing.T) {
-	got, ok := lectureUploadRouteOf(httptest.NewRequest(http.MethodPost, "/api/v2/courses/1/streams/7/media?type=COMB", nil))
+	media := func(r *http.Request) (lectureUploadRoute, bool) { return lectureUploadRouteOf(r, uploadMedia) }
+	pattern := lectureUploadPathPrefix + uploadMedia
+	got, ok := routed(pattern, http.MethodPost, "/api/v2/courses/1/streams/7/media?type=COMB", media)
 	if !ok || got != (lectureUploadRoute{courseID: 1, streamID: 7, kind: uploadMedia}) {
 		t.Errorf("got %+v, %v", got, ok)
 	}
 	for _, path := range []string{"/api/v2/courses/1/streams/7/media/2", "/api/v2/courses/1/streams/x/media"} {
-		if _, ok := lectureUploadRouteOf(httptest.NewRequest(http.MethodPost, path, nil)); ok {
+		if _, ok := routed(pattern, http.MethodPost, path, media); ok {
 			t.Errorf("%s matched", path)
 		}
 	}
-	if _, ok := lectureUploadRouteOf(httptest.NewRequest(http.MethodGet, "/api/v2/courses/1/streams/7/media", nil)); ok {
+	if _, ok := routed(pattern, http.MethodGet, "/api/v2/courses/1/streams/7/media", media); ok {
 		t.Error("GET matched")
 	}
 }

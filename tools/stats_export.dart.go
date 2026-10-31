@@ -4,8 +4,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/dao"
 )
 
@@ -46,22 +44,22 @@ func (e ExportStatsContainer) ExportCsv() string {
 	return result
 }
 
-func (e ExportStatsContainer) ExportJson() []gin.H {
-	var result []gin.H
+func (e ExportStatsContainer) ExportJson() []map[string]any {
+	var result []map[string]any
 	for _, data := range e.data {
-		var stats []gin.H
+		var stats []map[string]any
 
 		xName := strings.ToLower(data.XName)
 		yName := strings.ToLower(data.YName)
 
 		for _, stat := range data.Data {
-			stats = append(stats, gin.H{
+			stats = append(stats, map[string]any{
 				xName: stat.X,
 				yName: stat.Y,
 			})
 		}
 
-		result = append(result, gin.H{"name": data.Name, "data": stats})
+		result = append(result, map[string]any{"name": data.Name, "data": stats})
 	}
 	return result
 }

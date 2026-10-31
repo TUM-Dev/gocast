@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"uuid"
 
-	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -21,6 +21,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/safepath"
 )
 
@@ -35,8 +36,11 @@ const (
 	uploadMedia      = "media"
 )
 
-// lectureUploadRoute is a request for one of the upload endpoints:
-// POST /api/v2/courses/{course_id}/streams/{stream_id}/{attachments|thumbnail|media}.
+// The upload endpoints, POST /api/v2/courses/{course_id}/streams/{stream_id}/{attachments|
+// thumbnail|media}. Only POST: the thumbnail's DELETE on the same path is an RPC.
+const lectureUploadPathPrefix = "POST /api/v2/courses/{course_id}/streams/{stream_id}/"
+
+// lectureUploadRoute is a request for one of them.
 type lectureUploadRoute struct {
 	courseID, streamID uint32
 	kind               string
@@ -45,26 +49,15 @@ type lectureUploadRoute struct {
 // GetCourseId lets the route stand in for a request in authorizeCourseAdmin.
 func (r lectureUploadRoute) GetCourseId() uint32 { return r.courseID }
 
-// lectureUploadRouteOf matches a request against the upload endpoints. Only POST: the
-// thumbnail's DELETE on the same path is an RPC.
-func lectureUploadRouteOf(r *http.Request) (lectureUploadRoute, bool) {
-	if r.Method != http.MethodPost {
-		return lectureUploadRoute{}, false
-	}
-	rest, ok := strings.CutPrefix(r.URL.Path, "/api/v2/courses/")
-	if !ok {
-		return lectureUploadRoute{}, false
-	}
-	parts := strings.Split(rest, "/")
-	if len(parts) != 4 || parts[1] != "streams" || (parts[3] != uploadAttachment && parts[3] != uploadThumbnail && parts[3] != uploadMedia) {
-		return lectureUploadRoute{}, false
-	}
-	courseID, err1 := strconv.ParseUint(parts[0], 10, 32)
-	streamID, err2 := strconv.ParseUint(parts[2], 10, 32)
+// lectureUploadRouteOf reads the route's ids. The pattern matches any text there, so a
+// request whose ids are not numbers is not this endpoint's and goes to the gateway.
+func lectureUploadRouteOf(r *http.Request, kind string) (lectureUploadRoute, bool) {
+	courseID, err1 := strconv.ParseUint(r.PathValue("course_id"), 10, 32)
+	streamID, err2 := strconv.ParseUint(r.PathValue("stream_id"), 10, 32)
 	if err1 != nil || err2 != nil {
 		return lectureUploadRoute{}, false
 	}
-	return lectureUploadRoute{courseID: uint32(courseID), streamID: uint32(streamID), kind: parts[3]}, true
+	return lectureUploadRoute{courseID: uint32(courseID), streamID: uint32(streamID), kind: kind}, true
 }
 
 // incomingContext presents an HTTP request's credentials the way the gateway hands
@@ -83,9 +76,9 @@ func incomingContext(r *http.Request) context.Context {
 
 // writeUploadError answers as the gateway answers an RPC's error, so a client handles
 // the uploads' failures as it does every other endpoint's.
-func writeUploadError(c *gin.Context, err error) {
+func writeUploadError(w http.ResponseWriter, err error) {
 	st := status.Convert(err)
-	c.AbortWithStatusJSON(runtime.HTTPStatusFromCode(st.Code()), gin.H{"code": int(st.Code()), "message": st.Message()})
+	tools.WriteJSON(w, runtime.HTTPStatusFromCode(st.Code()), map[string]any{"code": int(st.Code()), "message": st.Message()})
 }
 
 // handleLectureUpload replaces v1's newAttachment and putCustomLiveThumbnail, and
@@ -95,66 +88,69 @@ func writeUploadError(c *gin.Context, err error) {
 // administer the course is answered 404, as the RPCs answer, so the status cannot tell
 // a missing course from someone else's. All of that before the body is read, so a
 // refused upload is not buffered first.
-func (a *API) handleLectureUpload(c *gin.Context, route lectureUploadRoute) {
-	ctx := incomingContext(c.Request)
+func (a *API) handleLectureUpload(w http.ResponseWriter, r *http.Request, route lectureUploadRoute) {
+	ctx := incomingContext(r)
 	stream, err := a.authorizeLectureUpload(ctx, route)
 	if err != nil {
-		writeUploadError(c, err)
+		writeUploadError(w, err)
 		return
 	}
 	if route.kind == uploadMedia {
-		a.proxyLectureMedia(c, stream, model.VideoType(c.Query("type")))
+		a.proxyLectureMedia(w, r, stream, model.VideoType(r.URL.Query().Get("type")))
 		return
 	}
 	if a.massStorage == "" {
-		writeUploadError(c, e.WithStatus(http.StatusInternalServerError, errors.New("no directory configured for uploads")))
+		writeUploadError(w, e.WithStatus(http.StatusInternalServerError, errors.New("no directory configured for uploads")))
 		return
 	}
 
 	// v1 checked the size once the whole body was in. The slack is the multipart
 	// framing around a file of exactly the limit.
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxLectureUploadSize+1<<20)
-	upload, err := c.FormFile("file")
-	if err != nil {
+	r.Body = http.MaxBytesReader(w, r.Body, maxLectureUploadSize+1<<20)
+	file, upload, err := r.FormFile("file")
+	if err == nil {
+		// Only the header is wanted: the content is copied from it when stored.
+		_ = file.Close()
+	} else {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			writeUploadError(c, e.WithStatus(http.StatusBadRequest, errors.New("file too large (limit is 50 MB)")))
+			writeUploadError(w, e.WithStatus(http.StatusBadRequest, errors.New("file too large (limit is 50 MB)")))
 			return
 		}
-		writeUploadError(c, e.WithStatus(http.StatusBadRequest, errors.New("missing form field 'file'")))
+		writeUploadError(w, e.WithStatus(http.StatusBadRequest, errors.New("missing form field 'file'")))
 		return
 	}
 	if upload.Size > maxLectureUploadSize {
-		writeUploadError(c, e.WithStatus(http.StatusBadRequest, errors.New("file too large (limit is 50 MB)")))
+		writeUploadError(w, e.WithStatus(http.StatusBadRequest, errors.New("file too large (limit is 50 MB)")))
 		return
 	}
 
 	course, err := a.dao.GetCourseById(ctx, stream.CourseID)
 	if err != nil {
-		writeUploadError(c, e.FromGorm(err, "can't find course"))
+		writeUploadError(w, e.FromGorm(err, "can't find course"))
 		return
 	}
 
-	var file model.File
+	var stored model.File
 	if route.kind == uploadAttachment {
-		file, err = a.saveAttachment(c, stream, course, upload)
+		stored, err = a.saveAttachment(stream, course, upload)
 	} else {
-		file, err = a.saveThumbnail(c, stream, course, upload)
+		stored, err = a.saveThumbnail(stream, course, upload)
 	}
 	if err != nil {
-		writeUploadError(c, err)
+		writeUploadError(w, err)
 		return
 	}
 
-	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %s uploaded (file %d)", stream.ID, route.kind, file.ID), forStream(stream))
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %s uploaded (file %d)", stream.ID, route.kind, stored.ID), forStream(stream))
 	body, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&protobuf.LectureFileAdmin{
-		Id: uint32(file.ID), Type: uint32(file.Type), FriendlyName: file.GetFriendlyFileName(),
+		Id: uint32(stored.ID), Type: uint32(stored.Type), FriendlyName: stored.GetFriendlyFileName(),
 	})
 	if err != nil {
-		writeUploadError(c, e.WithStatus(http.StatusInternalServerError, err))
+		writeUploadError(w, e.WithStatus(http.StatusInternalServerError, err))
 		return
 	}
-	c.Data(http.StatusOK, "application/json", body)
+	tools.WriteData(w, http.StatusOK, "application/json", body)
 }
 
 // authorizeLectureUpload answers the lecture an upload is for, once the caller is
@@ -174,7 +170,7 @@ func (a *API) authorizeLectureUpload(ctx context.Context, route lectureUploadRou
 // storeUpload writes an upload into dir under a fresh name, keeping its extension as
 // v1 does. The directory is under mass storage, built by safepath from the course's
 // name, which is free text.
-func storeUpload(c *gin.Context, root string, upload *multipart.FileHeader, dirs ...string) (string, error) {
+func storeUpload(root string, upload *multipart.FileHeader, dirs ...string) (string, error) {
 	dir, err := safepath.JoinInRoot(root, dirs...)
 	if err != nil {
 		return "", e.WithStatus(http.StatusInternalServerError, err)
@@ -183,15 +179,34 @@ func storeUpload(c *gin.Context, root string, upload *multipart.FileHeader, dirs
 		return "", e.WithStatus(http.StatusInternalServerError, fmt.Errorf("can't create folder: %w", err))
 	}
 	path := filepath.Join(dir, fmt.Sprintf("%s%s", uuid.NewV4(), filepath.Ext(upload.Filename)))
-	if err := c.SaveUploadedFile(upload, path); err != nil {
+	if err := saveUploadedFile(upload, path); err != nil {
 		return "", e.WithStatus(http.StatusInternalServerError, fmt.Errorf("can't save file: %w", err))
 	}
 	return path, nil
 }
 
+// saveUploadedFile copies an uploaded file to path. The directory exists already.
+func saveUploadedFile(upload *multipart.FileHeader, path string) error {
+	src, err := upload.Open()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = src.Close() }()
+
+	dst, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(dst, src); err != nil {
+		_ = dst.Close()
+		return err
+	}
+	return dst.Close()
+}
+
 // saveAttachment stores an attachment where v1's newAttachment does.
-func (a *API) saveAttachment(c *gin.Context, stream model.Stream, course model.Course, upload *multipart.FileHeader) (model.File, error) {
-	path, err := storeUpload(c, a.massStorage, upload,
+func (a *API) saveAttachment(stream model.Stream, course model.Course, upload *multipart.FileHeader) (model.File, error) {
+	path, err := storeUpload(a.massStorage, upload,
 		fmt.Sprintf("%s.%d", course.Name, course.Year),
 		fmt.Sprintf("%s.%s", course.Name, course.TeachingTerm),
 		"files")
@@ -214,7 +229,7 @@ var thumbnailExtensions = map[string]bool{".jpg": true, ".jpeg": true, ".png": t
 // saveThumbnail stores a custom thumbnail where v1's putCustomLiveThumbnail does, with
 // the same checks, replacing any previous one. v1 left the previous file on disk and
 // answered the new thumbnail's ID as 0, SetThumbnail taking its argument by value.
-func (a *API) saveThumbnail(c *gin.Context, stream model.Stream, course model.Course, upload *multipart.FileHeader) (model.File, error) {
+func (a *API) saveThumbnail(stream model.Stream, course model.Course, upload *multipart.FileHeader) (model.File, error) {
 	if !strings.HasPrefix(upload.Header.Get("Content-Type"), "image/") {
 		return model.File{}, e.WithStatus(http.StatusBadRequest, errors.New("the thumbnail must be an image"))
 	}
@@ -224,7 +239,7 @@ func (a *API) saveThumbnail(c *gin.Context, stream model.Stream, course model.Co
 
 	previous, previousErr := a.dao.FileDao.GetThumbnail(stream.ID, model.FILETYPE_THUMB_CUSTOM)
 
-	path, err := storeUpload(c, a.massStorage, upload,
+	path, err := storeUpload(a.massStorage, upload,
 		fmt.Sprintf("%s.%d.%s", course.Name, course.Year, course.TeachingTerm),
 		"files")
 	if err != nil {

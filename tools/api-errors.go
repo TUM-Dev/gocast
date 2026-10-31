@@ -1,7 +1,5 @@
 package tools
 
-import "github.com/gin-gonic/gin"
-
 type RequestError struct {
 	Status        int
 	CustomMessage string
@@ -15,8 +13,8 @@ func (r RequestError) Error() string {
 	return ""
 }
 
-func (r RequestError) ToResponse() gin.H {
-	res := gin.H{"status": r.Status, "message": r.CustomMessage}
+func (r RequestError) ToResponse() map[string]any {
+	res := map[string]any{"status": r.Status, "message": r.CustomMessage}
 
 	if r.Err != nil {
 		res["error"] = r.Error()

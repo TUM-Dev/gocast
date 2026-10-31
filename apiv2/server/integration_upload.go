@@ -15,7 +15,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gin-gonic/gin"
 	"golang.org/x/net/idna"
 	"gorm.io/gorm"
 
@@ -27,6 +26,9 @@ import (
 
 // integrationUploadPrefix is the path a ticket from createIntegrationUpload is used on.
 const integrationUploadPrefix = "/api/v2/integration/uploads/"
+
+// integrationUploadPath is the pattern of that path.
+const integrationUploadPath = integrationUploadPrefix + "{ticket}"
 
 // integrationUploadTicketTTL is how long a ticket waits for its upload to start. A
 // ticket is handed to the integration's browser page, which starts at once.
@@ -86,15 +88,6 @@ func (a *API) CreateIntegrationUpload(ctx context.Context, req *protobuf.CreateI
 	}, nil
 }
 
-// integrationUploadRouteOf matches the upload a ticket stands for, and the preflight
-// of a browser that sends it.
-func integrationUploadRouteOf(r *http.Request) (string, bool) {
-	if r.Method != http.MethodPost && r.Method != http.MethodOptions {
-		return "", false
-	}
-	return strings.CutPrefix(r.URL.Path, integrationUploadPrefix)
-}
-
 // handleIntegrationUpload takes the recording for a lecture an integration created. It
 // needs no login: only the integration, with its API key and an active grant, can get a
 // ticket, and it hands the ticket to the browser of one of its users. CORS is allowed for
@@ -102,38 +95,38 @@ func integrationUploadRouteOf(r *http.Request) (string, bool) {
 // upload with progress from another origin otherwise; the ticket is the protection. The
 // ticket is used up before the body is read, and the recording is always the combined
 // version.
-func (a *API) handleIntegrationUpload(c *gin.Context, rawTicket string) {
+func (a *API) handleIntegrationUpload(w http.ResponseWriter, r *http.Request, rawTicket string) {
 	notFound := e.WithStatus(http.StatusNotFound, errors.New("upload not found"))
 	ticket, err := base64.RawURLEncoding.DecodeString(rawTicket)
 	if err != nil || len(ticket) != 32 || base64.RawURLEncoding.EncodeToString(ticket) != rawTicket {
-		writeUploadError(c, notFound)
+		writeUploadError(w, notFound)
 		return
 	}
 	hash := sha256.Sum256(ticket)
-	ctx, now := c.Request.Context(), time.Now()
+	ctx, now := r.Context(), time.Now()
 
-	origin := c.GetHeader("Origin")
-	if c.Request.Method == http.MethodOptions || origin != "" {
+	origin := r.Header.Get("Origin")
+	if r.Method == http.MethodOptions || origin != "" {
 		returnURL, err := a.dao.IntegrationGrantDao.GetIntegrationUploadReturnURL(ctx, hash[:], now)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				a.log.Error("integration upload lookup failed", "err", err)
 			}
-			writeUploadError(c, notFound)
+			writeUploadError(w, notFound)
 			return
 		}
 		if origin == "" || origin != originOf(returnURL) {
-			writeUploadError(c, e.WithStatus(http.StatusForbidden, errors.New("uploads are only accepted from the integration's origin")))
+			writeUploadError(w, e.WithStatus(http.StatusForbidden, errors.New("uploads are only accepted from the integration's origin")))
 			return
 		}
-		header := c.Writer.Header()
+		header := w.Header()
 		header.Set("Access-Control-Allow-Origin", origin)
 		header.Add("Vary", "Origin")
-		if c.Request.Method == http.MethodOptions {
+		if r.Method == http.MethodOptions {
 			header.Set("Access-Control-Allow-Methods", "POST")
 			header.Set("Access-Control-Allow-Headers", "Content-Type")
 			header.Set("Access-Control-Max-Age", "600")
-			c.AbortWithStatus(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 	}
@@ -143,10 +136,10 @@ func (a *API) handleIntegrationUpload(c *gin.Context, rawTicket string) {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			a.log.Error("integration upload ticket failed", "err", err)
 		}
-		writeUploadError(c, notFound)
+		writeUploadError(w, notFound)
 		return
 	}
-	a.proxyLectureMedia(c, stream, model.VideoTypeCombined)
+	a.proxyLectureMedia(w, r, stream, model.VideoTypeCombined)
 }
 
 // originOf is the origin a browser sends for pages under rawURL: the host in its
