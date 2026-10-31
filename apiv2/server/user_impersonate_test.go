@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
@@ -16,7 +15,7 @@ import (
 	"github.com/TUM-Dev/gocast/model"
 )
 
-func TestImpersonateRouteOf(t *testing.T) {
+func TestImpersonateIDOf(t *testing.T) {
 	for _, tc := range []struct {
 		method, path string
 		want         uint
@@ -29,7 +28,7 @@ func TestImpersonateRouteOf(t *testing.T) {
 		{"POST", "/api/v2/users/7/impersonate/x", 0},
 		{"POST", "/api/v2/admin/users/7/impersonate", 0},
 	} {
-		got, ok := impersonateRouteOf(httptest.NewRequest(tc.method, tc.path, nil))
+		got, ok := routed(impersonatePath, tc.method, tc.path, impersonateIDOf)
 		if ok != (tc.want != 0) || got != tc.want {
 			t.Errorf("%s %s: got %d, %v; want %d", tc.method, tc.path, got, ok, tc.want)
 		}
@@ -37,18 +36,8 @@ func TestImpersonateRouteOf(t *testing.T) {
 }
 
 func serveImpersonate(api *API, req *http.Request) *httptest.ResponseRecorder {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		id, ok := impersonateRouteOf(c.Request)
-		if !ok {
-			c.Status(http.StatusTeapot)
-			return
-		}
-		api.handleImpersonate(c, id)
-	})
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
+	api.Handler().ServeHTTP(rec, req)
 	return rec
 }
 

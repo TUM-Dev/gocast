@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -15,10 +14,10 @@ import (
 
 // errorPageRenderer answers a browser request with the error page. The web package
 // installs it, because only it holds the SPA shell; see web.serveErrorPage.
-var errorPageRenderer func(c *gin.Context, status int, message string)
+var errorPageRenderer func(w http.ResponseWriter, r *http.Request, status int, message string)
 
 // SetErrorPageRenderer sets how RenderErrorPage answers a request for a page.
-func SetErrorPageRenderer(f func(c *gin.Context, status int, message string)) {
+func SetErrorPageRenderer(f func(w http.ResponseWriter, r *http.Request, status int, message string)) {
 	errorPageRenderer = f
 }
 
@@ -29,67 +28,85 @@ type JWTClaims struct {
 	SamlSubjectID *string // identifier of the SAML session (if any)
 }
 
-func InitContext(daoWrapper dao.DaoWrapper) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// no context initialisation required for static assets.
-		if strings.HasPrefix(c.Request.RequestURI, "/public") ||
-			strings.HasPrefix(c.Request.RequestURI, "/favicon") {
-			return
-		}
-
-		// get the session
-		cookie, err := c.Cookie("jwt")
-		if err != nil {
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		}
-
-		token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-			key := Cfg.GetJWTKey().Public()
-			return key, nil
+// InitContext puts the signed-in user, if any, on the request as its TUMLiveContext.
+// Every route behind it can rely on the context existing; a missing or broken session
+// is an empty context, not an error.
+func InitContext(daoWrapper dao.DaoWrapper) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// no context initialisation required for static assets.
+			if strings.HasPrefix(r.RequestURI, "/public") ||
+				strings.HasPrefix(r.RequestURI, "/favicon") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, WithTUMLiveContext(r, sessionContext(w, r, daoWrapper)))
 		})
-		if err != nil {
-			logger.Info("JWT parsing error: ", "err", err)
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			c.SetCookie("jwt", "", -1, "/", "", false, true)
-			return
-		}
-		if !token.Valid {
-			logger.Info("JWT token is not valid")
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			c.SetCookie("jwt", "", -1, "/", "", false, true)
-			return
-		}
-
-		user, err := daoWrapper.UsersDao.GetUserByID(c, token.Claims.(*JWTClaims).UserID)
-		if err != nil {
-			c.Set("TUMLiveContext", TUMLiveContext{})
-			return
-		}
-		c.Set("TUMLiveContext", TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID})
 	}
+}
+
+// sessionContext reads the session cookie. A cookie that does not verify is cleared,
+// so the browser stops sending it.
+func sessionContext(w http.ResponseWriter, r *http.Request, daoWrapper dao.DaoWrapper) TUMLiveContext {
+	cookie, err := Cookie(r, "jwt")
+	if err != nil {
+		return TUMLiveContext{}
+	}
+
+	token, err := jwt.ParseWithClaims(cookie, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+		key := Cfg.GetJWTKey().Public()
+		return key, nil
+	})
+	if err != nil {
+		logger.Info("JWT parsing error: ", "err", err)
+		SetCookie(w, "jwt", "", -1, false)
+		return TUMLiveContext{}
+	}
+	if !token.Valid {
+		logger.Info("JWT token is not valid")
+		SetCookie(w, "jwt", "", -1, false)
+		return TUMLiveContext{}
+	}
+
+	user, err := daoWrapper.UsersDao.GetUserByID(r.Context(), token.Claims.(*JWTClaims).UserID)
+	if err != nil {
+		return TUMLiveContext{}
+	}
+	return TUMLiveContext{User: &user, SamlSubjectID: token.Claims.(*JWTClaims).SamlSubjectID}
+}
+
+// redirectToLogin sends an anonymous visitor to the login page, with the page to come
+// back to.
+func redirectToLogin(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/login?return="+url.QueryEscape(r.RequestURI), http.StatusFound)
 }
 
 // LoggedIn is a middleware that checks if the user is logged in and redirects to the login page if not
-func LoggedIn(c *gin.Context) {
-	if c.MustGet("TUMLiveContext").(TUMLiveContext).User == nil {
-		// Pass the page along so the login flow can return to it, as the course and
-		// admin middlewares below do.
-		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-		c.Abort()
-	}
+func LoggedIn(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tumLiveContext, ok := requireTUMLiveContext(w, r)
+		if !ok {
+			return
+		}
+		if tumLiveContext.User == nil {
+			// Pass the page along so the login flow can return to it, as the course and
+			// admin middlewares below do.
+			redirectToLogin(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
-// RenderErrorPage answers with the given status and message, and aborts the context.
-// A page request gets the SPA shell, which renders the error; under /api/ the caller
-// is a script, which gets the message as plain text.
-func RenderErrorPage(c *gin.Context, status int, message string) {
-	if errorPageRenderer == nil || strings.HasPrefix(c.Request.URL.Path, "/api/") {
-		c.String(status, message)
+// RenderErrorPage answers with the given status and message. A page request gets the
+// SPA shell, which renders the error; under /api/ the caller is a script, which gets
+// the message as plain text.
+func RenderErrorPage(w http.ResponseWriter, r *http.Request, status int, message string) {
+	if errorPageRenderer == nil || strings.HasPrefix(r.URL.Path, "/api/") {
+		WriteText(w, status, message)
 	} else {
-		errorPageRenderer(c, status, message)
+		errorPageRenderer(w, r, status, message)
 	}
-	c.Abort()
 }
 
 const (
@@ -104,192 +121,158 @@ const (
 		"Please make sure to use the correct login."
 )
 
-func InitCourse(wrapper dao.DaoWrapper) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		foundContext, exists := c.Get("TUMLiveContext")
-		if !exists {
-			logger.Error("context should exist but doesn't")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		tumLiveContext := foundContext.(TUMLiveContext)
-		// Get course based on context:
-		var course model.Course
-		switch {
-		case c.Param("courseID") != "":
-			cIDInt, err := strconv.ParseInt(c.Param("courseID"), 10, 32)
-			if err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
+// InitCourse loads the course named by the route's courseID, or year, teachingTerm and
+// slug, and refuses a caller who may not see it.
+func InitCourse(wrapper dao.DaoWrapper) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tumLiveContext, ok := requireTUMLiveContext(w, r)
+			if !ok {
 				return
 			}
-			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, uint(cIDInt))
-			if err != nil {
-				c.Status(http.StatusNotFound)
-				RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
-			} else {
+			// Get course based on context:
+			var course model.Course
+			switch {
+			case r.PathValue("courseID") != "":
+				cIDInt, err := strconv.ParseInt(r.PathValue("courseID"), 10, 32)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				foundCourse, err := wrapper.CoursesDao.GetCourseById(r.Context(), uint(cIDInt))
+				if err != nil {
+					RenderErrorPage(w, r, http.StatusNotFound, CourseNotFoundErrMsg)
+					return
+				}
 				course = foundCourse
-			}
-		case c.Param("year") != "" && c.Param("teachingTerm") != "" && c.Param("slug") != "":
-			y := c.Param("year")
-			yInt, err := strconv.Atoi(y)
-			if err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
+			case r.PathValue("year") != "" && r.PathValue("teachingTerm") != "" && r.PathValue("slug") != "":
+				yInt, err := strconv.Atoi(r.PathValue("year"))
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				foundCourse, err := wrapper.CoursesDao.GetCourseBySlugYearAndTerm(r.Context(), r.PathValue("slug"), r.PathValue("teachingTerm"), yInt)
+				if err != nil {
+					RenderErrorPage(w, r, http.StatusNotFound, CourseNotFoundErrMsg)
+					return
+				}
+				course = foundCourse
+			default:
+				RenderErrorPage(w, r, http.StatusNotFound, CourseNotFoundErrMsg)
 				return
 			}
-			foundCourse, err := wrapper.CoursesDao.GetCourseBySlugYearAndTerm(c, c.Param("slug"), c.Param("teachingTerm"), yInt)
+			// check if course is accessible by user:
+			switch {
+			case course.IsPublic(), course.IsHidden(), tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course):
+				tumLiveContext.Course = &course
+				next.ServeHTTP(w, WithTUMLiveContext(r, tumLiveContext))
+			case tumLiveContext.User == nil:
+				redirectToLogin(w, r)
+			default:
+				RenderErrorPage(w, r, http.StatusForbidden, ForbiddenCourseAccess)
+			}
+		})
+	}
+}
+
+// InitStream loads the stream named by the route's streamID, and refuses a caller who
+// may not watch it.
+func InitStream(wrapper dao.DaoWrapper) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tumLiveContext, ok := requireTUMLiveContext(w, r)
+			if !ok {
+				return
+			}
+			// Get stream based on context:
+			if r.PathValue("streamID") == "" {
+				RenderErrorPage(w, r, http.StatusNotFound, StreamNotFoundErrMsg)
+				return
+			}
+			stream, err := wrapper.StreamsDao.GetStreamByID(r.Context(), r.PathValue("streamID"))
 			if err != nil {
-				c.Status(http.StatusNotFound)
-				RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
+				RenderErrorPage(w, r, http.StatusNotFound, StreamNotFoundErrMsg)
+				return
+			}
+			var course model.Course
+			if tumLiveContext.Course != nil {
+				// InitCourse ran first and AdminOfCourse/visibility checks vouch only for
+				// that course, so a course's routes must not reach another course's stream.
+				// Answer as for a missing stream rather than 403, so the reply doesn't reveal
+				// that the ID exists elsewhere.
+				if stream.CourseID != tumLiveContext.Course.ID {
+					RenderErrorPage(w, r, http.StatusNotFound, StreamNotFoundErrMsg)
+					return
+				}
+				course = *tumLiveContext.Course
 			} else {
+				foundCourse, err := wrapper.CoursesDao.GetCourseById(r.Context(), stream.CourseID)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
 				course = foundCourse
 			}
-		default:
-			c.Status(http.StatusNotFound)
-			RenderErrorPage(c, http.StatusNotFound, CourseNotFoundErrMsg)
-		}
-		if c.IsAborted() {
-			return
-		}
-		// check if course is accessible by user:
-		switch {
-		case course.IsPublic(), course.IsHidden(), tumLiveContext.User != nil && tumLiveContext.User.IsEligibleToWatchCourse(course):
+
+			if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+				// The page alone would go out as a 200: a refused stream must say so to
+				// whatever frames or fetches it (the Artemis embed does).
+				RenderErrorPage(w, r, http.StatusForbidden, ForbiddenStreamAccess)
+				return
+			}
+			if !course.IsPublic() && !course.IsHidden() {
+				if tumLiveContext.User == nil {
+					redirectToLogin(w, r)
+					return
+				} else if !tumLiveContext.User.IsEligibleToWatchCourse(course) {
+					RenderErrorPage(w, r, http.StatusForbidden, ForbiddenStreamAccess)
+					return
+				}
+			}
 			tumLiveContext.Course = &course
-			c.Set("TUMLiveContext", tumLiveContext)
-		case tumLiveContext.User == nil:
-			c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-			c.Abort()
-			return
-		default:
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenCourseAccess)
-		}
-	}
-}
-
-func InitStream(wrapper dao.DaoWrapper) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		foundContext, exists := c.Get("TUMLiveContext")
-		if !exists {
-			logger.Error("context should exist but doesn't")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		tumLiveContext := foundContext.(TUMLiveContext)
-		// Get stream based on context:
-		var stream model.Stream
-		if c.Param("streamID") != "" {
-			foundStream, err := wrapper.StreamsDao.GetStreamByID(c, c.Param("streamID"))
-			if err != nil {
-				c.Status(http.StatusNotFound)
-				RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
-			} else {
-				stream = foundStream
-			}
-		} else {
-			c.Status(http.StatusNotFound)
-			RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
-		}
-		if c.IsAborted() {
-			return
-		}
-		var course model.Course
-		if tumLiveContext.Course != nil {
-			// InitCourse ran first and AdminOfCourse/visibility checks vouch only for
-			// that course, so a course's routes must not reach another course's stream.
-			// Answer as for a missing stream rather than 403, so the reply doesn't reveal
-			// that the ID exists elsewhere.
-			if stream.CourseID != tumLiveContext.Course.ID {
-				c.Status(http.StatusNotFound)
-				RenderErrorPage(c, http.StatusNotFound, StreamNotFoundErrMsg)
-				return
-			}
-			course = *tumLiveContext.Course
-		} else {
-			foundCourse, err := wrapper.CoursesDao.GetCourseById(c, stream.CourseID)
-			if err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-				return
-			}
-			course = foundCourse
-		}
-
-		if stream.Private && (tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
-			// The page alone would go out as a 200: a refused stream must say so to
-			// whatever frames or fetches it (the Artemis embed does).
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
-			c.Abort()
-			return
-		}
-		if !course.IsPublic() && !course.IsHidden() {
-			if tumLiveContext.User == nil {
-				c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-				c.Abort()
-				return
-			} else if tumLiveContext.User == nil || !tumLiveContext.User.IsEligibleToWatchCourse(course) {
-				c.Status(http.StatusForbidden)
-				RenderErrorPage(c, http.StatusForbidden, ForbiddenStreamAccess)
-				return
-			}
-		}
-		tumLiveContext.Course = &course
-		tumLiveContext.Stream = &stream
-		c.Set("TUMLiveContext", tumLiveContext)
-	}
-}
-
-func OwnerOfCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if !tumLiveContext.User.Can(model.PermAdministerAllCourses) && (tumLiveContext.User == nil || tumLiveContext.User.Model.ID != tumLiveContext.Course.UserID) {
-		c.Status(http.StatusForbidden)
-		RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+			tumLiveContext.Stream = &stream
+			next.ServeHTTP(w, WithTUMLiveContext(r, tumLiveContext))
+		})
 	}
 }
 
 // AdminOfCourse checks if the user is an admin of the course or admin.
-// If not, aborts with status Forbidden.
-func AdminOfCourse(c *gin.Context) {
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
-		logger.Error("context should exist but doesn't")
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-	tumLiveContext := foundContext.(TUMLiveContext)
-	if tumLiveContext.User == nil {
-		c.Redirect(http.StatusFound, "/login?return="+url.QueryEscape(c.Request.RequestURI))
-		c.Abort()
-		return
-	}
-	if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
-		return
-	}
-	// The SPA renders the refusal from the shell; a bare status left a blank page.
-	RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
-}
-
-// RequirePermission aborts with Forbidden unless the caller holds the permission. A
-// route group states the capability it needs rather than the role that has it, so
-// moving a capability between roles is a change to model.rolePermissions alone.
-func RequirePermission(p model.Permission) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		foundContext, exists := c.Get("TUMLiveContext")
-		if !exists {
-			logger.Error("context should exist but doesn't")
-			c.AbortWithStatus(http.StatusInternalServerError)
+// If not, answers Forbidden.
+func AdminOfCourse(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tumLiveContext, ok := requireTUMLiveContext(w, r)
+		if !ok {
 			return
 		}
-		tumLiveContext := foundContext.(TUMLiveContext)
-		if !tumLiveContext.User.Can(p) {
-			c.Status(http.StatusForbidden)
-			RenderErrorPage(c, http.StatusForbidden, ForbiddenGenericErrMsg)
+		if tumLiveContext.User == nil {
+			redirectToLogin(w, r)
+			return
 		}
+		if tumLiveContext.User.IsAdminOfCourse(*tumLiveContext.Course) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// The SPA renders the refusal from the shell; a bare status left a blank page.
+		RenderErrorPage(w, r, http.StatusForbidden, ForbiddenGenericErrMsg)
+	})
+}
+
+// RequirePermission answers Forbidden unless the caller holds the permission. A
+// route group states the capability it needs rather than the role that has it, so
+// moving a capability between roles is a change to model.rolePermissions alone.
+func RequirePermission(p model.Permission) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tumLiveContext, ok := requireTUMLiveContext(w, r)
+			if !ok {
+				return
+			}
+			if !tumLiveContext.User.Can(p) {
+				RenderErrorPage(w, r, http.StatusForbidden, ForbiddenGenericErrMsg)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 

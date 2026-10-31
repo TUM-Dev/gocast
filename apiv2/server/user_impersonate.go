@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
@@ -17,20 +15,13 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// impersonateRouteOf matches POST /api/v2/users/{id}/impersonate and returns the id.
-func impersonateRouteOf(r *http.Request) (uint, bool) {
-	if r.Method != http.MethodPost {
-		return 0, false
-	}
-	rest, ok := strings.CutPrefix(r.URL.Path, "/api/v2/users/")
-	if !ok {
-		return 0, false
-	}
-	idStr, ok := strings.CutSuffix(rest, "/impersonate")
-	if !ok {
-		return 0, false
-	}
-	id, err := strconv.ParseUint(idStr, 10, 32)
+// impersonatePath is POST /api/v2/users/{id}/impersonate.
+const impersonatePath = "POST /api/v2/users/{id}/impersonate"
+
+// impersonateIDOf reads the route's id. The pattern matches any text there, so a
+// request whose id is not a number is not this endpoint's and goes to the gateway.
+func impersonateIDOf(r *http.Request) (uint, bool) {
+	id, err := strconv.ParseUint(r.PathValue("id"), 10, 32)
 	if err != nil || id == 0 {
 		return 0, false
 	}
@@ -44,16 +35,16 @@ func impersonateRouteOf(r *http.Request) (uint, bool) {
 // Who may: whoever holds PermManageUsers, as in v1. Nothing is remembered about the
 // original account, so, as in v1, there is no way back but to sign in again; the SPA
 // says so before asking. v1 wrote no audit entry; this writes one (AuditImpersonation) naming both accounts.
-func (a *API) handleImpersonate(c *gin.Context, targetID uint) {
-	ctx := incomingContext(c.Request)
+func (a *API) handleImpersonate(w http.ResponseWriter, r *http.Request, targetID uint) {
+	ctx := incomingContext(r)
 
 	caller, err := a.getCurrent(ctx)
 	if err != nil {
-		writeUploadError(c, e.WithStatus(http.StatusUnauthorized, errors.New("sign in first")))
+		writeUploadError(w, e.WithStatus(http.StatusUnauthorized, errors.New("sign in first")))
 		return
 	}
 	if !caller.Can(model.PermManageUsers) {
-		writeUploadError(c, status.Error(codes.PermissionDenied, "not allowed to sign in as another user"))
+		writeUploadError(w, status.Error(codes.PermissionDenied, "not allowed to sign in as another user"))
 		return
 	}
 
@@ -61,10 +52,10 @@ func (a *API) handleImpersonate(c *gin.Context, targetID uint) {
 	if err != nil || target.ID == 0 {
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			a.log.Error("could not look up the user to impersonate", "err", err, "user", targetID)
-			writeUploadError(c, e.WithStatus(http.StatusInternalServerError, errors.New("could not look up the user")))
+			writeUploadError(w, e.WithStatus(http.StatusInternalServerError, errors.New("could not look up the user")))
 			return
 		}
-		writeUploadError(c, e.WithStatus(http.StatusNotFound, errors.New("user not found")))
+		writeUploadError(w, e.WithStatus(http.StatusNotFound, errors.New("user not found")))
 		return
 	}
 
@@ -74,15 +65,15 @@ func (a *API) handleImpersonate(c *gin.Context, targetID uint) {
 	// so a signed-in impersonation never goes unrecorded.
 	a.audit(ctx, model.AuditImpersonation, fmt.Sprintf("%s (%d) signed in as %s (%d)",
 		caller.GetLoginString(), caller.ID, target.GetLoginString(), target.ID))
-	tools.StartSession(c, &tools.SessionData{Userid: target.ID})
+	tools.StartSession(w, &tools.SessionData{Userid: target.ID})
 	// StartSession only logs when it cannot sign the cookie; answering success with no
 	// cookie would leave the admin believing they are someone else.
-	if c.Writer.Header().Get("Set-Cookie") == "" {
-		writeUploadError(c, e.WithStatus(http.StatusInternalServerError, errors.New("could not start a session")))
+	if w.Header().Get("Set-Cookie") == "" {
+		writeUploadError(w, e.WithStatus(http.StatusInternalServerError, errors.New("could not start a session")))
 		return
 	}
 
 	// The cookie is the response; it must not be replayed from a cache.
-	c.Header("Cache-Control", "no-store")
-	c.Status(http.StatusNoContent)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusNoContent)
 }

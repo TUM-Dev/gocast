@@ -12,8 +12,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -28,7 +26,7 @@ var staticFS embed.FS
 
 // spaFS holds the built single-page app (`pnpm --dir frontend run build` writes it to
 // web/spa). Only the directory is tracked, so a checkout without a build still
-// compiles; ConfigGinRouter refuses to start without one.
+// compiles; ConfigRouter refuses to start without one.
 //
 //go:embed all:spa
 var spaFS embed.FS
@@ -37,8 +35,9 @@ var spaFS embed.FS
 // client router decides what to render.
 const spaShellPath = "spa/index.html"
 
-// The URL grammar for /admin. gin panics when two parameters with different names
-// share a position, so these shapes are effectively permanent once a sibling exists.
+// The URL grammar for /admin. The shapes are effectively permanent once a sibling
+// exists: ServeMux panics at startup when two patterns can match the same request and
+// neither is more specific.
 //
 //  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
 //  2. Plural collections: /admin/courses/:courseID.
@@ -99,16 +98,28 @@ var spaRoutes = map[string]bool{
 //
 // A hook may also answer the request itself; see pageHandler. Hooks that need a
 // database are registered in configMainRoute rather than here.
-var spaRouteHooks = map[string]gin.HandlerFunc{
+var spaRouteHooks = map[string]pageHook{
 	// Stored server-side because an external identity provider takes the browser
 	// off-site and brings it back without the original query string.
-	"/login": SetLoginRedirectCookie,
+	"/login": prepares(SetLoginRedirectCookie),
 	// Approving hands a one-time code to a third party, so the page must not be
 	// clickable through a frame; see denyFraming.
-	"/integration/authorize/:id": denyFraming,
+	"/integration/authorize/:id": prepares(denyFraming),
 	// The shell would answer 200 for a view the client then renders as not-found; the
 	// status is what crawlers, link checkers and curl read.
 	"/w/:slug/:streamID/:version": notFoundForUnknownWatchView,
+}
+
+// pageHook runs before a page's shell is written and reports whether it answered the
+// request itself, in which case the shell is not written after it.
+type pageHook func(w http.ResponseWriter, r *http.Request) (answered bool)
+
+// prepares adapts a hook that only sets cookies or headers.
+func prepares(f func(w http.ResponseWriter, r *http.Request)) pageHook {
+	return func(w http.ResponseWriter, r *http.Request) bool {
+		f(w, r)
+		return false
+	}
 }
 
 // watchViews are the `:version` segments the watch page knows, the same four as
@@ -118,48 +129,71 @@ var watchViews = map[string]bool{"COMB": true, "PRES": true, "CAM": true, "SPLIT
 // notFoundForUnknownWatchView answers 404 (with the SPA shell, like any unowned path)
 // for a view the watch page does not have. Matched case-insensitively because the
 // client uppercases the segment before looking it up, so /w/x/1/pres plays.
-func notFoundForUnknownWatchView(c *gin.Context) {
-	if !watchViews[strings.ToUpper(c.Param("version"))] {
-		serveNotFound(c)
+func notFoundForUnknownWatchView(w http.ResponseWriter, r *http.Request) bool {
+	if watchViews[strings.ToUpper(r.PathValue("version"))] {
+		return false
 	}
+	serveNotFound(w, r)
+	return true
 }
 
 // denyFraming forbids embedding the response in another page, so a framing page cannot
 // overlay the consent buttons and have the user click them unknowingly.
 // X-Frame-Options is for browsers that predate CSP's frame-ancestors.
-func denyFraming(c *gin.Context) {
-	c.Header("X-Frame-Options", "DENY")
-	c.Header("Content-Security-Policy", "frame-ancestors 'none'")
+func denyFraming(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
 }
 
-// ConfigGinRouter mounts every page. The SPA is the only frontend, so a missing build
+// ConfigRouter mounts every page. The SPA is the only frontend, so a missing build
 // is a broken deployment: it stops the server here instead of answering every page
 // with an error.
-func ConfigGinRouter(router *gin.Engine) {
+func ConfigRouter(router *tools.Router) {
 	if _, err := readSPAShell(); err != nil {
 		panic(fmt.Errorf("no SPA build found (%w): run `make spa` (or `pnpm --dir frontend run build`) before building or starting the server", err))
 	}
 	tools.SetErrorPageRenderer(serveErrorPage)
 
-	configGinStaticRouter(router)
+	configStaticRouter(router)
 	configSPARouter(router)
 	configSaml(router, dao.NewDaoWrapper())
 	configMainRoute(router)
 }
 
 // configSPARouter mounts the SPA's hashed assets under their own prefix.
-func configSPARouter(router *gin.Engine) {
+func configSPARouter(router *tools.Router) {
 	if VersionTag != "development" {
 		assets, err := fs.Sub(spaFS, "spa")
 		if err != nil {
 			logger.Error("can't mount SPA assets", "err", err)
 			return
 		}
-		router.StaticFS("/spa-assets", http.FS(assets))
+		router.Handle("GET /spa-assets/", serveFiles("/spa-assets", http.FS(assets)))
 		return
 	}
 
-	router.Static("/spa-assets", "web/spa")
+	router.Handle("GET /spa-assets/", serveFiles("/spa-assets", http.Dir("web/spa")))
+}
+
+// serveFiles serves a directory under a URL prefix. A directory itself is a 404:
+// http.FileServer would list it, and these hold uploads and build output nobody
+// should browse.
+func serveFiles(prefix string, root http.FileSystem) http.Handler {
+	return http.StripPrefix(prefix, http.FileServer(noDirectories{root}))
+}
+
+type noDirectories struct{ http.FileSystem }
+
+func (fsys noDirectories) Open(name string) (http.File, error) {
+	f, err := fsys.FileSystem.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	if info, err := f.Stat(); err != nil || info.IsDir() {
+		_ = f.Close()
+		return nil, fs.ErrNotExist
+	}
+	return f, nil
 }
 
 // readSPAShell returns the SPA's entry document, from disk in development so a
@@ -174,35 +208,53 @@ func readSPAShell() ([]byte, error) {
 
 // serveSPAShell responds with the SPA's entry document. Written directly rather than
 // through http.FileServer, which would redirect /index.html to its directory.
-func serveSPAShell(c *gin.Context) {
+func serveSPAShell(w http.ResponseWriter, _ *http.Request) {
 	shell, err := readSPAShell()
 	if err != nil {
 		logger.Error("can't read SPA shell", "err", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// The shell names content-hashed assets from its own build, so a cached copy
 	// would ask a new binary for files it no longer has. Assets stay cacheable.
-	c.Header("Cache-Control", "no-store")
-	c.Data(http.StatusOK, "text/html; charset=utf-8", shell)
+	w.Header().Set("Cache-Control", "no-store")
+	tools.WriteData(w, http.StatusOK, "text/html; charset=utf-8", shell)
 }
 
 // registerPage registers a page route served by the SPA. A path missing from spaRoutes
 // panics at boot: the client router would not know it, and the shell would render
 // nothing.
-func registerPage(group *gin.RouterGroup, method, path string) {
+func registerPage(group *tools.Router, method, path string) {
 	handler, err := pageHandler(path)
 	if err != nil {
 		panic(err)
 	}
 
-	group.Handle(method, path, handler)
+	group.HandleFunc(method+" "+muxPattern(path), handler)
+}
+
+// muxPattern turns a path in the client router's syntax (":courseID") into a ServeMux
+// pattern ("{courseID}"). spaRoutes keeps the client's syntax because
+// spa-routes.test.ts compares the two tables as literal strings. The root is the one
+// path whose pattern differs in more than parameters: "/" alone would match every
+// path.
+func muxPattern(path string) string {
+	if path == "/" {
+		return "/{$}"
+	}
+	segments := strings.Split(path, "/")
+	for i, segment := range segments {
+		if name, ok := strings.CutPrefix(segment, ":"); ok {
+			segments[i] = "{" + name + "}"
+		}
+	}
+	return strings.Join(segments, "/")
 }
 
 // pageHandler builds the handler for a page path. Split out from registerPage so the
 // decision can be tested.
-func pageHandler(path string) (gin.HandlerFunc, error) {
+func pageHandler(path string) (http.HandlerFunc, error) {
 	if !spaRoutes[path] {
 		return nil, fmt.Errorf("page %q is not in spaRoutes; add it there and to frontend/src/router/index.ts", path)
 	}
@@ -212,24 +264,23 @@ func pageHandler(path string) (gin.HandlerFunc, error) {
 		return serveSPAShell, nil
 	}
 
-	return func(c *gin.Context) {
-		hook(c)
+	return func(w http.ResponseWriter, r *http.Request) {
 		// A hook may answer the request instead of preparing for the shell: the
-		// fresh-installation check on "/" redirects to the onboarding page and aborts.
-		// Writing the shell after that would append it to a finished response.
-		if c.IsAborted() {
+		// fresh-installation check on "/" redirects to the onboarding page. Writing the
+		// shell after that would append it to a finished response.
+		if hook(w, r) {
 			return
 		}
-		serveSPAShell(c)
+		serveSPAShell(w, r)
 	}, nil
 }
 
-func configGinStaticRouter(router *gin.Engine) {
-	router.Static("/public", tools.Cfg.Paths.Static)
+func configStaticRouter(router *tools.Router) {
+	router.Handle("GET /public/", serveFiles("/public", http.Dir(tools.Cfg.Paths.Static)))
 
 	defaults := getDefaultStaticBrandingFiles()
 	for _, file := range defaults {
-		router.GET("/"+file.Name, getFileHandler(file))
+		router.HandleFunc("GET /"+file.Name, getFileHandler(file))
 	}
 
 	// Browsers that visited before the server-rendered pages were removed still have
@@ -237,9 +288,9 @@ func configGinStaticRouter(router *gin.Engine) {
 	// registers one any more, so this answers the update check with a worker that
 	// removes itself and its caches. Do not delete the route: without it the old worker
 	// would never be replaced.
-	router.GET("/service-worker.js", func(c *gin.Context) {
-		c.Header("Cache-Control", "no-store")
-		c.Data(http.StatusOK, "text/javascript; charset=utf-8", []byte(retireServiceWorker))
+	router.HandleFunc("GET /service-worker.js", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		tools.WriteData(w, http.StatusOK, "text/javascript; charset=utf-8", []byte(retireServiceWorker))
 	})
 }
 
@@ -255,46 +306,50 @@ self.addEventListener("activate", (event) => {
 
 // newStartPage registers the four routes of the start page, all served by the SPA,
 // plus the semester redirect that predates it.
-func newStartPage(router *gin.Engine, routes *mainRoutes) {
-	registerPage(&router.RouterGroup, http.MethodGet, "/")
-	registerPage(&router.RouterGroup, http.MethodGet, "/courses/mine")
-	registerPage(&router.RouterGroup, http.MethodGet, "/courses/public")
+func newStartPage(router *tools.Router, routes *mainRoutes) {
+	registerPage(router, http.MethodGet, "/")
+	registerPage(router, http.MethodGet, "/courses/mine")
+	registerPage(router, http.MethodGet, "/courses/public")
 	// Kept as a path rather than a query parameter because it is the URL people have
 	// bookmarked; the client router matches the same shape.
-	registerPage(&router.RouterGroup, http.MethodGet, "/course/:year/:term/:slug")
+	registerPage(router, http.MethodGet, "/course/:year/:term/:slug")
 
 	// Not a page of its own: it redirects into the semester query the start page uses.
-	router.GET("/semester/:year/:term", routes.semesterRedirect)
+	router.HandleFunc("GET /semester/{year}/{term}", routes.semesterRedirect)
 }
 
 // redirectTo permanently redirects a renamed path, for bookmarks and shared links.
-func redirectTo(path string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, path)
+func redirectTo(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, path, http.StatusMovedPermanently)
 	}
 }
 
-func configMainRoute(router *gin.Engine) {
+// redirectToLectures sends an old course URL to the course's lectures tab.
+func redirectToLectures(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+"/lectures", http.StatusMovedPermanently)
+}
+
+func configMainRoute(router *tools.Router) {
 	daoWrapper := dao.NewDaoWrapper()
 	routes := mainRoutes{daoWrapper}
 	// Registered here rather than in the package-level table, which holds only hooks
 	// that need nothing but the request. Must precede the registerPage calls below.
 	spaRouteHooks["/"] = routes.onboardingIfFresh
-	streamGroup := router.Group("/")
+	streamGroup := router.Group()
 
 	// lecturers
-	atLeastLecturerGroup := router.Group("/")
-	atLeastLecturerGroup.Use(tools.RequirePermission(model.PermLecture))
+	atLeastLecturerGroup := router.Group(tools.RequirePermission(model.PermLecture))
 	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin")
 	registerPage(atLeastLecturerGroup, http.MethodGet, "/admin/create-course")
 
 	// info-pages. Public, so no middleware; the rows are getInfoPage's business now.
-	registerPage(&router.RouterGroup, http.MethodGet, "/privacy")
-	registerPage(&router.RouterGroup, http.MethodGet, "/imprint")
-	registerPage(&router.RouterGroup, http.MethodGet, "/about")
+	registerPage(router, http.MethodGet, "/privacy")
+	registerPage(router, http.MethodGet, "/imprint")
+	registerPage(router, http.MethodGet, "/about")
 
 	// Public: anonymous callers search public courses; the page itself asks v2.
-	registerPage(&router.RouterGroup, http.MethodGet, "/search")
+	registerPage(router, http.MethodGet, "/search")
 
 	// admins
 	//
@@ -304,8 +359,7 @@ func configMainRoute(router *gin.Engine) {
 	//
 	// Split by what each page administers. Both permissions belong to admins today;
 	// the distinction is what makes an operator role a change to the role table.
-	serverAdminGroup := router.Group("/")
-	serverAdminGroup.Use(tools.RequirePermission(model.PermAdministerServer))
+	serverAdminGroup := router.Group(tools.RequirePermission(model.PermAdministerServer))
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/lecture-halls/new")
 	registerPage(serverAdminGroup, http.MethodGet, "/admin/runners")
@@ -320,8 +374,7 @@ func configMainRoute(router *gin.Engine) {
 
 	// Accounts and their API tokens. dao.GetAllTokens already scopes its rows on the
 	// same permission.
-	userAdminGroup := router.Group("/")
-	userAdminGroup.Use(tools.RequirePermission(model.PermManageUsers))
+	userAdminGroup := router.Group(tools.RequirePermission(model.PermManageUsers))
 	registerPage(userAdminGroup, http.MethodGet, "/admin/users")
 	registerPage(userAdminGroup, http.MethodGet, "/admin/token")
 
@@ -332,12 +385,10 @@ func configMainRoute(router *gin.Engine) {
 		"/admin/lectureHalls/new": "/admin/lecture-halls/new",
 		"/admin/infopages":        "/admin/info-pages",
 	} {
-		router.GET(from, redirectTo(to))
+		router.HandleFunc("GET "+from, redirectTo(to))
 	}
 
-	courseAdminGroup := router.Group("/")
-	courseAdminGroup.Use(tools.InitCourse(daoWrapper))
-	courseAdminGroup.Use(tools.AdminOfCourse)
+	courseAdminGroup := router.Group(tools.InitCourse(daoWrapper), tools.AdminOfCourse)
 	// The first page on rule 2's plural path. The edit-course page's statistics tab
 	// shows the same thing; that tab becomes this route when the page migrates.
 	registerPage(courseAdminGroup, http.MethodGet, "/admin/courses/:courseID/stats")
@@ -350,56 +401,49 @@ func configMainRoute(router *gin.Engine) {
 	// Outside the course group, like the redirects above: the destination checks.
 	// The server-rendered course page opened on its lectures tab; a fragment such as
 	// #lecture-li-7 never reaches the server, so it is lost here.
-	router.GET("/admin/course/:courseID", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
-	})
-	router.GET("/admin/course/:courseID/stats", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/stats")
+	router.HandleFunc("GET /admin/course/{courseID}", redirectToLectures)
+	router.HandleFunc("GET /admin/course/{courseID}/stats", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+"/stats", http.StatusMovedPermanently)
 	})
 	// The lecture cut editor was dropped (it may return later), so old bookmarks and
 	// emailed links go to the course's lectures tab. This must
 	// stay behind courseAdminGroup's middleware so the redirect doesn't reveal anything
 	// to people who couldn't open the page before. Stored cuts (StartOffset/EndOffset)
 	// still apply on playback.
-	courseAdminGroup.GET("/admin/cut/:courseID/:streamID", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
-	})
+	courseAdminGroup.HandleFunc("GET /admin/cut/{courseID}/{streamID}", redirectToLectures)
 	// Lecture units were dropped too; both of the page's URLs redirect the same way,
 	// behind the same middleware and for the same reason.
-	for _, path := range []string{
-		"/admin/units/:courseID/:streamID",
-		"/admin/courses/:courseID/lectures/:streamID/units",
+	for _, pattern := range []string{
+		"GET /admin/units/{courseID}/{streamID}",
+		"GET /admin/courses/{courseID}/lectures/{streamID}/units",
 	} {
-		courseAdminGroup.GET(path, func(c *gin.Context) {
-			c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+"/lectures")
-		})
+		courseAdminGroup.HandleFunc(pattern, redirectToLectures)
 	}
-	router.GET("/admin/stats/:courseID/:streamID", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
-			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/stats")
+	router.HandleFunc("GET /admin/stats/{courseID}/{streamID}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+
+			"/lectures/"+url.PathEscape(r.PathValue("streamID"))+"/stats", http.StatusMovedPermanently)
 	})
 
-	withStream := courseAdminGroup.Group("/")
-	withStream.Use(tools.InitStream(daoWrapper))
+	withStream := courseAdminGroup.Group(tools.InitStream(daoWrapper))
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats")
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/live")
 	// The old management URL, which lecturers have bookmarked and the old watch page
 	// linked to. Behind the same middleware as the page, so it reveals nothing the page
 	// would not.
-	withStream.GET("/admin/management/:courseID/:streamID", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/admin/courses/"+url.PathEscape(c.Param("courseID"))+
-			"/lectures/"+url.PathEscape(c.Param("streamID"))+"/live")
+	withStream.HandleFunc("GET /admin/management/{courseID}/{streamID}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+
+			"/lectures/"+url.PathEscape(r.PathValue("streamID"))+"/live", http.StatusMovedPermanently)
 	})
 
 	// login/logout/password-mgmt
-	router.POST("/login", routes.LoginHandler)
-	registerPage(&router.RouterGroup, http.MethodGet, "/login")
+	router.HandleFunc("POST /login", routes.LoginHandler)
+	registerPage(router, http.MethodGet, "/login")
 	// Public: the page itself finds out from getFrontendConfig whether it still applies.
-	registerPage(&router.RouterGroup, http.MethodGet, "/onboarding")
-	router.GET("/logout", routes.LogoutPage)
+	registerPage(router, http.MethodGet, "/onboarding")
+	router.HandleFunc("GET /logout", routes.LogoutPage)
 	// The key in the link is the credential; the page asks v2 whether it is still good.
-	registerPage(&router.RouterGroup, http.MethodGet, "/setPassword/:resetKey")
+	registerPage(router, http.MethodGet, "/setPassword/:resetKey")
 
 	// home & course pages
 	newStartPage(router, &routes)
@@ -417,16 +461,15 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(streamGroup, http.MethodGet, "/w/:slug/:streamID/chat")
 
 	// misc
-	router.GET("/healthcheck", routes.HealthCheck)
-	router.GET("/jwtPubKey", routes.JWTPubKey)
+	router.HandleFunc("GET /healthcheck", routes.HealthCheck)
+	router.HandleFunc("GET /jwtPubKey", routes.JWTPubKey)
 
-	router.GET("/:shortLink", routes.shortLinkOrInfoPage)
+	router.HandleFunc("GET /{shortLink}", routes.shortLinkOrInfoPage)
 	// The course token in the mailed link is the credential; both pages ask v2 for it.
-	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course")
-	registerPage(&router.RouterGroup, http.MethodGet, "/edit-course/opt-out")
+	registerPage(router, http.MethodGet, "/edit-course")
+	registerPage(router, http.MethodGet, "/edit-course/opt-out")
 
-	loggedIn := router.Group("/")
-	loggedIn.Use(tools.LoggedIn)
+	loggedIn := router.Group(tools.LoggedIn)
 	// The consent page; the decision is the v2 decideIntegrationAuthorization RPC.
 	registerPage(loggedIn, http.MethodGet, "/integration/authorize/:id")
 	// The auth middleware stays on the route even when the SPA serves it, so an
@@ -435,34 +478,34 @@ func configMainRoute(router *gin.Engine) {
 	registerPage(loggedIn, http.MethodGet, "/settings")
 
 	// redirect from old site:
-	router.GET("/cgi-bin/streams/*x", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/")
+	router.HandleFunc("GET /cgi-bin/streams/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusFound)
 	})
 
-	router.NoRoute(serveNotFound)
+	router.NotFound(http.HandlerFunc(serveNotFound))
 }
 
 // serveNotFound is the 404 for a path nothing owns.
-func serveNotFound(c *gin.Context) {
-	tools.RenderErrorPage(c, http.StatusNotFound, tools.PageNotFoundErrMsg)
+func serveNotFound(w http.ResponseWriter, r *http.Request) {
+	tools.RenderErrorPage(w, r, http.StatusNotFound, tools.PageNotFoundErrMsg)
 }
 
 // serveErrorPage answers a page request with the SPA shell and the given status. The
 // status and message ride along in meta tags, which the client reads to render the
 // error instead of the route (frontend/src/lib/server-error.ts). The shell alone would
 // render whatever page the URL names, for a request the server just refused.
-func serveErrorPage(c *gin.Context, status int, message string) {
+func serveErrorPage(w http.ResponseWriter, _ *http.Request, status int, message string) {
 	shell, err := readSPAShell()
 	if err != nil {
 		logger.Error("can't read SPA shell", "err", err)
-		c.String(status, message)
+		tools.WriteText(w, status, message)
 		return
 	}
 	meta := fmt.Sprintf(`<meta name="gocast-error-status" content="%d"><meta name="gocast-error-message" content="%s">`,
 		status, html.EscapeString(message))
 	shell = bytes.Replace(shell, []byte("</head>"), []byte(meta+"</head>"), 1)
-	c.Header("Cache-Control", "no-store")
-	c.Data(status, "text/html; charset=utf-8", shell)
+	w.Header().Set("Cache-Control", "no-store")
+	tools.WriteData(w, status, "text/html; charset=utf-8", shell)
 }
 
 type mainRoutes struct {
@@ -476,36 +519,36 @@ type mainRoutes struct {
 // This stays server-side because the shell would otherwise render the start page for
 // a moment before finding out. The onboarding page itself asks GetFrontendConfig,
 // which reports the same flag, so it can refuse once an account exists.
-func (r mainRoutes) onboardingIfFresh(c *gin.Context) {
-	isFresh, err := IsFreshInstallation(c, r.UsersDao)
+func (r mainRoutes) onboardingIfFresh(w http.ResponseWriter, req *http.Request) bool {
+	isFresh, err := IsFreshInstallation(req.Context(), r.UsersDao)
 	if err != nil {
 		logger.Error("can't check for a fresh installation", "err", err)
-		tools.RenderErrorPage(c, http.StatusInternalServerError, "Something went wrong. Please try again.")
-		return
+		tools.RenderErrorPage(w, req, http.StatusInternalServerError, "Something went wrong. Please try again.")
+		return true
 	}
 	if !isFresh {
-		return
+		return false
 	}
 
-	c.Redirect(http.StatusFound, "/onboarding")
-	c.Abort()
+	http.Redirect(w, req, "/onboarding", http.StatusFound)
+	return true
 }
 
-func (r mainRoutes) semesterRedirect(c *gin.Context) {
-	c.Redirect(http.StatusFound,
-		fmt.Sprintf("/?year=%s&term=%s", c.Param("year"), c.Param("term")))
+func (r mainRoutes) semesterRedirect(w http.ResponseWriter, req *http.Request) {
+	http.Redirect(w, req,
+		fmt.Sprintf("/?year=%s&term=%s", req.PathValue("year"), req.PathValue("term")), http.StatusFound)
 }
 
-func (r mainRoutes) HealthCheck(context *gin.Context) {
+func (r mainRoutes) HealthCheck(w http.ResponseWriter, _ *http.Request) {
 	resp := HealthCheckData{
 		Version:      VersionTag,
 		CacheMetrics: CacheMetrics{Hits: dao.Cache.Metrics.Hits(), Misses: dao.Cache.Metrics.Misses(), KeysAdded: dao.Cache.Metrics.KeysAdded()},
 	}
-	context.JSON(http.StatusOK, resp)
+	tools.WriteJSON(w, http.StatusOK, resp)
 }
 
-func (r mainRoutes) JWTPubKey(c *gin.Context) {
-	c.JSON(http.StatusOK, tools.Cfg.GetJWTKey().PublicKey)
+func (r mainRoutes) JWTPubKey(w http.ResponseWriter, _ *http.Request) {
+	tools.WriteJSON(w, http.StatusOK, tools.Cfg.GetJWTKey().PublicKey)
 }
 
 type HealthCheckData struct {
@@ -535,18 +578,18 @@ func getDefaultStaticBrandingFiles() []staticFile {
 	}
 }
 
-func getFileHandler(file staticFile) gin.HandlerFunc {
+func getFileHandler(file staticFile) http.HandlerFunc {
 	pathToFile := path.Join(tools.Cfg.Paths.Branding, file.Name)
 	_, err := os.Stat(pathToFile)
 	if tools.Cfg.Paths.Branding != "" && err == nil {
 		// Use customized file without embedded FS
-		return func(c *gin.Context) {
-			c.File(pathToFile)
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, pathToFile)
 		}
 	}
 	// Use Default with embedded FS
 	// p := file.Path // Copy bc. file is pointer
-	return func(c *gin.Context) {
-		c.FileFromFS(file.Path, http.FS(staticFS))
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(w, r, staticFS, file.Path)
 	}
 }

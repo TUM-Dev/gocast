@@ -15,8 +15,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/soheilhy/cmux"
 	"golang.org/x/sync/errgroup"
@@ -246,29 +244,26 @@ func initAll(initializers []initializer) {
 	}
 }
 
+// newRouter mounts everything the web port serves. There is no compression here: the
+// reverse proxy in front compresses.
+//
+// ServeMux panics when two patterns can match one request and neither is more
+// specific, and the apiv2 and web routes only meet here; TestNewRouter registers them
+// together so a conflict fails a test instead of the boot.
+func newRouter(api2Client *apiv2.API) *tools.Router {
+	router := tools.NewRouter()
+	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+	router.Handle("/api/v2/", api2Client.Handler())
+	api2Client.RegisterLegacyRoutes(router)
+	web.ConfigRouter(router)
+	return router
+}
+
 // serveHttp launches all http servers
 func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service, subtitles pb.SubtitleGeneratorClient, hub realtimehub.Hub) (err error) {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	gin.SetMode(gin.ReleaseMode)
 	if VersionTag != "development" {
 		tools.CookieSecure = true
 	}
-
-	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		if param.StatusCode >= 400 && VersionTag == "development" {
-			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-				param.TimeStamp.Format(time.DateTime),
-				param.StatusCode,
-				param.ClientIP,
-				param.Path,
-				param.Request.UserAgent(),
-			)
-		}
-		return ""
-	}))
-
-	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
@@ -316,15 +311,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		return api2Client.Run(grpcl)
 	})
 
-	// The v2 realtime socket is served by the /api/v2/*any route below, so it cannot be
-	// registered ahead of gzip: gin refuses a static route beside that catch-all. It is
-	// excluded by path instead.
-	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
-	router.Any("/api/v2/*any", api2Client.Proxy())
-	api2Client.RegisterLegacyRoutes(router)
-	web.ConfigGinRouter(router)
 	g.Go(func() error {
-		return router.RunListener(httpl)
+		return http.Serve(httpl, newRouter(api2Client))
 	})
 
 	g.Go(func() error {

@@ -9,10 +9,8 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -141,76 +139,85 @@ func (a *API) Run(lis net.Listener) error {
 	return grpcServer.Serve(lis)
 }
 
-// Proxy returns a gin handler that proxies requests to the grpc gateway server
-func (a *API) Proxy() func(c *gin.Context) {
+// Handler serves everything under /api/v2/: the gateway, which turns the REST surface
+// into calls on the RPC server, and beside it the endpoints that cannot be RPCs.
+func (a *API) Handler() http.Handler {
 	// setup muxing
-	mux := runtime.NewServeMux()
+	gateway := runtime.NewServeMux()
 	// DEPRECATED: opts := []grpc.DialOption{grpc.WithInsecure()}
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	// Every service registers onto the same mux, so the REST surface stays one flat
 	// set of paths however the services are cut.
 	for _, svc := range services {
-		if err := svc.gateway(context.Background(), mux, ":8081", opts); err != nil {
+		if err := svc.gateway(context.Background(), gateway, ":8081", opts); err != nil {
 			a.log.With("err", err, "service", svc.desc.ServiceName).Error("can't register grpc handler")
 			os.Exit(1)
 		}
 	}
+	rpc := http.StripPrefix("/api/v2", gateway)
 
-	// actual proxy method forwards the request to the grpc gateway server
-	return func(c *gin.Context) {
-		if c.Request.Method == http.MethodGet && strings.HasPrefix(c.Request.URL.Path, "/api/v2/docs") {
-			a.handleDocs(c)
+	mux := http.NewServeMux()
+	// Whatever is not claimed below is an RPC.
+	mux.Handle("/api/v2/", rpc)
+	mux.HandleFunc("GET /api/v2/docs", a.handleDocs)
+	mux.HandleFunc("GET /api/v2/docs/", a.handleDocs)
+	// Beside the gateway rather than through it: it reads a cookie, which the
+	// gateway deliberately abstracts away.
+	mux.HandleFunc("/api/v2/auth/token", a.handleAuthToken)
+	// A websocket; the gateway cannot serve one.
+	mux.HandleFunc(RealtimePath, a.serveRealtime)
+
+	// Beside the gateway too, each for what an RPC cannot do. A pattern matches any
+	// text where the path has an id, so a request whose id is no number is handed on
+	// to the gateway, which answers it as it answers any other unknown path.
+	//
+	// It sets a session cookie.
+	mux.HandleFunc(impersonatePath, func(w http.ResponseWriter, r *http.Request) {
+		id, ok := impersonateIDOf(r)
+		if !ok {
+			rpc.ServeHTTP(w, r)
 			return
 		}
-		// Beside the gateway rather than through it: it reads a cookie, which the
-		// gateway deliberately abstracts away.
-		if c.Request.URL.Path == "/api/v2/auth/token" {
-			a.handleAuthToken(c)
-			return
-		}
-		// Beside the gateway too: it sets a session cookie, which an RPC cannot.
-		if id, ok := impersonateRouteOf(c.Request); ok {
-			a.handleImpersonate(c, id)
-			return
-		}
-		// Beside the gateway too: it answers text/calendar from a path with a file name.
-		if route, ok := courseCalendarRouteOf(c.Request); ok {
-			a.handleCourseCalendar(c, route.year, route.term, route.slug)
-			return
-		}
-		// Beside the gateway too: webhook and calendar-feed endpoints that predate it.
-		if a.legacyRoutes(c) {
-			return
-		}
-		// Beside the gateway too: it cannot take a multipart body.
-		if route, ok := lectureUploadRouteOf(c.Request); ok {
-			a.handleLectureUpload(c, route)
-			return
-		}
-		// Beside the gateway too: it streams a file, with Range, which the gateway's
-		// unary responses cannot.
-		if route, ok := streamFileRouteOf(c.Request); ok {
-			a.handleStreamFile(c, route)
-			return
-		}
-		// A websocket; the gateway cannot serve one. Must stay outside gzip, see main.
-		if c.Request.URL.Path == RealtimePath {
-			a.serveRealtime(c.Writer, c.Request)
-			return
-		}
-		http.StripPrefix("/api/v2", mux).ServeHTTP(c.Writer, c.Request)
+		a.handleImpersonate(w, r, id)
+	})
+	// It answers text/calendar from a path with a file name.
+	mux.HandleFunc(courseCalendarPath, a.handleCourseCalendar)
+	// It cannot take a multipart body.
+	for _, kind := range []string{uploadAttachment, uploadThumbnail, uploadMedia} {
+		mux.HandleFunc(lectureUploadPathPrefix+kind, func(w http.ResponseWriter, r *http.Request) {
+			route, ok := lectureUploadRouteOf(r, kind)
+			if !ok {
+				rpc.ServeHTTP(w, r)
+				return
+			}
+			a.handleLectureUpload(w, r, route)
+		})
 	}
+	// It streams a file, with Range, which the gateway's unary responses cannot.
+	mux.HandleFunc(streamFilePath, func(w http.ResponseWriter, r *http.Request) {
+		route, ok := streamFileRouteOf(r)
+		if !ok {
+			rpc.ServeHTTP(w, r)
+			return
+		}
+		a.handleStreamFile(w, r, route)
+	})
+	// The v2 addresses of the routes of the retired v1 API; see RegisterLegacyRoutes.
+	mux.HandleFunc(selfStreamPublishPath, a.handleSelfStreamPublish)
+	mux.HandleFunc(tokenProxyPath, a.handleTokenProxy)
+	mux.HandleFunc(lectureHallSchedule, a.handleLectureHallSchedule)
+	return mux
 }
 
 //go:embed docs
 var openApiJson embed.FS
 
 // handleDocs serves the openapi.json file and the swagger ui
-func (a *API) handleDocs(c *gin.Context) {
+func (a *API) handleDocs(w http.ResponseWriter, r *http.Request) {
 	httpFs := http.FS(openApiJson)
 	fileServer := http.FileServer(httpFs)
-	http.StripPrefix("/api/v2", fileServer).ServeHTTP(c.Writer, c.Request)
+	http.StripPrefix("/api/v2", fileServer).ServeHTTP(w, r)
 }
 
 // HealthCheck returns ok

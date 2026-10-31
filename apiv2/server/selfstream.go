@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/model"
 )
 
@@ -40,11 +38,11 @@ type onStartReq struct {
 // handleSelfStreamPublish is the mediamtx ingest server's authHTTPAddress webhook
 // (ingest/mediamtx.yml), asked to approve every RTMP publish: a 2xx lets it through.
 // Any action other than "publish" is approved without a check, as in v1.
-func (a *API) handleSelfStreamPublish(c *gin.Context) {
+func (a *API) handleSelfStreamPublish(w http.ResponseWriter, r *http.Request) {
 	var req onStartReq
-	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		a.log.Warn("Bad request when trying to onPublish")
-		c.AbortWithStatus(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -54,28 +52,28 @@ func (a *API) handleSelfStreamPublish(c *gin.Context) {
 
 	streamKey, slug, err := mustGetStreamInfo(req)
 	if err != nil {
-		a.log.With("request", c.Request.Form).With("err", err).Warn("onPublish: bad request")
-		c.AbortWithStatus(http.StatusBadRequest)
+		a.log.With("request", r.Form).With("err", err).Warn("onPublish: bad request")
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	stream, err := a.dao.StreamsDao.GetStreamByKey(c, streamKey)
+	stream, err := a.dao.StreamsDao.GetStreamByKey(r.Context(), streamKey)
 	if err != nil {
 		a.log.Error("onPublish: failed to get stream key")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	course, err := a.dao.CoursesDao.GetCourseById(c, stream.CourseID)
+	course, err := a.dao.CoursesDao.GetCourseById(r.Context(), stream.CourseID)
 	if err != nil {
 		a.log.Error("onPublish: failed to get course id")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if slug != fmt.Sprintf("%s-%d", course.Slug, stream.ID) {
 		a.log.Error("onPublish: slug mismatch")
-		c.AbortWithStatus(http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -85,15 +83,17 @@ func (a *API) handleSelfStreamPublish(c *gin.Context) {
 
 	if a.selfStreams == nil {
 		a.log.Error("onPublish: no runner manager configured")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if err := a.selfStreams.RequestSelfStream(c, stream); err != nil {
+	// Not the request's context: the caller may hang up before the runners answer, and
+	// a stream half-started because of it is worse than one started for nobody.
+	if err := a.selfStreams.RequestSelfStream(context.WithoutCancel(r.Context()), stream); err != nil {
 		a.log.Error("Failed to start stream on runners")
-		c.AbortWithStatus(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	c.Status(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
 
 // mustGetStreamInfo gets the stream key and slug from mediamtx requests; the error says what is wrong.

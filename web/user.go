@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
@@ -16,9 +14,9 @@ import (
 
 const redirCookieName = "redirURL"
 
-func (r mainRoutes) LoginHandler(c *gin.Context) {
-	username := c.Request.FormValue("username")
-	password := c.Request.FormValue("password")
+func (r mainRoutes) LoginHandler(w http.ResponseWriter, req *http.Request) {
+	username := req.FormValue("username")
+	password := req.FormValue("password")
 
 	var (
 		data *tools.SessionData
@@ -26,13 +24,13 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	)
 
 	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
-		HandleValidLogin(c, data)
+		HandleValidLogin(w, req, data)
 		return
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
 		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
-			HandleValidLogin(c, data)
+			HandleValidLogin(w, req, data)
 			return
 		} else if err != tum.ErrLdapBadAuth {
 			logger.Error("Login error", "err", err)
@@ -43,27 +41,27 @@ func (r mainRoutes) LoginHandler(c *gin.Context) {
 	// served by the SPA, which would otherwise be replaced mid-flow by a
 	// server-rendered page. The redirect URL cookie set by LoginPage survives this, so
 	// the user still lands where they were headed once they get their password right.
-	c.Redirect(http.StatusFound, "/login?"+loginErrorQuery+"=1")
+	http.Redirect(w, req, "/login?"+loginErrorQuery+"=1", http.StatusFound)
 }
 
 // loginErrorQuery marks a failed login attempt when redirecting back to the login page.
 const loginErrorQuery = "error"
 
 // HandleValidLogin starts a session and redirects the user to the page they were trying to access.
-func HandleValidLogin(c *gin.Context, data *tools.SessionData) {
-	tools.StartSession(c, data)
-	redirURL, err := c.Cookie(redirCookieName)
+func HandleValidLogin(w http.ResponseWriter, r *http.Request, data *tools.SessionData) {
+	tools.StartSession(w, data)
+	redirURL, err := tools.Cookie(r, redirCookieName)
 	if err != nil {
 		redirURL = "/" // Fallback in case no cookie is present: Redirect to index page
 	} else {
 		// Delete cookie that was used for saving the redirURL.
-		c.SetCookie(redirCookieName, "", -1, "/", "", tools.CookieSecure, true)
+		tools.SetCookie(w, redirCookieName, "", -1, tools.CookieSecure)
 	}
-	c.Redirect(http.StatusFound, redirURL)
+	http.Redirect(w, r, redirURL, http.StatusFound)
 }
 
-func getRedirectUrl(c *gin.Context) (*url.URL, error) {
-	ret := c.Query("return")
+func getRedirectUrl(r *http.Request) (*url.URL, error) {
+	ret := r.URL.Query().Get("return")
 	if ret != "" {
 		red, err := url.QueryUnescape(ret)
 		if err == nil {
@@ -131,9 +129,9 @@ func recordLogin(usersDao dao.UsersDao, uid uint) {
 // internal form and an external identity provider, because an external login leaves
 // the site entirely and comes back without the original query string. It is exported
 // so that the route serving the SPA login page keeps the same behaviour.
-func SetLoginRedirectCookie(c *gin.Context) {
+func SetLoginRedirectCookie(w http.ResponseWriter, r *http.Request) {
 	redirUrlStr := "/"
-	redirURL, err := getRedirectUrl(c)
+	redirURL, err := getRedirectUrl(r)
 	if err == nil && redirURL.Scheme == "" && redirURL.Host == "" {
 		redirUrlStr = redirURL.String()
 	}
@@ -141,11 +139,11 @@ func SetLoginRedirectCookie(c *gin.Context) {
 	// Only set cookie if (potentially) needed.
 	if !strings.HasSuffix(redirUrlStr, "/") && !strings.HasSuffix(redirUrlStr, "/login") {
 		// Use 10 minutes for expiry as the user may not login immediately. The cookie is deleted after login.
-		c.SetCookie(redirCookieName, redirUrlStr, 600, "/", "", tools.CookieSecure, true)
+		tools.SetCookie(w, redirCookieName, redirUrlStr, 600, tools.CookieSecure)
 	}
 }
 
-func (r mainRoutes) LogoutPage(c *gin.Context) {
-	c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
-	c.Redirect(http.StatusFound, "/")
+func (r mainRoutes) LogoutPage(w http.ResponseWriter, req *http.Request) {
+	tools.SetCookie(w, "jwt", "", -1, tools.CookieSecure)
+	http.Redirect(w, req, "/", http.StatusFound)
 }

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -99,16 +98,4 @@ type Audit struct {
 	// soft-deleted and their history should outlive them.
 	CourseID *uint `gorm:"index"`
 	StreamID *uint
-}
-
-// Json converts the audit into a json object consumed by apis
-func (a Audit) Json() gin.H {
-	return gin.H{
-		"type":      a.Type.String(),
-		"createdAt": a.CreatedAt.Format("Jan 02, 2006: 15:04:05"),
-		"id":        a.ID,
-		"message":   a.Message,
-		"userID":    a.UserID,
-		"userName":  a.User.GetLoginString(),
-	}
 }

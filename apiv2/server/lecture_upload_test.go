@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
@@ -19,22 +18,28 @@ import (
 )
 
 func TestLectureUploadRouteOf(t *testing.T) {
-	for path, want := range map[string]*lectureUploadRoute{
-		"/api/v2/courses/1/streams/7/attachments":   {courseID: 1, streamID: 7, kind: uploadAttachment},
-		"/api/v2/courses/1/streams/7/thumbnail":     {courseID: 1, streamID: 7, kind: uploadThumbnail},
-		"/api/v2/courses/1/streams/7/sections":      nil,
-		"/api/v2/courses/1/streams/7/attachments/5": nil,
-		"/api/v2/courses/x/streams/7/attachments":   nil,
-		"/api/v2/courses/1/lectures/7/thumbnail":    nil,
-		"/api/v2/courses/1/streams/7":               nil,
-	} {
-		got, ok := lectureUploadRouteOf(httptest.NewRequest(http.MethodPost, path, nil))
-		if (want == nil) == ok || (want != nil && got != *want) {
-			t.Errorf("%s: got %+v, %v; want %+v", path, got, ok, want)
+	for _, kind := range []string{uploadAttachment, uploadThumbnail} {
+		route := func(r *http.Request) (lectureUploadRoute, bool) { return lectureUploadRouteOf(r, kind) }
+		got, ok := routed(lectureUploadPathPrefix+kind, http.MethodPost, "/api/v2/courses/1/streams/7/"+kind, route)
+		if !ok || got != (lectureUploadRoute{courseID: 1, streamID: 7, kind: kind}) {
+			t.Errorf("%s: got %+v, %v", kind, got, ok)
+		}
+		for _, path := range []string{
+			"/api/v2/courses/1/streams/7/" + kind + "/5",
+			"/api/v2/courses/x/streams/7/" + kind,
+			"/api/v2/courses/1/lectures/7/" + kind,
+		} {
+			if _, ok := routed(lectureUploadPathPrefix+kind, http.MethodPost, path, route); ok {
+				t.Errorf("%s matched as %s", path, kind)
+			}
 		}
 	}
-	if _, ok := lectureUploadRouteOf(httptest.NewRequest(http.MethodDelete, "/api/v2/courses/1/streams/7/thumbnail", nil)); ok {
+	thumbnail := func(r *http.Request) (lectureUploadRoute, bool) { return lectureUploadRouteOf(r, uploadThumbnail) }
+	if _, ok := routed(lectureUploadPathPrefix+uploadThumbnail, http.MethodDelete, "/api/v2/courses/1/streams/7/thumbnail", thumbnail); ok {
 		t.Error("DELETE of the thumbnail is the RPC's")
+	}
+	if _, ok := routed(lectureUploadPathPrefix+uploadThumbnail, http.MethodPost, "/api/v2/courses/1/streams/7/sections", thumbnail); ok {
+		t.Error("another path under the stream is not an upload")
 	}
 }
 
@@ -64,27 +69,10 @@ func uploadRequest(t *testing.T, path string, user *model.User, filename, conten
 }
 
 func serveUpload(api *API, req *http.Request) *httptest.ResponseRecorder {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Any("/api/v2/*any", func(c *gin.Context) {
-		route, ok := lectureUploadRouteOf(c.Request)
-		if !ok {
-			c.Status(http.StatusTeapot)
-			return
-		}
-		api.handleLectureUpload(c, route)
-	})
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(closeNotifyingRecorder{rec}, req)
+	api.Handler().ServeHTTP(rec, req)
 	return rec
 }
-
-// closeNotifyingRecorder lets the media upload's reverse proxy run against a
-// recorder: it asks gin's writer for CloseNotify, which gin passes on to the
-// underlying writer and panics if that has none. A server's writer has.
-type closeNotifyingRecorder struct{ *httptest.ResponseRecorder }
-
-func (closeNotifyingRecorder) CloseNotify() <-chan bool { return make(chan bool) }
 
 // filesUnder lists every file below dir.
 func filesUnder(t *testing.T, dir string) []string {
