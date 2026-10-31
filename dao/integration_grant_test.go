@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -306,4 +307,145 @@ func TestIntegrationUploadOwnership(t *testing.T) {
 	require.NoError(t, db.Model(&model.IntegrationRecording{}).Where("external_ref = ?", "reference-a-0000").Update("closed", true).Error)
 	_, err = d.GetIntegrationGrantStream(ctx, 10, 1, stream.ID)
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+}
+
+func TestIntegrationUploadTicketIsUsedOnceWhileEverythingStillHolds(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.AutoMigrate(&model.Course{}, &model.Integration{}, &model.IntegrationGrant{}, &model.IntegrationRecording{}))
+	if err := db.Migrator().CreateTable(&model.Stream{}); err != nil {
+		require.True(t, db.Migrator().HasTable(&model.Stream{}), err)
+	}
+	require.NoError(t, db.Create(&model.Course{Model: gorm.Model{ID: 1}, Name: "One", Slug: "one"}).Error)
+	require.NoError(t, db.Create(&model.Integration{ID: 1, Name: "Course portal", ReturnURL: "https://artemis.example/callback", APIKeyHash: bytes.Repeat([]byte{7}, 32)}).Error)
+	require.NoError(t, db.Create(&model.IntegrationGrant{ID: 10, IntegrationID: 1, CourseID: 1}).Error)
+	d := integrationGrantDao{db: db}
+	ctx, now := context.Background(), time.Now()
+	hash := func(b byte) []byte { return bytes.Repeat([]byte{b}, 32) }
+	upload := func(ref string, ticket byte) model.Stream {
+		stream, _, err := d.CreateIntegrationUpload(ctx, 1, 10, ref, model.Stream{Name: ref}, hash(ticket), now.Add(10*time.Minute))
+		require.NoError(t, err)
+		return stream
+	}
+
+	stream := upload("reference-a-0000", 1)
+	upload("reference-a-0000", 2)
+	_, err = d.ConsumeIntegrationUploadTicket(ctx, hash(1), now)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "a renewed ticket replaces the old one")
+	returnURL, err := d.GetIntegrationUploadReturnURL(ctx, hash(2), now)
+	require.NoError(t, err)
+	require.Equal(t, "https://artemis.example/callback", returnURL)
+	_, err = d.GetIntegrationUploadReturnURL(ctx, hash(2), now.Add(11*time.Minute))
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "expired ticket")
+	_, err = d.ConsumeIntegrationUploadTicket(ctx, hash(2), now.Add(11*time.Minute))
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "expired ticket")
+
+	used, err := d.ConsumeIntegrationUploadTicket(ctx, hash(2), now)
+	require.NoError(t, err)
+	require.Equal(t, stream.ID, used.ID)
+	_, err = d.ConsumeIntegrationUploadTicket(ctx, hash(2), now)
+	require.ErrorIs(t, err, gorm.ErrRecordNotFound, "one use")
+	_, _, err = d.CreateIntegrationUpload(ctx, 1, 10, "reference-a-0000", model.Stream{}, hash(3), now.Add(time.Minute))
+	require.ErrorIs(t, err, ErrIntegrationUploadRefused, "one lecture takes one upload")
+
+	ticket := byte(10)
+	for name, breakIt := range map[string]func(model.Stream){
+		"closed reference": func(s model.Stream) {
+			require.NoError(t, db.Model(&model.IntegrationRecording{}).Where("stream_id = ?", s.ID).Update("closed", true).Error)
+		},
+		"deleted lecture": func(s model.Stream) { require.NoError(t, db.Delete(&model.Stream{}, s.ID).Error) },
+		"revoked API key": func(model.Stream) {
+			require.NoError(t, db.Model(&model.Integration{}).Where("id = 1").Update("api_key_hash", nil).Error)
+		},
+		"revoked grant": func(model.Stream) {
+			require.NoError(t, db.Model(&model.IntegrationGrant{}).Where("id = 10").Update("revoked_at", now).Error)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.NoError(t, db.Model(&model.Integration{}).Where("id = 1").Update("api_key_hash", hash(7)).Error)
+			require.NoError(t, db.Model(&model.IntegrationGrant{}).Where("id = 10").Update("revoked_at", nil).Error)
+			ticket++
+			breakIt(upload("reference-"+strings.ReplaceAll(name, " ", "-"), ticket))
+			_, err := d.ConsumeIntegrationUploadTicket(ctx, hash(ticket), now)
+			require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+		})
+	}
+}
+
+func TestIntegrationUploadsAreSerializedOnMariaDB(t *testing.T) {
+	dsn := os.Getenv("TEST_MYSQL_DSN")
+	if dsn == "" {
+		t.Skip("TEST_MYSQL_DSN is not set")
+	}
+	prefix := fmt.Sprintf("u1_%d_", time.Now().UnixNano())
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{NamingStrategy: schema.NamingStrategy{TablePrefix: prefix}})
+	require.NoError(t, err)
+	tables := []any{&model.Course{}, &model.Stream{}, &model.Integration{}, &model.IntegrationGrant{}, &model.IntegrationRecording{}}
+	require.NoError(t, db.AutoMigrate(tables...))
+	t.Cleanup(func() { _ = db.Migrator().DropTable(tables...) })
+	require.NoError(t, db.Create(&model.Course{Model: gorm.Model{ID: 1}, Name: "One", Slug: "one"}).Error)
+	require.NoError(t, db.Create(&model.Integration{ID: 1, Name: "Course portal", APIKeyHash: bytes.Repeat([]byte{7}, 32)}).Error)
+	require.NoError(t, db.Create(&model.IntegrationGrant{ID: 10, IntegrationID: 1, CourseID: 1}).Error)
+	d := integrationGrantDao{db: db}
+	ctx, now := context.Background(), time.Now()
+
+	// Both run at once; they return how many succeeded.
+	concurrently := func(run func(i byte) error) (succeeded int) {
+		start, results := make(chan struct{}), make(chan error, 4)
+		var wait sync.WaitGroup
+		for i := range byte(4) {
+			wait.Go(func() {
+				<-start
+				results <- run(i)
+			})
+		}
+		close(start)
+		wait.Wait()
+		close(results)
+		for err := range results {
+			if err == nil {
+				succeeded++
+			}
+		}
+		return succeeded
+	}
+
+	require.Equal(t, 4, concurrently(func(i byte) error {
+		_, _, err := d.CreateIntegrationUpload(ctx, 1, 10, "reference-a-0000", model.Stream{Name: "A"}, bytes.Repeat([]byte{20 + i}, 32), now.Add(time.Minute))
+		return err
+	}))
+	var lectures, rows int64
+	require.NoError(t, db.Model(&model.Stream{}).Count(&lectures).Error)
+	require.NoError(t, db.Model(&model.IntegrationRecording{}).Count(&rows).Error)
+	require.Equal(t, int64(1), lectures, "one reference, one lecture")
+	require.Equal(t, int64(1), rows)
+
+	var rec model.IntegrationRecording
+	require.NoError(t, db.First(&rec).Error)
+	require.Equal(t, 1, concurrently(func(byte) error {
+		_, err := d.ConsumeIntegrationUploadTicket(ctx, rec.TicketHash, now)
+		return err
+	}), "a ticket is used once")
+
+	// A revocation that is under way when the ticket is used: the use waits for it and
+	// then sees the grant revoked, instead of an older snapshot.
+	ticket := bytes.Repeat([]byte{40}, 32)
+	_, _, err = d.CreateIntegrationUpload(ctx, 1, 10, "reference-b-0000", model.Stream{Name: "B"}, ticket, now.Add(time.Minute))
+	require.NoError(t, err)
+	revocation := db.Begin()
+	// Before the tables are dropped, which would wait for it on a failure.
+	t.Cleanup(func() { revocation.Rollback() })
+	require.NoError(t, revocation.Model(&model.IntegrationGrant{}).Where("id = 10").Update("revoked_at", now).Error)
+	used := make(chan error, 1)
+	go func() {
+		_, err := d.ConsumeIntegrationUploadTicket(ctx, ticket, now)
+		used <- err
+	}()
+	select {
+	case err := <-used:
+		t.Fatalf("the ticket was used during the revocation: %v", err)
+	case <-time.After(300 * time.Millisecond):
+	}
+	require.NoError(t, revocation.Commit().Error)
+	require.ErrorIs(t, <-used, gorm.ErrRecordNotFound)
 }

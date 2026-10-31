@@ -1,11 +1,15 @@
 package apiv2
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -122,5 +126,156 @@ func TestCreateIntegrationUploadMapsFailures(t *testing.T) {
 			assert.Equal(t, test.code, status.Code(err))
 			assert.Equal(t, test.msg, status.Convert(err).Message())
 		})
+	}
+}
+
+const artemisOrigin = "https://artemis.example"
+
+func uploadTicket() (string, []byte) {
+	ticket := bytes.Repeat([]byte{5}, 32)
+	hash := sha256.Sum256(ticket)
+	return "/api/v2/integration/uploads/" + base64.RawURLEncoding.EncodeToString(ticket), hash[:]
+}
+
+func serveIntegrationUpload(api *API, req *http.Request) *httptest.ResponseRecorder {
+	rec := httptest.NewRecorder()
+	api.Handler().ServeHTTP(rec, req)
+	return rec
+}
+
+func TestIntegrationUploadTakesTheRecordingAsTheCombinedVersion(t *testing.T) {
+	path, hash := uploadTicket()
+	var gotFile string
+	uploads := &fakeUploads{}
+	uploads.target = fakeRunner(t, func(w http.ResponseWriter, r *http.Request) {
+		f, _, err := r.FormFile("file")
+		if err == nil {
+			b, _ := io.ReadAll(f)
+			gotFile = string(b)
+		}
+	})
+	ctrl := gomock.NewController(t)
+	grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+	streams := mock_dao.NewMockStreamsDao(ctrl)
+	grants.EXPECT().GetIntegrationUploadReturnURL(gomock.Any(), hash, gomock.Any()).Return(artemisOrigin+"/api/callback", nil)
+	grants.EXPECT().ConsumeIntegrationUploadTicket(gomock.Any(), hash, gomock.Any()).Return(model.Stream{Model: gorm.Model{ID: 55}}, nil)
+	streams.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(55)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+	streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 55, Version: model.COMB}).Return(nil)
+	api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants, StreamsDao: streams}, log: slog.Default(), uploads: uploads}
+
+	req := uploadRequest(t, path+"?type=PRES", nil, "lecture.mp4", "video/mp4")
+	req.Header.Set("Origin", artemisOrigin)
+	rec := serveIntegrationUpload(api, req)
+
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	assert.Equal(t, artemisOrigin, rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, uint(55), uploads.streamID)
+	assert.Equal(t, model.COMB, uploads.version, "the query cannot pick another version")
+	assert.Equal(t, "content", gotFile)
+}
+
+func TestIntegrationUploadPreflightIsAnsweredForTheIntegrationsOriginOnly(t *testing.T) {
+	path, hash := uploadTicket()
+	for name, test := range map[string]struct {
+		origin, returnURL string
+		lookupErr         error
+		status            int
+	}{
+		"registered origin":      {artemisOrigin, artemisOrigin + "/api/callback", nil, http.StatusNoContent},
+		"origin with other host": {"https://evil.example", artemisOrigin + "/api/callback", nil, http.StatusForbidden},
+		"origin with other port": {artemisOrigin + ":8443", artemisOrigin + "/api/callback", nil, http.StatusForbidden},
+		"unknown or used ticket": {artemisOrigin, "", gorm.ErrRecordNotFound, http.StatusNotFound},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			grants.EXPECT().GetIntegrationUploadReturnURL(gomock.Any(), hash, gomock.Any()).Return(test.returnURL, test.lookupErr)
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants}, log: slog.Default()}
+			req := httptest.NewRequest(http.MethodOptions, path, nil)
+			req.Header.Set("Origin", test.origin)
+			req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+
+			rec := serveIntegrationUpload(api, req)
+
+			assert.Equal(t, test.status, rec.Code)
+			if test.status == http.StatusNoContent {
+				assert.Equal(t, test.origin, rec.Header().Get("Access-Control-Allow-Origin"))
+				assert.Equal(t, "POST", rec.Header().Get("Access-Control-Allow-Methods"))
+				assert.Equal(t, "Origin", rec.Header().Get("Vary"))
+				assert.Empty(t, rec.Header().Get("Access-Control-Allow-Credentials"))
+			} else {
+				assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+			}
+		})
+	}
+}
+
+func TestIntegrationUploadKeepsTheTicketWhenRefusedBeforeUse(t *testing.T) {
+	path, hash := uploadTicket()
+	t.Run("another origin", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+		grants.EXPECT().GetIntegrationUploadReturnURL(gomock.Any(), hash, gomock.Any()).Return(artemisOrigin+"/api/callback", nil)
+		api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants}, log: slog.Default()}
+		req := uploadRequest(t, path, nil, "lecture.mp4", "video/mp4")
+		req.Header.Set("Origin", "https://evil.example")
+
+		rec := serveIntegrationUpload(api, req)
+
+		assert.Equal(t, http.StatusForbidden, rec.Code)
+	})
+	for name, ticketPath := range map[string]string{
+		"not base64url": "/api/v2/integration/uploads/not*base64+url",
+		"too short":     "/api/v2/integration/uploads/" + base64.RawURLEncoding.EncodeToString([]byte("short")),
+		"padded":        path + "=",
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: mock_dao.NewMockIntegrationGrantDao(ctrl)}, log: slog.Default()}
+
+			rec := serveIntegrationUpload(api, uploadRequest(t, ticketPath, nil, "lecture.mp4", "video/mp4"))
+
+			assert.Equal(t, http.StatusNotFound, rec.Code)
+		})
+	}
+}
+
+func TestIntegrationUploadAnswersAnUnusableTicketWithNotFound(t *testing.T) {
+	path, hash := uploadTicket()
+	for name, err := range map[string]error{
+		"used, expired, revoked or deleted": gorm.ErrRecordNotFound,
+		"database failure is hidden":        errors.New("secret database detail"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			grants := mock_dao.NewMockIntegrationGrantDao(ctrl)
+			grants.EXPECT().ConsumeIntegrationUploadTicket(gomock.Any(), hash, gomock.Any()).Return(model.Stream{}, err)
+			api := &API{dao: dao.DaoWrapper{IntegrationGrantDao: grants}, log: slog.Default(), uploads: &fakeUploads{}}
+
+			// Without an Origin: a server-side client, not a browser.
+			rec := serveIntegrationUpload(api, uploadRequest(t, path, nil, "lecture.mp4", "video/mp4"))
+
+			assert.Equal(t, http.StatusNotFound, rec.Code)
+			_, msg := gatewayError(t, rec.Body.Bytes())
+			assert.Equal(t, "upload not found", msg)
+		})
+	}
+}
+
+func TestOriginOfMatchesWhatBrowsersSend(t *testing.T) {
+	for returnURL, origin := range map[string]string{
+		"https://artemis.example/api/callback":      "https://artemis.example",
+		"https://Artemis.Example:443/api/callback":  "https://artemis.example",
+		"https://artemis.example:8443/api/callback": "https://artemis.example:8443",
+		"http://artemis.localhost:80/callback":      "http://artemis.localhost",
+		"http://artemis.localhost:18080/callback":   "http://artemis.localhost:18080",
+		"http://[::1]:8080/callback":                "http://[::1]:8080",
+		"http://[0:0:0:0:0:0:0:1]:8080/callback":    "http://[::1]:8080",
+		"http://127.0.0.1:8080/callback":            "http://127.0.0.1:8080",
+		"https://bücher.example/callback":           "https://xn--bcher-kva.example",
+		"https://BÜCHER.example:443/callback":       "https://xn--bcher-kva.example",
+		"not a url":                                 "",
+	} {
+		assert.Equal(t, origin, originOf(returnURL), returnURL)
 	}
 }

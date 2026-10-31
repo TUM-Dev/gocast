@@ -23,6 +23,8 @@ type IntegrationGrantDao interface {
 	GetIntegrationGrantCourse(context.Context, uint, uint) (model.Course, error)
 	GetIntegrationGrantStream(context.Context, uint, uint, uint) (model.Stream, error)
 	CreateIntegrationUpload(context.Context, uint, uint, string, model.Stream, []byte, time.Time) (model.Stream, bool, error)
+	GetIntegrationUploadReturnURL(context.Context, []byte, time.Time) (string, error)
+	ConsumeIntegrationUploadTicket(context.Context, []byte, time.Time) (model.Stream, error)
 	GetCourseIntegrationGrants(context.Context, uint) ([]model.IntegrationGrant, error)
 	RevokeIntegrationGrant(context.Context, uint, uint) error
 	RevokeIntegrationGrantForIntegration(context.Context, uint, uint) (model.Course, error)
@@ -226,4 +228,56 @@ func (d integrationGrantDao) CreateIntegrationUpload(ctx context.Context, integr
 		return tx.Model(&rec).Updates(map[string]any{"ticket_hash": ticketHash, "ticket_expires_at": expiresAt}).Error
 	})
 	return stream, created, err
+}
+
+// GetIntegrationUploadReturnURL reads the registered return URL of the integration
+// behind a usable ticket, without using it, so the upload route can answer the
+// browser's preflight for that integration's origin only.
+func (d integrationGrantDao) GetIntegrationUploadReturnURL(ctx context.Context, ticketHash []byte, now time.Time) (string, error) {
+	var integration model.Integration
+	err := d.db.WithContext(ctx).Model(&model.Integration{}).
+		Joins("JOIN integration_recordings ON integration_recordings.integration_id = integrations.id").
+		Where("integration_recordings.ticket_hash = ? AND integration_recordings.ticket_expires_at > ?", ticketHash, now).
+		Where("integration_recordings.upload_started = ? AND integration_recordings.closed = ?", false, false).
+		First(&integration).Error
+	return integration.ReturnURL, err
+}
+
+// ConsumeIntegrationUploadTicket uses a ticket once and marks its lecture's upload as
+// started. Everything the ticket stood for must still hold: the integration's key and
+// grant, and the lecture in the grant's course. Locks are taken in the order the other
+// writers use (grant, ownership row, then integration) and read the latest rows, so a
+// revocation either finishes first and is seen, or waits until the ticket is used.
+func (d integrationGrantDao) ConsumeIntegrationUploadTicket(ctx context.Context, ticketHash []byte, now time.Time) (stream model.Stream, err error) {
+	// Which grant to lock, read before the transaction: a plain read inside it would fix
+	// MariaDB's snapshot before the locks, and a revocation it waited for would then fail
+	// the transaction instead of being seen.
+	var probe model.IntegrationRecording
+	if err := d.db.WithContext(ctx).Select("grant_id").Where("ticket_hash = ?", ticketHash).First(&probe).Error; err != nil {
+		return stream, err
+	}
+	err = d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var grant model.IntegrationGrant
+		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("id = ? AND revoked_at IS NULL", probe.GrantID).First(&grant).Error; err != nil {
+			return err
+		}
+		var rec model.IntegrationRecording
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("ticket_hash = ? AND grant_id = ?", ticketHash, grant.ID).First(&rec).Error; err != nil {
+			return err
+		}
+		if !rec.TicketExpiresAt.After(now) || rec.UploadStarted || rec.Closed || rec.IntegrationID != grant.IntegrationID {
+			return gorm.ErrRecordNotFound
+		}
+		if err := tx.Clauses(clause.Locking{Strength: "SHARE"}).Where("id = ? AND api_key_hash IS NOT NULL", rec.IntegrationID).First(&model.Integration{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Select("id").First(&model.Course{}, grant.CourseID).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id = ? AND course_id = ?", rec.StreamID, grant.CourseID).First(&stream).Error; err != nil {
+			return err
+		}
+		return tx.Model(&rec).Updates(map[string]any{"upload_started": true, "ticket_hash": nil}).Error
+	})
+	return stream, err
 }

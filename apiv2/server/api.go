@@ -194,6 +194,14 @@ func (a *API) Handler() http.Handler {
 			a.handleLectureUpload(w, r, route)
 		})
 	}
+	// A multipart body, and a browser's CORS preflight.
+	mux.HandleFunc(integrationUploadPath, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost && r.Method != http.MethodOptions {
+			rpc.ServeHTTP(w, r)
+			return
+		}
+		a.handleIntegrationUpload(w, r, r.PathValue("ticket"))
+	})
 	// It streams a file, with Range, which the gateway's unary responses cannot.
 	mux.HandleFunc(streamFilePath, func(w http.ResponseWriter, r *http.Request) {
 		route, ok := streamFileRouteOf(r)
