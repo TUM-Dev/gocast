@@ -3,13 +3,18 @@
  * runner builds on request, and the cut itself.
  */
 
+import { fromJson, type JsonValue } from "@bufbuild/protobuf";
+
 import {
+  AbandonLectureCutResponseSchema,
   CutLectureResponseSchema,
+  GetLectureCutResponseSchema,
   GetLectureWaveformResponseSchema,
   LectureCutMode,
   CutLectureRequestSchema,
 } from "@/gen/server/apiv2_pb";
-import { ApiError, apiGetMessage, apiPost, apiPostMessage } from "./api";
+import { ApiError, apiFetch, apiGetMessage, apiPost, apiPostMessage } from "./api";
+import type { TranscodingProgress } from "./lecture-content";
 import type { WatchSilence } from "./watch";
 
 export { LectureCutMode };
@@ -125,6 +130,49 @@ export async function cutLecture(
   return res.streamId;
 }
 
+/**
+ * A cut that is not finished. It stays open until every version is cut, so that one that
+ * failed can be cut again with the same ranges, or the cut given up.
+ */
+export interface OpenCut {
+  /** The lecture that gets the cut recording: the one asked about when it is replaced. */
+  targetStreamId: number;
+  /** A new lecture is made, and the recording is not replaced. */
+  duplicate: boolean;
+  /** The versions being cut or failed. None once all are done: the cut is being finished. */
+  progresses: TranscodingProgress[];
+}
+
+/** The cut of the lecture that is not finished, or null. */
+export async function fetchOpenCut(courseId: number, streamId: number): Promise<OpenCut | null> {
+  const res = await apiGetMessage(GetLectureCutResponseSchema, `${lecturePath(courseId, streamId)}/cut`);
+  if (!res.open) return null;
+  return {
+    targetStreamId: res.targetStreamId,
+    duplicate: res.duplicate,
+    progresses: res.progresses.map((p) => ({ version: p.version, progress: p.progress, failed: p.failed, error: p.error })),
+  };
+}
+
+/** Cuts the versions that failed again, with the ranges of the cut. */
+export async function retryCut(courseId: number, streamId: number): Promise<void> {
+  await apiPost(`${lecturePath(courseId, streamId)}/cut/retry`, {});
+}
+
+/**
+ * Gives up the cut. Resolves with the versions of a replaced recording that were not cut
+ * and still hold what the cut would have removed.
+ */
+export async function abandonCut(courseId: number, streamId: number): Promise<string[]> {
+  const json = await apiFetch<JsonValue>(`${lecturePath(courseId, streamId)}/cut`, { method: "DELETE" });
+  return fromJson(AbandonLectureCutResponseSchema, json, { ignoreUnknownFields: true }).leftUncut;
+}
+
+/** The server's message for a refusal, as a sentence. */
+function sentence(message: string, fallback: string): string {
+  return message ? message.charAt(0).toUpperCase() + message.slice(1) + "." : fallback;
+}
+
 /** What to tell the person when one of these calls fails. */
 export function cutErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -133,7 +181,8 @@ export function cutErrorMessage(err: unknown): string {
       case 404:
         return "This lecture does not exist or you do not administer it.";
       case 409:
-        return "The lecture is being converted. Wait until it is done.";
+        // Several things are refused with this, and the server says which.
+        return sentence(err.message, "The lecture is being converted. Wait until it is done.");
       case 503:
         return "No runner is available right now. Please try again in a moment.";
       default:

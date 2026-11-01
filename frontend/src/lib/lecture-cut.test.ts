@@ -84,7 +84,8 @@ describe("cutErrorMessage", () => {
   it("says what happened", () => {
     expect(cutErrorMessage(new ApiError(401, "x"))).toMatch(/session expired/);
     expect(cutErrorMessage(new ApiError(404, "x"))).toMatch(/does not exist/);
-    expect(cutErrorMessage(new ApiError(409, "x"))).toMatch(/being converted/);
+    expect(cutErrorMessage(new ApiError(409, "the lecture is being converted"))).toBe("The lecture is being converted.");
+    expect(cutErrorMessage(new ApiError(409, ""))).toMatch(/being converted/);
     expect(cutErrorMessage(new ApiError(503, "x"))).toMatch(/No runner/);
     expect(cutErrorMessage(new ApiError(400, "the cut leaves less than a second"))).toBe("the cut leaves less than a second");
     expect(cutErrorMessage(new Error("?"))).toMatch(/Something went wrong/);
