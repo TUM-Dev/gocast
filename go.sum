@@ -160,6 +160,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/tum-dev/gocast/runner v0.0.0-20261026200106-b6c507b6cfc9 h1:LXZcNBHQPKrafY/eOrFDRJr+laqwTFyhuMUIg3rq29k=
 github.com/tum-dev/gocast/runner v0.0.0-20261026200106-b6c507b6cfc9/go.mod h1:bPoykKk6VtHIn0KaM7MHvHgvfGr7avS9s5pPIlgvw4Y=
+github.com/tum-dev/gocast/runner v0.0.0-20261031085938-e50635d35d65 h1:aEkfT1yx6R0Nts5xqAkZNVVOgaw+9nzx6fWNf2YQy6U=
+github.com/tum-dev/gocast/runner v0.0.0-20261031085938-e50635d35d65/go.mod h1:bPoykKk6VtHIn0KaM7MHvHgvfGr7avS9s5pPIlgvw4Y=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

@@ -28,7 +28,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.12.1
-	github.com/tum-dev/gocast/runner v0.0.0-20261026200106-b6c507b6cfc9
+	github.com/tum-dev/gocast/runner v0.0.0-20261031085938-e50635d35d65
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.72.0
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
