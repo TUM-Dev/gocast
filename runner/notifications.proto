@@ -18,6 +18,7 @@ message Notification {
     SilenceDetectedNotification silence_detected = 9;
     DurationProbedNotification duration_probed = 11;
     SpriteReadyNotification sprite_ready = 12;
+    WaveformReadyNotification waveform_ready = 13;
   }
   // W3C traceparent of the runner span that produced this notification, so that the
   // manager's handling of it joins the trace of the job. Empty when tracing is off, and
@@ -80,6 +81,24 @@ message DurationProbedNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   uint32 duration_seconds = 3;
+}
+
+// WaveformReadyNotification carries the audio levels of a stream for the cut editor.
+message WaveformReadyNotification {
+  // VersionDuration is the length of one version of the stream.
+  message VersionDuration {
+    StreamVersion stream_version = 1;
+    double seconds = 2;
+  }
+
+  StreamInfo stream = 1;
+  // One byte per bucket of bucket_seconds, the peak level in it: 0 is -60 dBFS or less, 255
+  // is 0 dBFS, linear in between.
+  bytes peaks = 2;
+  uint32 bucket_seconds = 3;
+  // Every version that could be measured. A version that could not be read is missing, which
+  // the server must not mistake for one of length 0.
+  repeated VersionDuration durations = 4;
 }
 
 // VODFailedNotification reports that a VOD could not be made from an uploaded video.
