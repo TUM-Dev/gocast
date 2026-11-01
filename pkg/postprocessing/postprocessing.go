@@ -1,5 +1,5 @@
 // Package postprocessing is how apiv2 reaches the redoing of VOD post-processing:
-// thumbnails and silences.
+// thumbnails, durations and silences.
 package postprocessing
 
 import (
@@ -10,8 +10,8 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 )
 
-// PostProcessing redoes the post-processing of one version of one VOD: its large thumbnail and,
-// if asked, the silences. Only a
+// PostProcessing redoes the post-processing of one version of one VOD: its large thumbnail, its
+// duration and, if asked, the silences. Only a
 // runner can do this today, so Manager being nil means there is nobody to ask.
 type PostProcessing struct {
 	Manager *runner_manager.Manager

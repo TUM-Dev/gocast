@@ -16,6 +16,7 @@ message Notification {
     TranscodingProgressNotification transcoding_progress = 7;
     VODFailedNotification vod_failed = 8;
     SilenceDetectedNotification silence_detected = 9;
+    DurationProbedNotification duration_probed = 11;
   }
   // W3C traceparent of the runner span that produced this notification, so that the
   // manager's handling of it joins the trace of the job. Empty when tracing is off, and
@@ -67,6 +68,17 @@ message SilenceDetectedNotification {
   StreamVersion stream_version = 2;
   repeated uint32 starts = 3;
   repeated uint32 ends = 4;
+}
+
+// DurationProbedNotification reports the length of a VoD as ffprobe reads it from the
+// finished playlist, in whole seconds. It is its own notification, and not a field of
+// VODReadyNotification, because redoing the post-processing of a recording has to report
+// it too, and VODReady there would run everything that follows a new VoD again.
+// Nothing is sent when the probe fails or finds no length.
+message DurationProbedNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  uint32 duration_seconds = 3;
 }
 
 // VODFailedNotification reports that a VOD could not be made from an uploaded video.

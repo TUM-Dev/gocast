@@ -11,7 +11,7 @@ import (
 )
 
 // RedoPostProcessingRequest describes the VOD whose post-processing, its thumbnail and
-// optionally its silences, should be redone.
+// duration and optionally its silences, should be redone.
 // PlaylistURL must be signed, as for SectionImageRequest.
 type RedoPostProcessingRequest struct {
 	StreamID    uint
@@ -36,8 +36,8 @@ func protobufStreamVersion(version model.StreamVersion) protobuf.StreamVersion {
 
 // RequestRedoPostProcessing asks a runner to redo the post-processing of an
 // already-recorded VOD. The runner answers asynchronously with a
-// ThumbnailReadyNotification, which saveThumbnail then stores, and a
-// SilenceDetectedNotification if silences were asked for, so this returns as soon as the
+// ThumbnailReadyNotification, which saveThumbnail then stores, a
+// DurationProbedNotification, and a SilenceDetectedNotification if silences were asked for, so this returns as soon as the
 // job is accepted. The runner's RPC still has the name it was introduced with.
 func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) (err error) {
 	version := protobufStreamVersion(req.Version)

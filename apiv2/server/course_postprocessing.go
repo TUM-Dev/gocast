@@ -14,7 +14,7 @@ import (
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-// PostProcessing redoes the post-processing of one VOD: its large thumbnail, and the silences.
+// PostProcessing redoes the post-processing of one VOD: its large thumbnail, its duration, and the silences.
 // Only a runner understands the versions PlaylistUrl, PlaylistUrlCAM and PlaylistUrlPRES
 // stand for, so the worker half that SectionImages has has no equivalent here. See WithPostProcessing.
 type PostProcessing interface {
@@ -30,8 +30,9 @@ func WithPostProcessing(t PostProcessing) Option {
 }
 
 // RedoCoursePostProcessing starts a background job that asks a runner to redo the
-// thumbnail for every available version (combined, camera, presentation) of every
-// recorded lecture in the course, and to detect the lecture's silences. It returns as
+// thumbnail and probe the duration for every available version (combined, camera,
+// presentation) of every recorded lecture in the course, and to detect the lecture's
+// silences. It returns as
 // soon as the jobs are queued, the way GenerateMaintenanceThumbnails does for every
 // course at once.
 func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {

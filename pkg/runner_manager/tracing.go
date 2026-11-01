@@ -88,6 +88,8 @@ func notificationStream(n *protobuf.Notification) (id uint64, version protobuf.S
 		return d.VodFailed.GetStream().GetId(), d.VodFailed.GetStreamVersion(), true
 	case *protobuf.Notification_SilenceDetected:
 		return d.SilenceDetected.GetStream().GetId(), d.SilenceDetected.GetStreamVersion(), true
+	case *protobuf.Notification_DurationProbed:
+		return d.DurationProbed.GetStream().GetId(), d.DurationProbed.GetStreamVersion(), true
 	case *protobuf.Notification_SectionImagesReady:
 		return d.SectionImagesReady.GetStream().GetId(), protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED, true
 	}

@@ -320,6 +320,8 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	case *protobuf.Notification_SilenceDetected:
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
+	case *protobuf.Notification_DurationProbed:
+		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}

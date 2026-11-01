@@ -551,6 +551,20 @@ func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).SaveTranscodingProgress), progress)
 }
 
+// SetDuration mocks base method.
+func (m *MockStreamsDao) SetDuration(streamID uint, seconds uint32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDuration", streamID, seconds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDuration indicates an expected call of SetDuration.
+func (mr *MockStreamsDaoMockRecorder) SetDuration(streamID, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDuration", reflect.TypeOf((*MockStreamsDao)(nil).SetDuration), streamID, seconds)
+}
+
 // SetLectureHall mocks base method.
 func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
 	m.ctrl.T.Helper()

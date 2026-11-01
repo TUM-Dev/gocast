@@ -434,6 +434,7 @@ func isCritical(n *protobuf.Notification) bool {
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
 		*protobuf.Notification_SilenceDetected,
+		*protobuf.Notification_DurationProbed,
 		*protobuf.Notification_VodFailed:
 		return true
 	}
