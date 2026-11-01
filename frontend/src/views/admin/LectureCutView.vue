@@ -26,12 +26,16 @@ import {
 import { fetchTranscodingProgress, type TranscodingProgress as Progress } from "@/lib/lecture-content";
 import {
   LectureCutMode,
+  abandonCut,
   cutErrorMessage,
   cutLecture,
+  fetchOpenCut,
   fetchWaveform,
   pollWaveform,
   requestWaveform,
+  retryCut,
   waveformDuration,
+  type OpenCut,
   type Waveform,
 } from "@/lib/lecture-cut";
 import { fetchStreamWatch, viewOfKind, WatchViewKind } from "@/lib/watch";
@@ -46,6 +50,10 @@ import { useCourseAdminStore } from "@/stores/course-admin";
  * Nothing is cut here. Submitting hands the ranges to the server, which has runners
  * re-encode every version of the recording and either replace it or make a copy of the
  * lecture. As with every admin page the server decides who may do any of this.
+ *
+ * A cut stays open on the server until every version is cut. While one is, the page shows
+ * how far it is instead of the editor, and for a version that failed offers to cut it again
+ * with the same ranges or to give the cut up.
  */
 const auth = useAuthStore();
 const courses = useCourseAdminStore();
@@ -54,7 +62,7 @@ const route = useRoute();
 const courseId = computed(() => Number(route.params.courseID));
 const streamId = computed(() => Number(route.params.streamID));
 
-type Phase = "loading" | "building" | "ready" | "converting" | "failed";
+type Phase = "loading" | "building" | "ready" | "converting" | "cutting" | "failed";
 const phase = ref<Phase>("loading");
 const error = ref("");
 const lectureName = ref("");
@@ -62,6 +70,8 @@ const slug = ref("");
 const src = ref("");
 const waveform = shallowRef<Waveform | null>(null);
 const duration = ref(0);
+/** The versions of the lecture that are being converted, by an upload say. */
+const progresses = ref<Progress[]>([]);
 
 const cuts = ref<Cut[]>([]);
 const selectedId = ref<number | null>(null);
@@ -80,6 +90,85 @@ onBeforeUnmount(() => stopPolling?.());
 function fail(err: unknown): void {
   error.value = cutErrorMessage(err);
   phase.value = "failed";
+}
+
+/* A cut that is not finished. */
+
+const openCut = ref<OpenCut | null>(null);
+const outcome = ref<"" | "done">("");
+const notice = ref("");
+const working = ref(false);
+const confirmingAbandon = ref(false);
+let leaving = false;
+onBeforeUnmount(() => (leaving = true));
+
+const cutRunning = computed(() => openCut.value?.progresses.some((p) => !p.failed) ?? false);
+const cutFailed = computed(() => openCut.value?.progresses.some((p) => p.failed) ?? false);
+
+function showOpenCut(open: OpenCut): void {
+  openCut.value = open;
+  outcome.value = "";
+  phase.value = "cutting";
+  // No version is left at all: the server is finishing the cut. Versions being cut report to
+  // the progress below, which says when they are done, and failed ones are for the person.
+  if (open.progresses.length === 0) void settle();
+}
+
+/**
+ * After the versions are done the server finishes the cut, which closes it. Asks until it
+ * has, unless a version failed, which is for the person to decide.
+ */
+async function settle(): Promise<void> {
+  for (let attempt = 0; attempt < SETTLE_TRIES && !leaving; attempt++) {
+    let open: OpenCut | null | undefined;
+    try {
+      open = await fetchOpenCut(courseId.value, streamId.value);
+    } catch {
+      open = undefined; // a dropped request is asked again
+    }
+    if (open === null) {
+      outcome.value = "done";
+      return;
+    }
+    if (open) {
+      openCut.value = open;
+      if (open.progresses.length > 0) return; // failed, or being cut again
+    }
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+  }
+}
+
+const SETTLE_TRIES = 15;
+const SETTLE_MS = 2000;
+
+async function retry(): Promise<void> {
+  working.value = true;
+  error.value = "";
+  try {
+    await retryCut(courseId.value, streamId.value);
+    await load(courseId.value, streamId.value);
+  } catch (err) {
+    error.value = cutErrorMessage(err);
+  } finally {
+    working.value = false;
+  }
+}
+
+async function abandon(): Promise<void> {
+  confirmingAbandon.value = false;
+  working.value = true;
+  error.value = "";
+  try {
+    const left = await abandonCut(courseId.value, streamId.value);
+    notice.value = left.length
+      ? `The cut was given up. The ${left.join(" and ")} ${left.length === 1 ? "version was" : "versions were"} not cut and still ${left.length === 1 ? "holds" : "hold"} what you cut out of the others.`
+      : "The cut was given up.";
+    await load(courseId.value, streamId.value);
+  } catch (err) {
+    error.value = cutErrorMessage(err);
+  } finally {
+    working.value = false;
+  }
 }
 
 function useWaveform(w: Waveform): void {
@@ -114,6 +203,12 @@ async function load(course: number, stream: number): Promise<void> {
       return;
     }
     src.value = view.playlistUrl;
+
+    const open = await fetchOpenCut(course, stream);
+    if (open) {
+      showOpenCut(open);
+      return;
+    }
 
     // Cutting while a conversion runs would race it for the same files.
     progresses.value = await fetchTranscodingProgress(course, stream);
@@ -214,9 +309,6 @@ const zoomOut = () => (zoom.value = Math.max(1, zoom.value / 2));
 const mode = ref<LectureCutMode>(LectureCutMode.OVERWRITE);
 const confirming = ref(false);
 const submitting = ref(false);
-const targetId = ref<number | null>(null);
-const progresses = ref<Progress[]>([]);
-const outcome = ref<"" | "done" | "failed">("");
 
 const canSubmit = computed(
   () => applied.value.length > 0 && leavesEnough(cuts.value, duration.value) && !versionsDiffer.value && !submitting.value,
@@ -235,30 +327,30 @@ async function submit(): Promise<void> {
   confirming.value = false;
   submitting.value = true;
   error.value = "";
+  notice.value = "";
   try {
-    const target = await cutLecture(courseId.value, streamId.value, mode.value, toRanges(cuts.value));
-    targetId.value = target;
-    outcome.value = "";
-    progresses.value = await fetchTranscodingProgress(courseId.value, target);
+    await cutLecture(courseId.value, streamId.value, mode.value, toRanges(cuts.value));
   } catch (err) {
-    error.value = cutErrorMessage(err);
+    const message = cutErrorMessage(err);
+    // Some versions may have been started: what the server has is what the page shows.
+    if (err instanceof ApiError && err.status === 503) await load(courseId.value, streamId.value);
+    error.value = message;
+    submitting.value = false;
+    return;
+  }
+  try {
+    await load(courseId.value, streamId.value);
   } finally {
     submitting.value = false;
   }
 }
 
-async function converted(): Promise<void> {
-  if (targetId.value === null) return;
-  const left = await fetchTranscodingProgress(courseId.value, targetId.value).catch(() => []);
-  outcome.value = left.some((p) => p.failed) ? "failed" : "done";
-}
+const watchPath = computed(() =>
+  openCut.value ? `/w/${encodeURIComponent(slug.value)}/${openCut.value.targetStreamId}` : "",
+);
 
-const watchPath = computed(() => (targetId.value ? `/w/${encodeURIComponent(slug.value)}/${targetId.value}` : ""));
-
-/** Loads the lecture again: once a conversion it waited for is done, or after a cut failed. */
+/** Loads the lecture again, once a conversion it waited for is done. */
 function reload(): void {
-  targetId.value = null;
-  outcome.value = "";
   void load(courseId.value, streamId.value);
 }
 </script>
@@ -277,6 +369,7 @@ function reload(): void {
       </header>
 
       <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">{{ error }}</p>
+      <p v-if="notice" class="rounded-lg bg-info/25 px-2 py-2 text-sm" role="status" data-testid="cut-notice">{{ notice }}</p>
 
       <p v-if="phase === 'loading'" class="text-5 text-sm">Loading the lecture…</p>
 
@@ -290,6 +383,85 @@ function reload(): void {
           @done="reload"
         />
       </div>
+
+      <section v-else-if="phase === 'cutting' && openCut" class="flex flex-col gap-3" data-testid="cut-progress">
+        <h2 class="text-1 text-lg font-semibold">
+          {{
+            outcome === "done"
+              ? "The video is cut."
+              : cutRunning
+                ? "Cutting the video…"
+                : cutFailed
+                  ? "The cut did not finish."
+                  : "Finishing the cut…"
+          }}
+        </h2>
+        <p v-if="outcome !== 'done' && !cutRunning && !cutFailed" class="text-5 flex items-center gap-2 text-sm" role="status">
+          <i class="fas fa-circle-notch fa-spin"></i>Moving the sections of the lecture along.
+        </p>
+        <TranscodingProgress
+          v-if="outcome !== 'done'"
+          :course-id="courseId"
+          :lecture-id="openCut.targetStreamId"
+          converting
+          :progresses="openCut.progresses"
+          retry-hint="Cut it again, or give up the cut."
+          @done="settle"
+        />
+
+        <div v-if="cutFailed && !cutRunning" class="flex flex-col gap-2 text-sm" data-testid="cut-failed">
+          <p class="text-2">
+            <template v-if="openCut.duplicate">
+              The versions that are done are kept. Cutting again runs only the ones that failed, with the same cuts.
+            </template>
+            <template v-else>
+              The versions that are done are cut already. Cutting again runs only the ones that failed, with the same cuts,
+              so nothing is cut twice.
+            </template>
+          </p>
+          <div v-if="confirmingAbandon" class="flex flex-wrap items-center gap-2 rounded-lg bg-danger/25 px-2 py-2" role="alertdialog">
+            <span v-if="openCut.duplicate">This removes the new lecture. The original is not changed.</span>
+            <span v-else>
+              The versions that are cut stay cut and can't be put back. The ones that failed keep what you cut out of the others.
+            </span>
+            <button type="button" class="tum-live-button text-white bg-red-600" data-testid="cut-abandon-confirm" @click="abandon">
+              Give up the cut
+            </button>
+            <button type="button" class="tum-live-button tum-live-button-secondary" @click="confirmingAbandon = false">
+              Keep it
+            </button>
+          </div>
+          <div v-else class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="tum-live-button text-white bg-blue-500 disabled:opacity-50 dark:bg-indigo-600"
+              :disabled="working"
+              data-testid="cut-retry"
+              @click="retry"
+            >
+              <i class="fas fa-arrows-rotate mr-1"></i>Cut the failed versions again
+            </button>
+            <button
+              type="button"
+              class="tum-live-button tum-live-button-secondary"
+              :disabled="working"
+              data-testid="cut-abandon"
+              @click="confirmingAbandon = true"
+            >
+              Give up the cut
+            </button>
+          </div>
+        </div>
+
+        <p v-if="outcome === 'done'" class="flex flex-wrap gap-2 text-sm">
+          <RouterLink :to="watchPath" class="tum-live-button text-white bg-blue-500 dark:bg-indigo-600">
+            Watch the cut video
+          </RouterLink>
+          <RouterLink :to="`/admin/courses/${courseId}/lectures`" class="tum-live-button tum-live-button-secondary">
+            Back to the lectures
+          </RouterLink>
+        </p>
+      </section>
 
       <template v-else-if="phase === 'failed'">
         <RouterLink :to="`/admin/courses/${courseId}/lectures`" class="tum-live-button tum-live-button-secondary w-fit">
@@ -449,7 +621,7 @@ function reload(): void {
             </ul>
           </section>
 
-          <section v-if="targetId === null" class="flex flex-col gap-2 border-t pt-3 dark:border-gray-700">
+          <section class="flex flex-col gap-2 border-t pt-3 dark:border-gray-700">
             <p class="text-sm" data-testid="cut-summary">
               <template v-if="applied.length">
                 Removing {{ formatTime(removed) }} of {{ formatTime(duration) }}. The recording will be
@@ -497,33 +669,6 @@ function reload(): void {
                 <i v-else class="fas fa-scissors mr-1"></i>Cut video
               </button>
             </div>
-          </section>
-
-          <section v-else class="flex flex-col gap-2 border-t pt-3 dark:border-gray-700" data-testid="cut-progress">
-            <h2 class="text-1 text-sm font-semibold">
-              {{ outcome === "done" ? "The video is cut." : outcome === "failed" ? "The cut failed." : "Cutting the video…" }}
-            </h2>
-            <TranscodingProgress
-              :course-id="courseId"
-              :lecture-id="targetId"
-              converting
-              :progresses="progresses"
-              retry-hint="Go back and cut the video again."
-              @done="converted"
-            />
-            <p v-if="outcome === 'done'" class="flex flex-wrap gap-2 text-sm">
-              <RouterLink :to="watchPath" class="tum-live-button text-white bg-blue-500 dark:bg-indigo-600">
-                Watch the cut video
-              </RouterLink>
-              <RouterLink :to="`/admin/courses/${courseId}/lectures`" class="tum-live-button tum-live-button-secondary">
-                Back to the lectures
-              </RouterLink>
-            </p>
-            <p v-else-if="outcome === 'failed'" class="flex flex-wrap gap-2 text-sm">
-              <button type="button" class="tum-live-button tum-live-button-secondary" @click="reload">
-                Back to the editor
-              </button>
-            </p>
           </section>
         </template>
       </template>

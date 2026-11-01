@@ -7,6 +7,8 @@ import { defineComponent, h } from "vue";
 import { StreamWatchSchema, WatchViewKind } from "@/gen/server/apiv2_pb";
 import { ApiError } from "@/lib/api";
 import { LectureCutMode, type Waveform } from "@/lib/lecture-cut";
+import TranscodingProgress from "@/components/admin/lectures/content/TranscodingProgress.vue";
+import type { OpenCut } from "@/lib/lecture-cut";
 import LectureCutView from "./LectureCutView.vue";
 
 const m = vi.hoisted(() => ({
@@ -15,6 +17,9 @@ const m = vi.hoisted(() => ({
   requestWaveform: vi.fn(),
   pollWaveform: vi.fn(),
   cutLecture: vi.fn(),
+  fetchOpenCut: vi.fn(),
+  retryCut: vi.fn(),
+  abandonCut: vi.fn(),
   progress: vi.fn(),
   courseLoad: vi.fn(),
   seek: vi.fn(),
@@ -32,6 +37,9 @@ vi.mock("@/lib/lecture-cut", async (orig) => ({
   requestWaveform: m.requestWaveform,
   pollWaveform: m.pollWaveform,
   cutLecture: m.cutLecture,
+  fetchOpenCut: m.fetchOpenCut,
+  retryCut: m.retryCut,
+  abandonCut: m.abandonCut,
 }));
 vi.mock("@/stores/auth", () => ({
   useAuthStore: () => ({ load: () => Promise.resolve({ id: 1 }) }),
@@ -77,6 +85,15 @@ function watchData(over: Record<string, unknown> = {}) {
   });
 }
 
+const running = (over: Partial<OpenCut> = {}): OpenCut => ({
+  targetStreamId: 7,
+  duplicate: false,
+  progresses: [{ version: "COMB", progress: 10, failed: false, error: "" }],
+  ...over,
+});
+const failedCut = (over: Partial<OpenCut> = {}): OpenCut =>
+  running({ progresses: [{ version: "CAM", progress: 0, failed: true, error: "The video could not be converted." }], ...over });
+
 const mountIt = () => mount(LectureCutView, { global: { stubs } });
 const byTestId = (w: ReturnType<typeof mountIt>, id: string) => w.get(`[data-testid=${id}]`);
 
@@ -87,6 +104,9 @@ beforeEach(() => {
   m.requestWaveform.mockReset().mockResolvedValue(undefined);
   m.pollWaveform.mockReset().mockReturnValue(() => {});
   m.cutLecture.mockReset().mockResolvedValue(7);
+  m.fetchOpenCut.mockReset().mockResolvedValue(null);
+  m.retryCut.mockReset().mockResolvedValue(undefined);
+  m.abandonCut.mockReset().mockResolvedValue([]);
   m.progress.mockReset().mockResolvedValue([]);
   m.courseLoad.mockReset().mockResolvedValue(undefined);
   m.seek.mockReset();
@@ -125,11 +145,14 @@ describe("LectureCutView", () => {
 
     await byTestId(w, "cut-submit").trigger("click");
     expect(m.cutLecture).not.toHaveBeenCalled();
+    m.fetchOpenCut.mockResolvedValue(running());
     await byTestId(w, "cut-confirm").trigger("click");
     await flushPromises();
 
     expect(m.cutLecture).toHaveBeenCalledWith(3, 7, LectureCutMode.OVERWRITE, [{ start: 21.5, end: 58.5 }]);
-    expect(w.find("[data-testid=cut-progress]").exists()).toBe(true);
+    // What the server says is under way is what the page shows, in place of the editor.
+    expect(byTestId(w, "cut-progress").text()).toContain("Cutting the video");
+    expect(w.find("[data-testid=cut-timeline]").exists()).toBe(false);
   });
 
   it("makes a new lecture without asking", async () => {
@@ -138,11 +161,12 @@ describe("LectureCutView", () => {
     await flushPromises();
     await byTestId(w, "cut-accept-all").trigger("click");
     await w.findAll("input[type=radio]")[1].setValue(true);
+    m.fetchOpenCut.mockResolvedValue(running({ targetStreamId: 8, duplicate: true }));
     await byTestId(w, "cut-submit").trigger("click");
     await flushPromises();
 
     expect(m.cutLecture).toHaveBeenCalledWith(3, 7, LectureCutMode.DUPLICATE, [{ start: 21.5, end: 58.5 }]);
-    expect(m.progress).toHaveBeenCalledWith(3, 8);
+    expect(w.findComponent(TranscodingProgress).props("lectureId")).toBe(8);
   });
 
   it("does not send the suggestions that were not accepted", async () => {
@@ -161,7 +185,7 @@ describe("LectureCutView", () => {
   });
 
   it("shows why a cut was refused", async () => {
-    m.cutLecture.mockRejectedValue(new ApiError(409, "busy"));
+    m.cutLecture.mockRejectedValue(new ApiError(409, "the lecture is being converted"));
     const w = mountIt();
     await flushPromises();
     await byTestId(w, "cut-accept-all").trigger("click");
@@ -169,7 +193,7 @@ describe("LectureCutView", () => {
     await byTestId(w, "cut-submit").trigger("click");
     await flushPromises();
 
-    expect(w.get("[role=alert]").text()).toContain("being converted");
+    expect(w.get("[role=alert]").text()).toContain("The lecture is being converted");
     expect(w.find("[data-testid=cut-progress]").exists()).toBe(false);
   });
 
@@ -243,5 +267,115 @@ describe("LectureCutView", () => {
     m.paused.mockReturnValue(true);
     w.findComponent(Player).vm.$emit("timeupdate", 30);
     expect(m.seek).not.toHaveBeenCalled();
+  });
+});
+
+describe("LectureCutView, a cut that is not finished", () => {
+  it("shows how far it is instead of the editor", async () => {
+    m.fetchOpenCut.mockResolvedValue(running());
+    const w = mountIt();
+    await flushPromises();
+
+    expect(byTestId(w, "cut-progress").text()).toContain("Cutting the video");
+    expect(w.find("[data-testid=cut-timeline]").exists()).toBe(false);
+    expect(m.fetchWaveform).not.toHaveBeenCalled();
+    expect(w.find("[data-testid=cut-retry]").exists()).toBe(false);
+  });
+
+  it("offers to cut the versions that failed again", async () => {
+    m.fetchOpenCut.mockResolvedValueOnce(failedCut()).mockResolvedValue(running());
+    const w = mountIt();
+    await flushPromises();
+    expect(byTestId(w, "cut-failed").text()).toContain("only the ones that failed");
+    expect(byTestId(w, "cut-progress").text()).toContain("The cut did not finish");
+
+    await byTestId(w, "cut-retry").trigger("click");
+    await flushPromises();
+
+    expect(m.retryCut).toHaveBeenCalledWith(3, 7);
+    // and then it shows them being cut
+    expect(byTestId(w, "cut-progress").text()).toContain("Cutting the video");
+  });
+
+  it("shows why a retry was refused and stays on the cut", async () => {
+    m.fetchOpenCut.mockResolvedValue(failedCut());
+    m.retryCut.mockRejectedValue(new ApiError(503, "no runner is available"));
+    const w = mountIt();
+    await flushPromises();
+    await byTestId(w, "cut-retry").trigger("click");
+    await flushPromises();
+    expect(w.get("[role=alert]").text()).toContain("No runner is available");
+    expect(w.find("[data-testid=cut-failed]").exists()).toBe(true);
+  });
+
+  it("gives up a cut after asking, and says what was left uncut", async () => {
+    m.fetchOpenCut.mockResolvedValueOnce(failedCut()).mockResolvedValue(null);
+    m.abandonCut.mockResolvedValue(["CAM"]);
+    const w = mountIt();
+    await flushPromises();
+
+    await byTestId(w, "cut-abandon").trigger("click");
+    expect(m.abandonCut).not.toHaveBeenCalled();
+    expect(w.text()).toContain("can't be put back");
+    await byTestId(w, "cut-abandon-confirm").trigger("click");
+    await flushPromises();
+
+    expect(m.abandonCut).toHaveBeenCalledWith(3, 7);
+    expect(byTestId(w, "cut-notice").text()).toContain("The CAM version was not cut");
+    // back at the editor
+    expect(w.find("[data-testid=cut-timeline]").exists()).toBe(true);
+  });
+
+  it("says that giving up a duplicate removes the new lecture", async () => {
+    m.fetchOpenCut.mockResolvedValue(failedCut({ targetStreamId: 8, duplicate: true }));
+    const w = mountIt();
+    await flushPromises();
+    await byTestId(w, "cut-abandon").trigger("click");
+    expect(w.text()).toContain("removes the new lecture");
+  });
+
+  it("can be kept after all", async () => {
+    m.fetchOpenCut.mockResolvedValue(failedCut());
+    const w = mountIt();
+    await flushPromises();
+    await byTestId(w, "cut-abandon").trigger("click");
+    await w.findAll("button").find((b) => b.text() === "Keep it")!.trigger("click");
+    expect(w.find("[data-testid=cut-abandon-confirm]").exists()).toBe(false);
+    expect(m.abandonCut).not.toHaveBeenCalled();
+  });
+
+  it("is done once the server has finished it", async () => {
+    // all versions are done and the cut is being finished, then it is closed
+    m.fetchOpenCut.mockResolvedValueOnce(running({ progresses: [], targetStreamId: 8, duplicate: true })).mockResolvedValue(null);
+    const w = mountIt();
+    await flushPromises();
+
+    expect(byTestId(w, "cut-progress").text()).toContain("The video is cut.");
+    expect(w.find("a[href='/w/eidi/8']").exists()).toBe(true);
+  });
+
+  it("settles when the conversion it showed is over", async () => {
+    m.fetchOpenCut.mockResolvedValueOnce(running()).mockResolvedValue(null);
+    const w = mountIt();
+    await flushPromises();
+    expect(byTestId(w, "cut-progress").text()).toContain("Cutting the video");
+
+    w.findComponent(TranscodingProgress).vm.$emit("done");
+    await flushPromises();
+    expect(byTestId(w, "cut-progress").text()).toContain("The video is cut.");
+  });
+
+  it("shows what the server has when only some versions could be started", async () => {
+    m.cutLecture.mockRejectedValue(new ApiError(503, "only some versions could be started: retry the cut to start the rest"));
+    const w = mountIt();
+    await flushPromises();
+    await byTestId(w, "cut-accept-all").trigger("click");
+    await w.findAll("input[type=radio]")[1].setValue(true);
+    m.fetchOpenCut.mockResolvedValue(failedCut({ targetStreamId: 8, duplicate: true }));
+    await byTestId(w, "cut-submit").trigger("click");
+    await flushPromises();
+
+    expect(w.find("[data-testid=cut-failed]").exists()).toBe(true);
+    expect(w.get("[role=alert]").text()).toContain("No runner is available");
   });
 });
