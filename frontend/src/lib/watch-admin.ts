@@ -37,6 +37,7 @@ export interface AdminLinks {
   /** The lecture's row in the course's lectures tab. */
   edit: string;
   stats: string;
+  cut: string;
   live: string;
   /** The lecture's watch page. */
   watch: string;
@@ -47,6 +48,7 @@ export function adminLinks(courseId: number, streamId: number, slug: string): Ad
   return {
     edit: `${course}/lectures`,
     stats: `${course}/lectures/${streamId}/stats`,
+    cut: `${course}/lectures/${streamId}/cut`,
     live: `${course}/lectures/${streamId}/live`,
     watch: `/w/${encodeURIComponent(slug)}/${streamId}`,
   };

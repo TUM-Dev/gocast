@@ -40,6 +40,7 @@ describe("adminLinks", () => {
     expect(adminLinks(3, 7, "ab c")).toEqual({
       edit: "/admin/courses/3/lectures",
       stats: "/admin/courses/3/lectures/7/stats",
+      cut: "/admin/courses/3/lectures/7/cut",
       live: "/admin/courses/3/lectures/7/live",
       watch: "/w/ab%20c/7",
     });

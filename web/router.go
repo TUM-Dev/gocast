@@ -41,7 +41,7 @@ const spaShellPath = "spa/index.html"
 //
 //  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
 //  2. Plural collections: /admin/courses/:courseID.
-//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{stats,live}.
+//  3. Lectures nest: /admin/courses/:courseID/lectures/:streamID/{stats,live,cut}.
 //  4. In-page tabs are child routes, not component state.
 //
 // Rules 2 and 3 do not hold for the server-rendered pages yet; each is normalized as
@@ -83,6 +83,7 @@ var spaRoutes = map[string]bool{
 	"/admin/courses/:courseID/participants": true,
 	"/admin/courses/:courseID/lectures":     true,
 	"/admin/courses/:courseID/lectures/:streamID/stats": true,
+	"/admin/courses/:courseID/lectures/:streamID/cut":   true,
 	"/admin/create-course":                              true,
 	"/admin":                                            true,
 	"/w/:slug/:streamID":                                true,
@@ -405,12 +406,13 @@ func configMainRoute(router *tools.Router) {
 	router.HandleFunc("GET /admin/course/{courseID}/stats", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+"/stats", http.StatusMovedPermanently)
 	})
-	// The lecture cut editor was dropped (it may return later), so old bookmarks and
-	// emailed links go to the course's lectures tab. This must
+	// The old address of the lecture cut editor, which came back under rule 3. This must
 	// stay behind courseAdminGroup's middleware so the redirect doesn't reveal anything
-	// to people who couldn't open the page before. Stored cuts (StartOffset/EndOffset)
-	// still apply on playback.
-	courseAdminGroup.HandleFunc("GET /admin/cut/{courseID}/{streamID}", redirectToLectures)
+	// to people who couldn't open the page before.
+	courseAdminGroup.HandleFunc("GET /admin/cut/{courseID}/{streamID}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/courses/"+url.PathEscape(r.PathValue("courseID"))+
+			"/lectures/"+url.PathEscape(r.PathValue("streamID"))+"/cut", http.StatusMovedPermanently)
+	})
 	// Lecture units were dropped too; both of the page's URLs redirect the same way,
 	// behind the same middleware and for the same reason.
 	for _, pattern := range []string{
@@ -428,6 +430,7 @@ func configMainRoute(router *tools.Router) {
 	// Rule 3's nested path; the old one redirects below.
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/stats")
 	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/live")
+	registerPage(withStream, http.MethodGet, "/admin/courses/:courseID/lectures/:streamID/cut")
 	// The old management URL, which lecturers have bookmarked and the old watch page
 	// linked to. Behind the same middleware as the page, so it reveals nothing the page
 	// would not.

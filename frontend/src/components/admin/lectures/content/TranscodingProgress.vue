@@ -14,12 +14,17 @@ import {
  * the card shows the finished recording. A version whose conversion failed stays, with
  * the reason, until the next upload of it replaces it.
  */
-const props = defineProps<{
-  courseId: number;
-  lectureId: number;
-  converting: boolean;
-  progresses: TranscodingProgress[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    courseId: number;
+    lectureId: number;
+    converting: boolean;
+    progresses: TranscodingProgress[];
+    /** What to do about a failed version, which depends on what was converting. */
+    retryHint?: string;
+  }>(),
+  { retryHint: "Upload the video again to retry." },
+);
 
 const emit = defineEmits<{ done: [] }>();
 
@@ -64,7 +69,7 @@ onBeforeUnmount(() => stop?.());
       <p v-if="p.failed" class="font-semibold text-red-700 dark:text-red-400" role="alert">
         <i class="fas fa-triangle-exclamation mr-1"></i>{{ p.version }}: conversion failed.
         <span v-if="p.error" class="font-normal">{{ p.error }}</span>
-        <span class="font-normal"> Upload the video again to retry.</span>
+        <span class="font-normal"> {{ retryHint }}</span>
       </p>
       <template v-else>
         <span class="text-4 font-semibold">{{ p.version }} ({{ p.progress }}%)</span>

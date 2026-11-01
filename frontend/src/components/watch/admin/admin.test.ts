@@ -95,9 +95,13 @@ describe("WatchAdminStrip", () => {
     ]);
   });
 
-  it("offers management and ending only while it makes sense", () => {
+  it("offers management and ending only while it makes sense, and cutting only once it is over", () => {
     const w = mount(WatchAdminStrip, { props: { ...props({ canEndStream: false }), liveNow: false }, global: { stubs } });
-    expect(w.findAll("a")).toHaveLength(2);
+    expect(w.findAll("a").map((a) => a.attributes("href"))).toEqual([
+      "/admin/courses/3/lectures",
+      "/admin/courses/3/lectures/7/stats",
+      "/admin/courses/3/lectures/7/cut",
+    ]);
     expect(w.text()).not.toContain("End stream");
   });
 

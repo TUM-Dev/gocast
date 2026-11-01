@@ -110,6 +110,16 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
     </dl>
 
     <template v-if="lecture.recording">
+      <div v-if="!lecture.liveNow" class="flex flex-wrap items-center gap-2">
+        <RouterLink
+          :to="`/admin/courses/${courseId}/lectures/${lecture.id}/cut`"
+          class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+          data-testid="cut-video-link"
+        >
+          <i class="fas fa-scissors mr-1"></i>Cut video
+        </RouterLink>
+        <span class="text-5 text-xs">Remove breaks and silences from the recording.</span>
+      </div>
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-2"><i class="fa-solid fa-closed-captioning mr-1"></i>Generate subtitles:</span>
         <button
