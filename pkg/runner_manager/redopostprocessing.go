@@ -35,9 +35,9 @@ func protobufStreamVersion(version model.StreamVersion) protobuf.StreamVersion {
 }
 
 // RequestRedoPostProcessing asks a runner to redo the post-processing of an
-// already-recorded VOD. The runner answers asynchronously with a
-// ThumbnailReadyNotification, which saveThumbnail then stores, a
-// DurationProbedNotification, and a SilenceDetectedNotification if silences were asked for, so this returns as soon as the
+// already-recorded VOD. The runner answers asynchronously with a DurationProbedNotification,
+// a ThumbnailReadyNotification, which saveThumbnail then stores, and a
+// SilenceDetectedNotification if silences were asked for, so this returns as soon as the
 // job is accepted. The runner's RPC still has the name it was introduced with.
 func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) (err error) {
 	version := protobufStreamVersion(req.Version)

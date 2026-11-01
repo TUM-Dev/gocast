@@ -32,9 +32,8 @@ func WithPostProcessing(t PostProcessing) Option {
 // RedoCoursePostProcessing starts a background job that asks a runner to redo the
 // thumbnail and probe the duration for every available version (combined, camera,
 // presentation) of every recorded lecture in the course, and to detect the lecture's
-// silences. It returns as
-// soon as the jobs are queued, the way GenerateMaintenanceThumbnails does for every
-// course at once.
+// silences. It returns as soon as the jobs are queued, the way
+// GenerateMaintenanceThumbnails does for every course at once.
 func (a *API) RedoCoursePostProcessing(ctx context.Context, req *protobuf.RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {
 	course, err := a.administeredCourse(ctx, req.GetCourseId())
 	if err != nil {
