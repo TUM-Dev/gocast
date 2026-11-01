@@ -234,13 +234,22 @@ export function apiUpload<T>(path: string, form: FormData, onProgress?: (fractio
   return apiUploadWithProgress<T>(path, form, onProgress);
 }
 
-/** The XHR twin of send(): same token, same error shape, plus upload progress. */
-function sendWithProgress<T>(
+/**
+ * The XHR twin of apiFetch, with upload progress.
+ *
+ * It mints a fresh token instead of retrying on a 401. The server checks the token
+ * before it reads the body, so one that is valid when the request starts carries an
+ * upload of any length. A cached token that had expired would be refused at once, and
+ * with a large body still going out the browser may report a reset connection rather
+ * than the 401, so the retry apiFetch relies on would not be reached.
+ */
+async function apiUploadWithProgress<T>(
   path: string,
   form: FormData,
-  token: string,
   onProgress: (fraction: number) => void,
 ): Promise<T> {
+  const token = await getToken(true);
+
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE}${path}`);
@@ -250,46 +259,29 @@ function sendWithProgress<T>(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
     };
-    xhr.onerror = () => reject(new ApiError(0, "network error"));
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        // 204 and other empty answers carry no JSON.
-        try {
-          resolve((xhr.status === 204 || !xhr.responseText ? undefined : JSON.parse(xhr.responseText)) as T);
-        } catch {
-          reject(new ApiError(xhr.status, "invalid response"));
-        }
+    // fetch rejects with a TypeError when the request does not complete, and callers
+    // already treat that as "something went wrong"; match it, so none of them has to
+    // know a second kind of failure.
+    xhr.onerror = () => reject(new TypeError("network error"));
+    xhr.onabort = () => reject(new TypeError("upload aborted"));
+    xhr.ontimeout = () => reject(new TypeError("upload timed out"));
+    xhr.onload = async () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(await toApiError(new Response(xhr.responseText, { status: xhr.status, statusText: xhr.statusText })));
         return;
       }
-      let message = xhr.statusText || "request failed";
-      try {
-        const body = JSON.parse(xhr.responseText);
-        if (body && typeof body.message === "string") message = body.message;
-      } catch {
-        // response had no JSON body
+      if (xhr.status === 204 || !xhr.responseText) {
+        resolve(undefined as T);
+        return;
       }
-      reject(new ApiError(xhr.status, message));
+      try {
+        resolve(JSON.parse(xhr.responseText) as T);
+      } catch {
+        reject(new ApiError(xhr.status, "invalid response"));
+      }
     };
     xhr.send(form);
   });
-}
-
-/** apiFetch's retry-once-on-401 around sendWithProgress. */
-async function apiUploadWithProgress<T>(
-  path: string,
-  form: FormData,
-  onProgress: (fraction: number) => void,
-): Promise<T> {
-  let token = await getToken();
-  try {
-    return await sendWithProgress<T>(path, form, token, onProgress);
-  } catch (err) {
-    if (!(err instanceof ApiError) || !err.isUnauthenticated) {
-      throw err;
-    }
-    token = await getToken(true);
-    return await sendWithProgress<T>(path, form, token, onProgress);
-  }
 }
 
 /** DELETE, for endpoints that answer with an empty body. */
