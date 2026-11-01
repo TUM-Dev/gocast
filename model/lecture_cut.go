@@ -14,12 +14,16 @@ type CutRange struct {
 // LectureCut is a cut of a lecture's VOD that the runners are carrying out. It is kept to
 // finish the cut once every version is done, because only then does the lecture's data
 // that refers to times in the recording, its sections and offsets, move onto the new
-// timeline, and a duplicate become visible.
+// timeline, and a duplicate become visible. It stays open when a version fails, with the
+// ranges, so that the failed versions can be cut again like the others.
+//
+// A lecture has at most one: SourceStreamID is unique, which is also what makes starting a
+// cut atomic.
 type LectureCut struct {
 	// TargetStreamID is the lecture the cut VOD belongs to: the cut one itself when the
 	// VOD is replaced, the copy otherwise.
 	TargetStreamID uint `gorm:"primaryKey;autoIncrement:false"`
-	SourceStreamID uint `gorm:"not null"`
+	SourceStreamID uint `gorm:"not null;uniqueIndex"`
 	// SourcePrivate is whether the source was private before the cut. A duplicate takes
 	// over the source's visibility, and the source is made private, which a second try at
 	// finishing the cut must not mistake for the source's own.

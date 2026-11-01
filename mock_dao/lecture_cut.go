@@ -40,6 +40,21 @@ func (m *MockLectureCutDao) EXPECT() *MockLectureCutDaoMockRecorder {
 	return m.recorder
 }
 
+// ClaimLectureCut mocks base method.
+func (m *MockLectureCutDao) ClaimLectureCut(cut model.LectureCut) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClaimLectureCut", cut)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClaimLectureCut indicates an expected call of ClaimLectureCut.
+func (mr *MockLectureCutDaoMockRecorder) ClaimLectureCut(cut any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClaimLectureCut", reflect.TypeOf((*MockLectureCutDao)(nil).ClaimLectureCut), cut)
+}
+
 // DeleteLectureCut mocks base method.
 func (m *MockLectureCutDao) DeleteLectureCut(targetStreamID uint) error {
 	m.ctrl.T.Helper()
@@ -84,16 +99,17 @@ func (mr *MockLectureCutDaoMockRecorder) GetLectureCut(targetStreamID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureCut", reflect.TypeOf((*MockLectureCutDao)(nil).GetLectureCut), targetStreamID)
 }
 
-// SaveLectureCut mocks base method.
-func (m *MockLectureCutDao) SaveLectureCut(cut model.LectureCut) error {
+// GetLectureCutBySource mocks base method.
+func (m *MockLectureCutDao) GetLectureCutBySource(sourceStreamID uint) (model.LectureCut, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveLectureCut", cut)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "GetLectureCutBySource", sourceStreamID)
+	ret0, _ := ret[0].(model.LectureCut)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// SaveLectureCut indicates an expected call of SaveLectureCut.
-func (mr *MockLectureCutDaoMockRecorder) SaveLectureCut(cut any) *gomock.Call {
+// GetLectureCutBySource indicates an expected call of GetLectureCutBySource.
+func (mr *MockLectureCutDaoMockRecorder) GetLectureCutBySource(sourceStreamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLectureCut", reflect.TypeOf((*MockLectureCutDao)(nil).SaveLectureCut), cut)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLectureCutBySource", reflect.TypeOf((*MockLectureCutDao)(nil).GetLectureCutBySource), sourceStreamID)
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"go.uber.org/mock/gomock"
@@ -22,22 +23,49 @@ import (
 type fakeCutting struct {
 	waveformFor     []uint
 	waveformSources []CutSource
-	cutErr          error
-	cutSource       uint
-	cutTarget       uint
-	cutSources      []CutSource
-	cutDiscard      []model.CutRange
+	waveformErr     error
+	// cutErrs fails the cut of a version, in addition to cutErr for all of them.
+	cutErr  error
+	cutErrs map[model.StreamVersion]error
+	cuts    []cutCall
+	scanned []uint
+}
+
+type cutCall struct {
+	source, target uint
+	src            CutSource
+	discard        []model.CutRange
 }
 
 func (f *fakeCutting) RequestWaveform(streamID uint, sources []CutSource) error {
 	f.waveformFor = append(f.waveformFor, streamID)
 	f.waveformSources = sources
-	return f.cutErr
+	return f.waveformErr
 }
 
-func (f *fakeCutting) Cut(source, target uint, sources []CutSource, discard []model.CutRange) error {
-	f.cutSource, f.cutTarget, f.cutSources, f.cutDiscard = source, target, sources, discard
-	return f.cutErr
+func (f *fakeCutting) Cut(source, target uint, src CutSource, discard []model.CutRange) error {
+	if err := f.cutErrs[src.Version]; err != nil {
+		return err
+	}
+	if f.cutErr != nil {
+		return f.cutErr
+	}
+	f.cuts = append(f.cuts, cutCall{source, target, src, discard})
+	return nil
+}
+
+func (f *fakeCutting) ScanSilences(streamID uint) error {
+	f.scanned = append(f.scanned, streamID)
+	return nil
+}
+
+// versionsCut is the versions the runners were asked to cut, in order.
+func (f *fakeCutting) versionsCut() []model.StreamVersion {
+	var out []model.StreamVersion
+	for _, c := range f.cuts {
+		out = append(out, c.src.Version)
+	}
+	return out
 }
 
 type cutMocks struct {
@@ -151,7 +179,7 @@ func TestRequestLectureWaveform(t *testing.T) {
 
 	t.Run("503s a runner that doesn't answer", func(t *testing.T) {
 		api, m := newCutAPI(t)
-		m.cutting.cutErr = errors.New("no runner is available")
+		m.cutting.waveformErr = errors.New("no runner is available")
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
 		_, err := api.RequestLectureWaveform(asCaller(lectureAdmin), req)
 		wantCode(t, err, codes.Unavailable)
@@ -260,14 +288,37 @@ func TestValidateCut(t *testing.T) {
 	}
 }
 
+// progressRows expects the progress rows of the three versions of a stream: those in rows
+// exist, the others do not.
+func progressRows(m cutMocks, stream uint, rows map[model.StreamVersion]model.TranscodingProgress) {
+	for _, v := range []model.StreamVersion{model.COMB, model.CAM, model.PRES} {
+		if p, ok := rows[v]; ok {
+			m.streams.EXPECT().GetTranscodingProgressByVersion(v, stream).Return(p, nil)
+		} else {
+			m.streams.EXPECT().GetTranscodingProgressByVersion(v, stream).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+		}
+	}
+}
+
 func TestCutLecture(t *testing.T) {
 	req := func(mode protobuf.LectureCutMode, d ...float64) *protobuf.CutLectureRequest {
 		return &protobuf.CutLectureRequest{CourseId: 1, StreamId: 7, Mode: mode, Discard: discard(d...)}
 	}
 	overwrite := protobuf.LectureCutMode_LECTURE_CUT_MODE_OVERWRITE
 	duplicate := protobuf.LectureCutMode_LECTURE_CUT_MODE_DUPLICATE
+	// Nothing converting, and no cut that is not finished.
 	idle := func(m cutMocks) {
-		m.streams.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound).Times(3)
+		progressRows(m, 7, nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
+	}
+	signed := []CutSource{{model.COMB, "https://comb?jwt=signed"}, {model.CAM, "https://cam"}}
+	saveRows := func(m cutMocks, target uint) {
+		for _, v := range []model.StreamVersion{model.COMB, model.CAM} {
+			m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: target, Version: v}).Return(nil)
+		}
+	}
+	removeRows := func(m cutMocks, target uint) {
+		m.streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), target).Return(nil).Times(2)
 	}
 
 	t.Run("overwrites in place", func(t *testing.T) {
@@ -276,24 +327,21 @@ func TestCutLecture(t *testing.T) {
 		idle(m)
 		storeWaveform(t, m, hourLong)
 		want := model.LectureCut{TargetStreamID: 7, SourceStreamID: 7, Discard: []model.CutRange{{Start: 60, End: 120}, {Start: 300, End: 400}}}
-		m.cuts.EXPECT().SaveLectureCut(want).Return(nil)
-		for _, v := range []model.StreamVersion{model.COMB, model.CAM} {
-			m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 7, Version: v}).Return(nil)
-		}
+		m.cuts.EXPECT().ClaimLectureCut(want).Return(true, nil)
+		saveRows(m, 7)
 
 		resp, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120, 300, 400))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if resp.StreamId != 7 || m.cutting.cutSource != 7 || m.cutting.cutTarget != 7 {
-			t.Errorf("resp = %v, cut %d -> %d", resp, m.cutting.cutSource, m.cutting.cutTarget)
+		if resp.StreamId != 7 || len(m.cutting.cuts) != 2 {
+			t.Fatalf("resp = %v, cuts = %v", resp, m.cutting.cuts)
 		}
-		wantSources := []CutSource{{model.COMB, "https://comb?jwt=signed"}, {model.CAM, "https://cam"}}
-		if !reflect.DeepEqual(m.cutting.cutSources, wantSources) {
-			t.Errorf("sources = %v, want %v", m.cutting.cutSources, wantSources)
-		}
-		if len(m.cutting.cutDiscard) != 2 || m.cutting.cutDiscard[1].End != 400 {
-			t.Errorf("discard = %v", m.cutting.cutDiscard)
+		// One job per version, from the signed playlist of that version, with the same ranges.
+		for i, c := range m.cutting.cuts {
+			if c.source != 7 || c.target != 7 || c.src != signed[i] || !reflect.DeepEqual(c.discard, want.Discard) {
+				t.Errorf("cut %d = %+v", i, c)
+			}
 		}
 	})
 
@@ -310,19 +358,17 @@ func TestCutLecture(t *testing.T) {
 			created = *s
 			return nil
 		})
-		m.cuts.EXPECT().SaveLectureCut(model.LectureCut{
+		m.cuts.EXPECT().ClaimLectureCut(model.LectureCut{
 			TargetStreamID: 8, SourceStreamID: 7, SourcePrivate: false, Discard: []model.CutRange{{Start: 60, End: 120}},
-		}).Return(nil)
-		for _, v := range []model.StreamVersion{model.COMB, model.CAM} {
-			m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 8, Version: v}).Return(nil)
-		}
+		}).Return(true, nil)
+		saveRows(m, 8)
 
 		resp, err := api.CutLecture(asCaller(lectureAdmin), req(duplicate, 60, 120))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if resp.StreamId != 8 || m.cutting.cutSource != 7 || m.cutting.cutTarget != 8 {
-			t.Errorf("resp = %v, cut %d -> %d", resp, m.cutting.cutSource, m.cutting.cutTarget)
+		if resp.StreamId != 8 || m.cutting.cuts[0].source != 7 || m.cutting.cuts[0].target != 8 {
+			t.Errorf("resp = %v, cuts = %+v", resp, m.cutting.cuts)
 		}
 		if !created.Private || created.Recording || created.PlaylistUrl != "" || created.PlaylistUrlCAM != "" ||
 			created.CourseID != 1 || created.Name != "Old" || len(created.Silences) != 0 {
@@ -346,16 +392,58 @@ func TestCutLecture(t *testing.T) {
 		idle(m)
 		storeWaveform(t, m, hourLong)
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { s.ID = 8; return nil })
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).DoAndReturn(func(c model.LectureCut) error {
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).DoAndReturn(func(c model.LectureCut) (bool, error) {
 			if !c.SourcePrivate {
 				t.Error("SourcePrivate not set")
 			}
-			return nil
+			return true, nil
 		})
 		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(2)
 		if _, err := api.CutLecture(asCaller(lectureAdmin), req(duplicate, 60, 120)); err != nil {
 			t.Fatal(err)
 		}
+	})
+
+	t.Run("refuses a lecture that has a cut that is not finished", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		idle(m)
+		storeWaveform(t, m, hourLong)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(false, nil)
+
+		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
+		wantCode(t, err, codes.AlreadyExists)
+		if len(m.cutting.cuts) != 0 {
+			t.Error("a runner was asked")
+		}
+	})
+
+	t.Run("says a cut is not finished before it asks for a waveform", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(7, model.CAM)})
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(openOverwrite, nil)
+		// the waveform went when the version that was cut was ready: no GetStreamFile
+
+		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
+		wantCode(t, err, codes.AlreadyExists)
+		if !strings.Contains(err.Error(), "not finished") {
+			t.Errorf("err = %v, want it to say that the cut is not finished", err)
+		}
+	})
+
+	t.Run("takes back the copy of a duplicate that was refused", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		idle(m)
+		storeWaveform(t, m, hourLong)
+		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { s.ID = 8; return nil })
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(false, nil)
+		// only the copy goes: the lecture's own rows belong to the cut that is open
+		m.streams.EXPECT().RemoveStream("8").Return(nil)
+
+		_, err := api.CutLecture(asCaller(lectureAdmin), req(duplicate, 60, 120))
+		wantCode(t, err, codes.AlreadyExists)
 	})
 
 	t.Run("takes back a duplicate that no runner took", func(t *testing.T) {
@@ -365,14 +453,55 @@ func TestCutLecture(t *testing.T) {
 		idle(m)
 		storeWaveform(t, m, hourLong)
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { s.ID = 8; return nil })
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).Return(nil)
-		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(2)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		// two rows when it starts, and both marked failed when no runner takes them
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(4)
 		m.cuts.EXPECT().DeleteLectureCut(uint(8)).Return(nil)
-		m.streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(8)).Return(nil).Times(2)
+		removeRows(m, 8)
 		m.streams.EXPECT().RemoveStream("8").Return(nil)
 
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(duplicate, 60, 120))
 		wantCode(t, err, codes.Unavailable)
+	})
+
+	t.Run("leaves nothing behind when no runner took an overwrite", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.cutting.cutErr = errors.New("no runner is available")
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		idle(m)
+		storeWaveform(t, m, hourLong)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(4)
+		m.cuts.EXPECT().DeleteLectureCut(uint(7)).Return(nil)
+		removeRows(m, 7)
+
+		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
+		wantCode(t, err, codes.Unavailable)
+	})
+
+	t.Run("keeps a cut that was only partly started, to be retried", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.cutting.cutErrs = map[model.StreamVersion]error{model.CAM: errors.New("runner went away")}
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		idle(m)
+		storeWaveform(t, m, hourLong)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		saveRows(m, 7)
+		// The version that was not taken is the one that is marked. The combined one carries
+		// on: marking it too would have a retry cut it a second time.
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error {
+			if p.Version != model.CAM || !p.Failed {
+				t.Errorf("marked %+v as failed", p)
+			}
+			return nil
+		})
+		// no DeleteLectureCut, no RemoveTranscodingProgress
+
+		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
+		wantCode(t, err, codes.Unavailable)
+		if got := m.cutting.versionsCut(); !reflect.DeepEqual(got, []model.StreamVersion{model.COMB}) {
+			t.Errorf("cut = %v, want only the combined version", got)
+		}
 	})
 
 	t.Run("does not cut without the markers that tell when it is done", func(t *testing.T) {
@@ -380,49 +509,34 @@ func TestCutLecture(t *testing.T) {
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
 		idle(m)
 		storeWaveform(t, m, hourLong)
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).Return(nil)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
 		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(errors.New("db down"))
 		m.cuts.EXPECT().DeleteLectureCut(uint(7)).Return(nil)
-		m.streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(7)).Return(nil).Times(2)
+		removeRows(m, 7)
 
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
 		wantCode(t, err, codes.Unknown)
-		if m.cutting.cutTarget != 0 {
+		if len(m.cutting.cuts) != 0 {
 			t.Error("a runner was asked")
 		}
-	})
-
-	t.Run("marks an overwrite that no runner took as failed", func(t *testing.T) {
-		api, m := newCutAPI(t)
-		m.cutting.cutErr = errors.New("no runner is available")
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
-		idle(m)
-		storeWaveform(t, m, hourLong)
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).Return(nil)
-		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error { return nil }).Times(4)
-		m.cuts.EXPECT().DeleteLectureCut(uint(7)).Return(nil)
-
-		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
-		wantCode(t, err, codes.Unavailable)
 	})
 
 	t.Run("refuses while a version is converting", func(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
-		m.streams.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(7)).Return(model.TranscodingProgress{Progress: 10}, nil)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.COMB: {Progress: 10}})
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
 		wantCode(t, err, codes.AlreadyExists)
 	})
 
-	t.Run("cuts again after a failure", func(t *testing.T) {
+	t.Run("goes on after a conversion that failed", func(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
-		m.streams.EXPECT().GetTranscodingProgressByVersion(model.COMB, uint(7)).Return(model.TranscodingProgress{Failed: true}, nil)
-		m.streams.EXPECT().GetTranscodingProgressByVersion(model.CAM, uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
-		m.streams.EXPECT().GetTranscodingProgressByVersion(model.PRES, uint(7)).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.COMB: {Failed: true}})
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
 		storeWaveform(t, m, hourLong)
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).Return(nil)
-		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(2)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		saveRows(m, 7)
 		if _, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120)); err != nil {
 			t.Fatal(err)
 		}
@@ -437,7 +551,7 @@ func TestCutLecture(t *testing.T) {
 		storeWaveform(t, m, w)
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
 		wantCode(t, err, codes.InvalidArgument)
-		if m.cutting.cutTarget != 0 {
+		if len(m.cutting.cuts) != 0 {
 			t.Error("a runner was asked")
 		}
 	})
@@ -449,8 +563,8 @@ func TestCutLecture(t *testing.T) {
 		w := hourLong
 		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3570}
 		storeWaveform(t, m, w)
-		m.cuts.EXPECT().SaveLectureCut(gomock.Any()).Return(nil)
-		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(2)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		saveRows(m, 7)
 		if _, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120)); err != nil {
 			t.Fatal(err)
 		}
@@ -493,6 +607,243 @@ func TestCutLecture(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(foreignLecture(), nil)
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
+		wantCode(t, err, codes.NotFound)
+	})
+}
+
+var (
+	// openOverwrite is the cut of stream 7 into itself, and openDuplicate the one into 8.
+	openOverwrite = model.LectureCut{TargetStreamID: 7, SourceStreamID: 7, Discard: []model.CutRange{{Start: 60, End: 120}}}
+	openDuplicate = model.LectureCut{TargetStreamID: 8, SourceStreamID: 7, Discard: []model.CutRange{{Start: 60, End: 120}}}
+)
+
+func failedRow(stream uint, v model.StreamVersion) model.TranscodingProgress {
+	return model.TranscodingProgress{StreamID: stream, Version: v, Failed: true, Error: "The video could not be converted."}
+}
+
+func TestGetLectureCut(t *testing.T) {
+	req := &protobuf.GetLectureCutRequest{CourseId: 1, StreamId: 7}
+
+	t.Run("is not open without a cut", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
+		resp, err := api.GetLectureCut(asCaller(lectureAdmin), req)
+		if err != nil || resp.Open {
+			t.Errorf("got %v, %v, want not open", resp, err)
+		}
+	})
+
+	t.Run("lists the versions of the target", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(openDuplicate, nil)
+		progressRows(m, 8, map[model.StreamVersion]model.TranscodingProgress{
+			model.COMB: {StreamID: 8, Version: model.COMB, Progress: 40},
+			model.CAM:  failedRow(8, model.CAM),
+		})
+		resp, err := api.GetLectureCut(asCaller(lectureAdmin), req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !resp.Open || resp.TargetStreamId != 8 || !resp.Duplicate || len(resp.Progresses) != 2 ||
+			resp.Progresses[0].Progress != 40 || !resp.Progresses[1].Failed || resp.Progresses[1].Version != "CAM" {
+			t.Errorf("resp = %v", resp)
+		}
+	})
+
+	t.Run("404s another course's lecture", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(foreignLecture(), nil)
+		_, err := api.GetLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.NotFound)
+	})
+}
+
+func TestRetryLectureCut(t *testing.T) {
+	req := &protobuf.RetryLectureCutRequest{CourseId: 1, StreamId: 7}
+	open := func(t *testing.T, cut model.LectureCut) (*API, cutMocks) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(cut, nil)
+		return api, m
+	}
+
+	t.Run("cuts only the versions that failed, with the ranges of the cut", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		// The combined version is done and has no row any more.
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(7, model.CAM)})
+		m.streams.EXPECT().SaveTranscodingProgress(model.TranscodingProgress{StreamID: 7, Version: model.CAM}).Return(nil)
+
+		if _, err := api.RetryLectureCut(asCaller(lectureAdmin), req); err != nil {
+			t.Fatal(err)
+		}
+		if len(m.cutting.cuts) != 1 {
+			t.Fatalf("cuts = %+v, want the camera version only", m.cutting.cuts)
+		}
+		c := m.cutting.cuts[0]
+		if c.src != (CutSource{model.CAM, "https://cam"}) || c.target != 7 || !reflect.DeepEqual(c.discard, openOverwrite.Discard) {
+			t.Errorf("cut = %+v", c)
+		}
+	})
+
+	t.Run("cuts the copy from the original", func(t *testing.T) {
+		api, m := open(t, openDuplicate)
+		progressRows(m, 8, map[model.StreamVersion]model.TranscodingProgress{
+			model.COMB: failedRow(8, model.COMB), model.CAM: failedRow(8, model.CAM),
+		})
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).Times(2)
+		if _, err := api.RetryLectureCut(asCaller(lectureAdmin), req); err != nil {
+			t.Fatal(err)
+		}
+		if len(m.cutting.cuts) != 2 || m.cutting.cuts[0].source != 7 || m.cutting.cuts[0].target != 8 {
+			t.Errorf("cuts = %+v", m.cutting.cuts)
+		}
+	})
+
+	t.Run("marks them failed again when no runner takes them", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		m.cutting.cutErr = errors.New("no runner is available")
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(7, model.CAM)})
+		var saved []model.TranscodingProgress
+		m.streams.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error {
+			saved = append(saved, p)
+			return nil
+		}).Times(2)
+		_, err := api.RetryLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.Unavailable)
+		if len(saved) != 2 || saved[0].Failed || !saved[1].Failed {
+			t.Errorf("rows = %+v, want one started and then marked failed", saved)
+		}
+	})
+
+	t.Run("refuses while a version is being cut", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{
+			model.COMB: {StreamID: 7, Version: model.COMB, Progress: 30}, model.CAM: failedRow(7, model.CAM),
+		})
+		_, err := api.RetryLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.AlreadyExists)
+		if len(m.cutting.cuts) != 0 {
+			t.Error("a runner was asked")
+		}
+	})
+
+	t.Run("refuses when no version failed", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, nil)
+		_, err := api.RetryLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.AlreadyExists)
+	})
+
+	t.Run("404s a lecture without an open cut", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
+		_, err := api.RetryLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.NotFound)
+	})
+
+	t.Run("503s without runners", func(t *testing.T) {
+		api, _ := open(t, openOverwrite)
+		api.cutting = nil
+		_, err := api.RetryLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.Unavailable)
+	})
+}
+
+func TestAbandonLectureCut(t *testing.T) {
+	req := &protobuf.AbandonLectureCutRequest{CourseId: 1, StreamId: 7}
+	open := func(t *testing.T, cut model.LectureCut) (*API, cutMocks) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(cut, nil)
+		return api, m
+	}
+
+	t.Run("removes the copy of a duplicate", func(t *testing.T) {
+		api, m := open(t, openDuplicate)
+		progressRows(m, 8, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(8, model.CAM)})
+		m.streams.EXPECT().RemoveTranscodingProgress(model.CAM, uint(8)).Return(nil)
+		m.streams.EXPECT().RemoveStream("8").Return(nil)
+		m.cuts.EXPECT().DeleteLectureCut(uint(8)).Return(nil)
+
+		resp, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		if err != nil || len(resp.LeftUncut) != 0 {
+			t.Errorf("got %v, %v, want the original untouched", resp, err)
+		}
+	})
+
+	t.Run("keeps what is cut of a replaced recording and moves its data along", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(7, model.CAM)})
+		m.cuts.EXPECT().FinishLectureCut(openOverwrite).Return(true, nil)
+		m.streams.EXPECT().RemoveTranscodingProgress(model.CAM, uint(7)).Return(nil)
+
+		resp, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(resp.LeftUncut, []string{"CAM"}) {
+			t.Errorf("left uncut = %v, want the camera version", resp.LeftUncut)
+		}
+		if !reflect.DeepEqual(m.cutting.scanned, []uint{7}) {
+			t.Errorf("silences scanned for %v", m.cutting.scanned)
+		}
+	})
+
+	t.Run("changes nothing when no version was cut", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{
+			model.COMB: failedRow(7, model.COMB), model.CAM: failedRow(7, model.CAM),
+		})
+		m.cuts.EXPECT().DeleteLectureCut(uint(7)).Return(nil)
+		m.streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(7)).Return(nil).Times(2)
+
+		resp, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		if err != nil || len(resp.LeftUncut) != 0 {
+			t.Errorf("got %v, %v, want nothing left uncut", resp, err)
+		}
+		if len(m.cutting.scanned) != 0 {
+			t.Error("silences were scanned for a lecture that did not change")
+		}
+	})
+
+	t.Run("leaves the data where it is when the combined version was not cut", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.COMB: failedRow(7, model.COMB)})
+		// no FinishLectureCut: the version viewers watch is as it was
+		m.cuts.EXPECT().DeleteLectureCut(uint(7)).Return(nil)
+		m.streams.EXPECT().RemoveTranscodingProgress(model.COMB, uint(7)).Return(nil)
+
+		resp, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		if err != nil || !reflect.DeepEqual(resp.LeftUncut, []string{"COMB"}) {
+			t.Errorf("got %v, %v, want the combined version left uncut", resp, err)
+		}
+	})
+
+	t.Run("keeps the cut open when it can't be finished", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.CAM: failedRow(7, model.CAM)})
+		m.cuts.EXPECT().FinishLectureCut(openOverwrite).Return(false, errors.New("db down"))
+		// the failed rows stay too
+
+		_, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.Unknown)
+	})
+
+	t.Run("refuses while a version is being cut", func(t *testing.T) {
+		api, m := open(t, openOverwrite)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.COMB: {StreamID: 7, Version: model.COMB, Progress: 5}})
+		_, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
+		wantCode(t, err, codes.AlreadyExists)
+	})
+
+	t.Run("404s a lecture without an open cut", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
+		_, err := api.AbandonLectureCut(asCaller(lectureAdmin), req)
 		wantCode(t, err, codes.NotFound)
 	})
 }

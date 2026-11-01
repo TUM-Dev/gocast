@@ -3044,9 +3044,85 @@
       }
     },
     "/courses/{courseId}/streams/{streamId}/cut": {
+      "get": {
+        "summary": "Get the cut of a lecture that is not finished.",
+        "description": "A cut stays open until every version is cut, so that a version that failed can be retried with the same ranges. Not open once it is done or abandoned. Requires administering the course.",
+        "operationId": "CourseService_getLectureCut",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLectureCutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "delete": {
+        "summary": "Give up an open cut.",
+        "description": "For a new lecture, removes it. For a replaced recording, the versions that are cut stay cut and the lecture's sections and trimming move with them if the combined version is among them. The versions that failed are left as they were, and are named in the answer. Answers 404 without an open cut and 409 while a version is still being cut. Requires administering the course.",
+        "operationId": "CourseService_abandonLectureCut",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufAbandonLectureCutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
       "post": {
         "summary": "Cut parts out of a lecture's recording.",
-        "description": "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted. Requires administering the course.",
+        "description": "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course.",
         "operationId": "CourseService_cutLecture",
         "responses": {
           "200": {
@@ -3084,6 +3160,47 @@
             "schema": {
               "$ref": "#/definitions/CourseServicecutLectureBody"
             }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/cut/retry": {
+      "post": {
+        "summary": "Cut again the versions of an open cut that failed.",
+        "description": "Runs only the versions that failed, with the ranges of the cut, and leaves the ones that are done. Answers 404 without an open cut and 409 while a version is still being cut or when none failed. Requires administering the course.",
+        "operationId": "CourseService_retryLectureCut",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -6350,6 +6467,18 @@
       },
       "description": "Message that represents an arbitrary HTTP body. It should only be used for\npayload formats that can't be represented as JSON, such as raw binary or\nan HTML page.\n\n\nThis message can be used both in streaming and non-streaming API methods in\nthe request as well as the response.\n\nIt can be used as a top-level request field, which is convenient if one\nwants to extract parameters from either the URL or HTTP template into the\nrequest fields and also want access to the raw HTTP body.\n\nExample:\n\n    message GetResourceRequest {\n      // A unique request id.\n      string request_id = 1;\n\n      // The raw HTTP body is bound to this field.\n      google.api.HttpBody http_body = 2;\n\n    }\n\n    service ResourceService {\n      rpc GetResource(GetResourceRequest)\n        returns (google.api.HttpBody);\n      rpc UpdateResource(google.api.HttpBody)\n        returns (google.protobuf.Empty);\n\n    }\n\nExample with streaming methods:\n\n    service CaldavService {\n      rpc GetCalendar(stream google.api.HttpBody)\n        returns (stream google.api.HttpBody);\n      rpc UpdateCalendar(stream google.api.HttpBody)\n        returns (stream google.api.HttpBody);\n\n    }\n\nUse of this type only changes how the request and response bodies are\nhandled, all other features will continue to work unchanged."
     },
+    "protobufAbandonLectureCutResponse": {
+      "type": "object",
+      "properties": {
+        "leftUncut": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The versions of a replaced recording that were not cut and still hold what the cut\nwould have removed (COMB, CAM, PRES)."
+        }
+      }
+    },
     "protobufAddBookmarkRequest": {
       "type": "object",
       "properties": {
@@ -7918,6 +8047,31 @@
         },
         "returnUrl": {
           "type": "string"
+        }
+      }
+    },
+    "protobufGetLectureCutResponse": {
+      "type": "object",
+      "properties": {
+        "open": {
+          "type": "boolean"
+        },
+        "targetStreamId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The lecture that gets the cut recording: the request's own when it is replaced."
+        },
+        "duplicate": {
+          "type": "boolean",
+          "description": "A new lecture is made, and not the recording replaced."
+        },
+        "progresses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureTranscodingProgress"
+          },
+          "description": "The versions of the target that are being cut, or failed. Empty once every version is\ndone, which is when the cut is being finished."
         }
       }
     },
