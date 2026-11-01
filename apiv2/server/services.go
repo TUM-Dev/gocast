@@ -164,6 +164,9 @@ var services = []service{
 			"deleteLectureThumbnail":        requiresCourseAdmin(),
 			"requestLectureSubtitles":       requiresCourseAdmin(),
 			"getLectureTranscodingProgress": requiresCourseAdmin(),
+			"requestLectureWaveform":        requiresCourseAdmin(),
+			"getLectureWaveform":            requiresCourseAdmin(),
+			"cutLecture":                    requiresCourseAdmin(),
 		},
 	},
 	{

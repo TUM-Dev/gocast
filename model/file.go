@@ -23,6 +23,9 @@ const (
 	FILETYPE_THUMB_LG_PRES
 	FILETYPE_THUMB_LG_CAM_PRES // generated from CAM and PRES, preferred over the others
 	FILETYPE_THUMB_CUSTOM
+	// FILETYPE_WAVEFORM is the audio level timeline of a stream, see Waveform. Appended
+	// last: the type is persisted as its integer.
+	FILETYPE_WAVEFORM
 )
 
 type File struct {

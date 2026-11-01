@@ -820,6 +820,35 @@ service CourseService {
       description: "The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course."
     };
   }
+  rpc requestLectureWaveform(RequestLectureWaveformRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/waveform"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Have the audio level timeline of a lecture built."
+      description: "Asks a runner for the timeline the cut editor draws, and for the length of each version. Poll getLectureWaveform for the result. Answers 400 for a lecture with no recording and 503 when no runner is configured. Requires administering the course."
+    };
+  }
+
+  rpc getLectureWaveform(GetLectureWaveformRequest) returns (GetLectureWaveformResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/waveform"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the audio level timeline of a lecture."
+      description: "Not ready until a runner has delivered what requestLectureWaveform asked for. A new VOD of the lecture removes it. Requires administering the course."
+    };
+  }
+
+  rpc cutLecture(CutLectureRequest) returns (CutLectureResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/cut"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Cut parts out of a lecture's recording."
+      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted. Requires administering the course."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -3280,6 +3309,61 @@ message GetLectureTranscodingProgressResponse {
   // Versions still converting, and those whose conversion failed. Holds nothing
   // converting once every version has finished.
   repeated LectureTranscodingProgress progresses = 1;
+}
+
+message RequestLectureWaveformRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureWaveformRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureWaveformResponse {
+  // False while a runner has not delivered the timeline; all else is empty then.
+  bool ready = 1;
+  // One byte per bucket_seconds of the recording, the peak level in it: 0 is -60 dBFS or
+  // less, 255 is 0 dBFS.
+  bytes peaks = 2;
+  uint32 bucket_seconds = 3;
+  // The length in seconds of each version the runner could measure, by version (COMB,
+  // CAM, PRES).
+  map<string, double> version_durations = 4;
+  // The versions differ in length by more than the 30 seconds one cut can span, so
+  // cutLecture refuses the lecture.
+  bool versions_differ = 5;
+  // The lecture's detected silences, from which the editor suggests cuts.
+  repeated WatchSilence silences = 6;
+}
+
+enum LectureCutMode {
+  LECTURE_CUT_MODE_UNSPECIFIED = 0;
+  // Replace the recording.
+  LECTURE_CUT_MODE_OVERWRITE = 1;
+  // Make the cut recording a lecture of its own, with the visibility of the original, which
+  // becomes private.
+  LECTURE_CUT_MODE_DUPLICATE = 2;
+}
+
+// A stretch of the recording, in seconds from its start.
+message LectureCutRange {
+  double start = 1;
+  double end = 2;
+}
+
+message CutLectureRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  LectureCutMode mode = 3;
+  // The parts to remove: sorted, without overlap, within the recording.
+  repeated LectureCutRange discard = 4;
+}
+
+message CutLectureResponse {
+  // The lecture that gets the cut recording: the request's own when overwriting.
+  uint32 stream_id = 1;
 }
 
 // ----- end of lecture administration -----
