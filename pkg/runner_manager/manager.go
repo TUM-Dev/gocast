@@ -324,6 +324,8 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
 	case *protobuf.Notification_SpriteReady:
 		return &protobuf.NotificationResponse{}, m.saveSprite(ctx, notification.GetSpriteReady())
+	case *protobuf.Notification_WaveformReady:
+		return &protobuf.NotificationResponse{}, m.saveWaveform(ctx, notification.GetWaveformReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -689,6 +691,10 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	// repeated, so that a failure here retries the whole notification.
 	if err := m.dao.StreamsDao.RemoveTranscodingProgress(modelVersion, stream.ID); err != nil {
 		return nil, status.Errorf(codes.Internal, "can't clear the transcoding progress: %v", err)
+	}
+
+	if err := m.afterVODReady(ctx, stream.ID); err != nil {
+		return nil, err
 	}
 
 	err = m.requestSubtitles(ctx, stream, modelVersion)

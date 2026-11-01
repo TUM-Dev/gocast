@@ -821,6 +821,9 @@ const (
 	CourseService_DeleteLectureThumbnail_FullMethodName          = "/protobuf.CourseService/deleteLectureThumbnail"
 	CourseService_RequestLectureSubtitles_FullMethodName         = "/protobuf.CourseService/requestLectureSubtitles"
 	CourseService_GetLectureTranscodingProgress_FullMethodName   = "/protobuf.CourseService/getLectureTranscodingProgress"
+	CourseService_RequestLectureWaveform_FullMethodName          = "/protobuf.CourseService/requestLectureWaveform"
+	CourseService_GetLectureWaveform_FullMethodName              = "/protobuf.CourseService/getLectureWaveform"
+	CourseService_CutLecture_FullMethodName                      = "/protobuf.CourseService/cutLecture"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -900,6 +903,9 @@ type CourseServiceClient interface {
 	DeleteLectureThumbnail(ctx context.Context, in *DeleteLectureThumbnailRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RequestLectureSubtitles(ctx context.Context, in *RequestLectureSubtitlesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetLectureTranscodingProgress(ctx context.Context, in *GetLectureTranscodingProgressRequest, opts ...grpc.CallOption) (*GetLectureTranscodingProgressResponse, error)
+	RequestLectureWaveform(ctx context.Context, in *RequestLectureWaveformRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetLectureWaveform(ctx context.Context, in *GetLectureWaveformRequest, opts ...grpc.CallOption) (*GetLectureWaveformResponse, error)
+	CutLecture(ctx context.Context, in *CutLectureRequest, opts ...grpc.CallOption) (*CutLectureResponse, error)
 }
 
 type courseServiceClient struct {
@@ -1450,6 +1456,36 @@ func (c *courseServiceClient) GetLectureTranscodingProgress(ctx context.Context,
 	return out, nil
 }
 
+func (c *courseServiceClient) RequestLectureWaveform(ctx context.Context, in *RequestLectureWaveformRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_RequestLectureWaveform_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetLectureWaveform(ctx context.Context, in *GetLectureWaveformRequest, opts ...grpc.CallOption) (*GetLectureWaveformResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLectureWaveformResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetLectureWaveform_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) CutLecture(ctx context.Context, in *CutLectureRequest, opts ...grpc.CallOption) (*CutLectureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CutLectureResponse)
+	err := c.cc.Invoke(ctx, CourseService_CutLecture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -1527,6 +1563,9 @@ type CourseServiceServer interface {
 	DeleteLectureThumbnail(context.Context, *DeleteLectureThumbnailRequest) (*emptypb.Empty, error)
 	RequestLectureSubtitles(context.Context, *RequestLectureSubtitlesRequest) (*emptypb.Empty, error)
 	GetLectureTranscodingProgress(context.Context, *GetLectureTranscodingProgressRequest) (*GetLectureTranscodingProgressResponse, error)
+	RequestLectureWaveform(context.Context, *RequestLectureWaveformRequest) (*emptypb.Empty, error)
+	GetLectureWaveform(context.Context, *GetLectureWaveformRequest) (*GetLectureWaveformResponse, error)
+	CutLecture(context.Context, *CutLectureRequest) (*CutLectureResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -1698,6 +1737,15 @@ func (UnimplementedCourseServiceServer) RequestLectureSubtitles(context.Context,
 }
 func (UnimplementedCourseServiceServer) GetLectureTranscodingProgress(context.Context, *GetLectureTranscodingProgressRequest) (*GetLectureTranscodingProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLectureTranscodingProgress not implemented")
+}
+func (UnimplementedCourseServiceServer) RequestLectureWaveform(context.Context, *RequestLectureWaveformRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestLectureWaveform not implemented")
+}
+func (UnimplementedCourseServiceServer) GetLectureWaveform(context.Context, *GetLectureWaveformRequest) (*GetLectureWaveformResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLectureWaveform not implemented")
+}
+func (UnimplementedCourseServiceServer) CutLecture(context.Context, *CutLectureRequest) (*CutLectureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CutLecture not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -2692,6 +2740,60 @@ func _CourseService_GetLectureTranscodingProgress_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_RequestLectureWaveform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestLectureWaveformRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).RequestLectureWaveform(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_RequestLectureWaveform_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).RequestLectureWaveform(ctx, req.(*RequestLectureWaveformRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetLectureWaveform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLectureWaveformRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetLectureWaveform(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetLectureWaveform_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetLectureWaveform(ctx, req.(*GetLectureWaveformRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_CutLecture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CutLectureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CutLecture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CutLecture_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CutLecture(ctx, req.(*CutLectureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2914,6 +3016,18 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getLectureTranscodingProgress",
 			Handler:    _CourseService_GetLectureTranscodingProgress_Handler,
+		},
+		{
+			MethodName: "requestLectureWaveform",
+			Handler:    _CourseService_RequestLectureWaveform_Handler,
+		},
+		{
+			MethodName: "getLectureWaveform",
+			Handler:    _CourseService_GetLectureWaveform_Handler,
+		},
+		{
+			MethodName: "cutLecture",
+			Handler:    _CourseService_CutLecture_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

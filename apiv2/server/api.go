@@ -52,6 +52,9 @@ type API struct {
 	// Where an uploaded recording is converted; see WithUploads. Optional: nil means
 	// uploading a lecture's media answers 503.
 	uploads Uploads
+	// The audio level timeline and cuts of a lecture's VOD; see WithCutting. Optional: nil
+	// means the cut editor's RPCs answer 503.
+	cutting Cutting
 	// Courses, lectures and subtitles by text; see WithSearch.
 	search        Search
 	subtitles     pb.SubtitleGeneratorClient

@@ -29,6 +29,7 @@ import (
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera"
+	"github.com/TUM-Dev/gocast/pkg/cutting"
 	"github.com/TUM-Dev/gocast/pkg/livepreview"
 	"github.com/TUM-Dev/gocast/pkg/livestate"
 	"github.com/TUM-Dev/gocast/pkg/postprocessing"
@@ -140,6 +141,7 @@ func run(ctx context.Context) error {
 		&model.InfoPage{},
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
+		&model.LectureCut{},
 		&model.ChatReaction{},
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
@@ -291,6 +293,7 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithSectionImages(sectionimages.SectionImages{Manager: manager}),
 		apiv2.WithPostProcessing(postprocessing.PostProcessing{Manager: manager}),
 		apiv2.WithUploads(uploads.Uploads{Manager: manager}),
+		apiv2.WithCutting(cutting.Cutting{Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),

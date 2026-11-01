@@ -3043,6 +3043,54 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/cut": {
+      "post": {
+        "summary": "Cut parts out of a lecture's recording.",
+        "description": "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted. Requires administering the course.",
+        "operationId": "CourseService_cutLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCutLectureResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecutLectureBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/end": {
       "post": {
         "summary": "End a live stream.",
@@ -3569,6 +3617,85 @@
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/protobufGetLectureTranscodingProgressResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/waveform": {
+      "get": {
+        "summary": "Get the audio level timeline of a lecture.",
+        "description": "Not ready until a runner has delivered what requestLectureWaveform asked for. A new VOD of the lecture removes it. Requires administering the course.",
+        "operationId": "CourseService_getLectureWaveform",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufGetLectureWaveformResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "post": {
+        "summary": "Have the audio level timeline of a lecture built.",
+        "description": "Asks a runner for the timeline the cut editor draws, and for the length of each version. Poll getLectureWaveform for the result. Answers 400 for a lecture with no recording and 503 when no runner is configured. Requires administering the course.",
+        "operationId": "CourseService_requestLectureWaveform",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
             }
           },
           "default": {
@@ -5873,6 +6000,22 @@
         }
       }
     },
+    "CourseServicecutLectureBody": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "$ref": "#/definitions/protobufLectureCutMode"
+        },
+        "discard": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufLectureCutRange"
+          },
+          "description": "The parts to remove: sorted, without overlap, within the recording."
+        }
+      }
+    },
     "CourseServicedecideIntegrationAuthorizationBody": {
       "type": "object",
       "properties": {
@@ -7565,6 +7708,16 @@
         }
       }
     },
+    "protobufCutLectureResponse": {
+      "type": "object",
+      "properties": {
+        "streamId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The lecture that gets the cut recording: the request's own when overwriting."
+        }
+      }
+    },
     "protobufDecideIntegrationAuthorizationResponse": {
       "type": "object",
       "properties": {
@@ -7778,6 +7931,44 @@
             "$ref": "#/definitions/protobufLectureTranscodingProgress"
           },
           "description": "Versions still converting, and those whose conversion failed. Holds nothing\nconverting once every version has finished."
+        }
+      }
+    },
+    "protobufGetLectureWaveformResponse": {
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean",
+          "description": "False while a runner has not delivered the timeline; all else is empty then."
+        },
+        "peaks": {
+          "type": "string",
+          "format": "byte",
+          "description": "One byte per bucket_seconds of the recording, the peak level in it: 0 is -60 dBFS or\nless, 255 is 0 dBFS."
+        },
+        "bucketSeconds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "versionDurations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "description": "The length in seconds of each version the runner could measure, by version (COMB,\nCAM, PRES)."
+        },
+        "versionsDiffer": {
+          "type": "boolean",
+          "description": "The versions differ in length by more than the 30 seconds one cut can span, so\ncutLecture refuses the lecture."
+        },
+        "silences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufWatchSilence"
+          },
+          "description": "The lecture's detected silences, from which the editor suggests cuts."
         }
       }
     },
@@ -8075,6 +8266,30 @@
       ],
       "default": "LECTURE_CREATION_KIND_LIVESTREAM",
       "description": "What a created lecture is. LIVESTREAM, the zero value, is v1's default.\n\n - LECTURE_CREATION_KIND_LIVESTREAM: Streamed live: from its lecture hall, or by the lecturer with its stream key.\n - LECTURE_CREATION_KIND_VOD_UPLOAD: A recording uploaded afterwards through POST .../streams/{stream_id}/media."
+    },
+    "protobufLectureCutMode": {
+      "type": "string",
+      "enum": [
+        "LECTURE_CUT_MODE_UNSPECIFIED",
+        "LECTURE_CUT_MODE_OVERWRITE",
+        "LECTURE_CUT_MODE_DUPLICATE"
+      ],
+      "default": "LECTURE_CUT_MODE_UNSPECIFIED",
+      "description": " - LECTURE_CUT_MODE_OVERWRITE: Replace the recording.\n - LECTURE_CUT_MODE_DUPLICATE: Make the cut recording a lecture of its own, with the visibility of the original, which\nbecomes private."
+    },
+    "protobufLectureCutRange": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number",
+          "format": "double"
+        },
+        "end": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "description": "A stretch of the recording, in seconds from its start."
     },
     "protobufLectureFileAdmin": {
       "type": "object",

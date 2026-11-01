@@ -137,7 +137,7 @@ func TestHandleVODReady(t *testing.T) {
 		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
 		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
-		m := New(dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao})
+		m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao}))
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_CAMERA)); err != nil {
 			t.Fatal(err)
 		}
@@ -156,7 +156,7 @@ func TestHandleVODReady(t *testing.T) {
 		streamsDao.EXPECT().SaveStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error { saved = *s; return nil })
 		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
-		m := New(dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao})
+		m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao, CoursesDao: coursesDao}))
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +174,7 @@ func TestHandleVODReady(t *testing.T) {
 		streamsDao.EXPECT().RemoveTranscodingProgress(gomock.Any(), uint(5)).Return(nil)
 
 		// no CoursesDao: asking the course would be a mistake here
-		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao}))
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
 			t.Fatal(err)
 		}
@@ -188,7 +188,7 @@ func TestHandleVODReady(t *testing.T) {
 		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
 		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{}, gorm.ErrRecordNotFound)
 
-		m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+		m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao}))
 		if _, err := m.handleVODReady(context.Background(), notification(protobuf.StreamVersion_STREAM_VERSION_COMBINED)); err != nil {
 			t.Errorf("handleVODReady = %v, want nil so the runner stops retrying", err)
 		}
@@ -204,7 +204,7 @@ func TestHandleVODReadyEndsTheConversion(t *testing.T) {
 	streamsDao.EXPECT().SaveStream(gomock.Any()).Return(nil)
 	streamsDao.EXPECT().RemoveTranscodingProgress(model.PRES, uint(5)).Return(nil)
 
-	m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+	m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao}))
 	_, err := m.handleVODReady(context.Background(), &protobuf.VODReadyNotification{
 		Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
 		StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_PRESENTATION),
