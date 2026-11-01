@@ -138,6 +138,77 @@ func (r *Runner) RegenerateThumbnail(ctx context.Context, req *protobuf.Regenera
 	return &protobuf.RegenerateThumbnailResponse{JobId: ptr.Take(jID)}, nil
 }
 
+// RequestWaveform builds the audio level timeline for the cut editor. The result is delivered
+// asynchronously in a WaveformReadyNotification, so this only acknowledges the job.
+func (r *Runner) RequestWaveform(ctx context.Context, req *protobuf.WaveformRequest) (*protobuf.WaveformResponse, error) {
+	if req.GetStreamId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
+	}
+	sources := map[string]string{}
+	for _, s := range req.GetSources() {
+		if s.GetVersion() == protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED || s.GetPlaylistUrl() == "" {
+			continue
+		}
+		sources[protobuf.StreamVersion_name[int32(s.GetVersion())]] = s.GetPlaylistUrl()
+	}
+	if len(sources) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no stream versions with a playlist given")
+	}
+
+	data := map[string]any{
+		"streamID": req.GetStreamId(),
+		"sources":  sources,
+	}
+	jID := r.RunActionContext(ctx, []actions.Action{actions.MkWaveform}, nil, data,
+		r.log.With("stream_id", req.GetStreamId()))
+	r.log.Info("waveform job added", "ID", jID)
+
+	return &protobuf.WaveformResponse{JobId: ptr.Take(jID)}, nil
+}
+
+// cutActions is what a cut runs. The duration and the thumbnail are made from the VOD that
+// CutVOD leaves, see its playlistURL. The silences are not: the server asks for them once
+// all versions are cut, as the old ones are corrected only then.
+var cutActions = []actions.Action{actions.CutVOD, actions.MkDuration, actions.RegenerateThumb}
+
+// CutVOD cuts parts out of one version of a recorded stream. Progress and the result are
+// delivered asynchronously, like those of an upload, so this only acknowledges the job.
+func (r *Runner) CutVOD(ctx context.Context, req *protobuf.CutVODRequest) (*protobuf.CutVODResponse, error) {
+	if req.GetStreamId() == 0 || req.GetTargetStreamId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "no stream id given")
+	}
+	version, ok := protobuf.StreamVersion_name[int32(req.GetVersion())]
+	if !ok || req.GetVersion() == protobuf.StreamVersion_STREAM_VERSION_UNSPECIFIED {
+		return nil, status.Errorf(codes.InvalidArgument, "no valid stream version given")
+	}
+	if len(req.GetDiscards()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "nothing to cut")
+	}
+	if req.GetPlaylistUrl() == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "no playlist url given")
+	}
+	discard := make([]actions.TimeRange, 0, len(req.GetDiscards()))
+	for _, d := range req.GetDiscards() {
+		if d.GetStart() < 0 || d.GetEnd() <= d.GetStart() {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid range %v to %v", d.GetStart(), d.GetEnd())
+		}
+		discard = append(discard, actions.TimeRange{Start: d.GetStart(), End: d.GetEnd()})
+	}
+
+	// streamID is the stream the result belongs to, as every action after the cut reports on it.
+	data := map[string]any{
+		"streamID":      req.GetTargetStreamId(),
+		"streamVersion": version,
+		"sourceURL":     req.GetPlaylistUrl(),
+		"discard":       discard,
+	}
+	jID := r.RunActionContext(ctx, cutActions, nil, data,
+		r.log.With("stream_id", req.GetTargetStreamId(), "source_stream_id", req.GetStreamId(), "stream_version", version))
+	r.log.Info("cut job added", "ID", jID)
+
+	return &protobuf.CutVODResponse{JobId: ptr.Take(jID)}, nil
+}
+
 // PrepareUpload reserves a slot for a video file upload. The file is then POSTed to the
 // upload endpoint with the returned token; the result is delivered asynchronously in
 // VODReady and ThumbnailReady notifications, so nothing is started here.

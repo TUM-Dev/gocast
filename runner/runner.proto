@@ -28,6 +28,13 @@ service RunnerService {
   // other thumbnail RPCs this one is synchronous: previews are refreshed every minute and
   // a stale one is simply replaced, so there is no job to track.
   rpc GenerateLivePreview (LivePreviewRequest) returns (LivePreviewResponse) {}
+  // Builds the audio level timeline of a recorded stream for the cut editor and measures the
+  // length of each of its versions. The result is delivered asynchronously via
+  // WaveformReadyNotification.
+  rpc RequestWaveform (WaveformRequest) returns (WaveformResponse) {}
+  // Cuts parts out of one version of a recorded stream. Progress and the result are
+  // delivered like those of an upload: TranscodingProgress, VODReady and VODFailed.
+  rpc CutVOD (CutVODRequest) returns (CutVODResponse) {}
 }
 
 message StreamRequest {
@@ -111,6 +118,50 @@ message LivePreviewRequest {
 message LivePreviewResponse {
   // thumbnail is a JPEG.
   bytes thumbnail = 1;
+}
+
+message WaveformRequest {
+  // Source is one version of the stream and where the runner reads it from.
+  message Source {
+    StreamVersion version = 1;
+    // playlist_url must be signed, as for SectionImageRequest.
+    string playlist_url = 2;
+  }
+
+  uint64 stream_id = 1;
+  // The versions the stream has. The levels are taken from the combined one if it is among
+  // them, as for silences, and the length of each is measured.
+  repeated Source sources = 2;
+}
+
+message WaveformResponse {
+  string job_id = 1;
+}
+
+message CutVODRequest {
+  // Range is a stretch of the recording, in seconds from its start.
+  message Range {
+    double start = 1;
+    double end = 2;
+  }
+
+  // The stream whose VOD is read.
+  uint64 stream_id = 1;
+  // The stream the result belongs to. The same as stream_id replaces the VOD in place,
+  // another one gets a copy of it and leaves the source untouched.
+  uint64 target_stream_id = 2;
+  StreamVersion version = 3;
+  // The parts to remove, sorted and without overlap. Ranges beyond the end of this version
+  // are ignored, as the versions of a stream differ slightly in length.
+  repeated Range discards = 4;
+  reserved 5;
+  // Where the version is read from, signed as for SectionImageRequest. The result is written
+  // to the runner's own storage, which the edge serves.
+  string playlist_url = 6;
+}
+
+message CutVODResponse {
+  string job_id = 1;
 }
 
 // RunnerManagerService service defines communication from runners to gocast
