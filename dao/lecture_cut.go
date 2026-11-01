@@ -12,10 +12,14 @@ import (
 //go:generate go tool mockgen -source=lecture_cut.go -destination ../mock_dao/lecture_cut.go
 
 type LectureCutDao interface {
-	// SaveLectureCut records a cut that is under way, replacing the one a failed try left.
-	SaveLectureCut(cut model.LectureCut) error
+	// ClaimLectureCut records a cut that is starting, unless the source lecture has one that is
+	// not finished. claimed says which. Atomic: of two calls for the same lecture only one
+	// claims it.
+	ClaimLectureCut(cut model.LectureCut) (claimed bool, err error)
 	// GetLectureCut is the cut under way that makes the VODs of the lecture.
 	GetLectureCut(targetStreamID uint) (model.LectureCut, error)
+	// GetLectureCutBySource is the cut under way of a lecture, gorm.ErrRecordNotFound if none.
+	GetLectureCutBySource(sourceStreamID uint) (model.LectureCut, error)
 	// DeleteLectureCut drops a cut that was not carried out.
 	DeleteLectureCut(targetStreamID uint) error
 	// FinishLectureCut moves what the lecture has that refers to times in the recording onto
@@ -37,8 +41,15 @@ func NewLectureCutDao() LectureCutDao {
 	return lectureCutDao{db: DB}
 }
 
-func (d lectureCutDao) SaveLectureCut(cut model.LectureCut) error {
-	return DB.Clauses(clause.OnConflict{UpdateAll: true}).Create(&cut).Error
+func (d lectureCutDao) ClaimLectureCut(cut model.LectureCut) (bool, error) {
+	// DoNothing on any unique key: the target's, which is a new lecture's, and the source's.
+	res := DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&cut)
+	return res.RowsAffected > 0, res.Error
+}
+
+func (d lectureCutDao) GetLectureCutBySource(sourceStreamID uint) (cut model.LectureCut, err error) {
+	err = DB.Where("source_stream_id = ?", sourceStreamID).First(&cut).Error
+	return cut, err
 }
 
 func (d lectureCutDao) GetLectureCut(targetStreamID uint) (cut model.LectureCut, err error) {

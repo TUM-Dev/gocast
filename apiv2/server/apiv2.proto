@@ -846,7 +846,33 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Cut parts out of a lecture's recording."
-      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted. Requires administering the course."
+      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course."
+    };
+  }
+  rpc getLectureCut(GetLectureCutRequest) returns (GetLectureCutResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/cut"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the cut of a lecture that is not finished."
+      description: "A cut stays open until every version is cut, so that a version that failed can be retried with the same ranges. Not open once it is done or abandoned. Requires administering the course."
+    };
+  }
+
+  rpc retryLectureCut(RetryLectureCutRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/cut/retry"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Cut again the versions of an open cut that failed."
+      description: "Runs only the versions that failed, with the ranges of the cut, and leaves the ones that are done. Answers 404 without an open cut and 409 while a version is still being cut or when none failed. Requires administering the course."
+    };
+  }
+
+  rpc abandonLectureCut(AbandonLectureCutRequest) returns (AbandonLectureCutResponse) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/cut"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Give up an open cut."
+      description: "For a new lecture, removes it. For a replaced recording, the versions that are cut stay cut and the lecture's sections and trimming move with them if the combined version is among them. The versions that failed are left as they were, and are named in the answer. Answers 404 without an open cut and 409 while a version is still being cut. Requires administering the course."
     };
   }
 }
@@ -3364,6 +3390,38 @@ message CutLectureRequest {
 message CutLectureResponse {
   // The lecture that gets the cut recording: the request's own when overwriting.
   uint32 stream_id = 1;
+}
+
+message GetLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureCutResponse {
+  bool open = 1;
+  // The lecture that gets the cut recording: the request's own when it is replaced.
+  uint32 target_stream_id = 2;
+  // A new lecture is made, and not the recording replaced.
+  bool duplicate = 3;
+  // The versions of the target that are being cut, or failed. Empty once every version is
+  // done, which is when the cut is being finished.
+  repeated LectureTranscodingProgress progresses = 4;
+}
+
+message RetryLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message AbandonLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message AbandonLectureCutResponse {
+  // The versions of a replaced recording that were not cut and still hold what the cut
+  // would have removed (COMB, CAM, PRES).
+  repeated string left_uncut = 1;
 }
 
 // ----- end of lecture administration -----

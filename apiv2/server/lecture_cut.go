@@ -31,10 +31,11 @@ type Cutting interface {
 	// RequestWaveform asks a runner for the audio level timeline of a stream and the length
 	// of each of the versions. The answer is stored when it comes.
 	RequestWaveform(streamID uint, sources []CutSource) error
-	// Cut asks runners to cut each of the versions of the VOD of sourceStreamID, one job
-	// each. The result is the VOD of targetStreamID, which is the same stream to replace
-	// the VOD.
-	Cut(sourceStreamID, targetStreamID uint, sources []CutSource, discard []model.CutRange) error
+	// Cut asks a runner to cut one version of the VOD of sourceStreamID. The result is the VOD
+	// of targetStreamID, which is the same stream to replace the VOD.
+	Cut(sourceStreamID, targetStreamID uint, source CutSource, discard []model.CutRange) error
+	// ScanSilences asks a runner to detect the silences of the stream again.
+	ScanSilences(streamID uint) error
 }
 
 // WithCutting lets the cut editor's RPCs reach a runner. Without it they answer 503.
@@ -43,10 +44,14 @@ func WithCutting(c Cutting) Option {
 }
 
 var (
-	errNoCutRunner    = errors.New("no runner is available to take the job")
-	errNoWaveform     = errors.New("the lecture's waveform has not been built yet")
-	errVersionsDiffer = errors.New("the versions of the recording differ in length by more than 30 seconds")
-	errCutBusy        = errors.New("the lecture is being converted")
+	errNoCutRunner      = errors.New("no runner is available to take the job")
+	errNoWaveform       = errors.New("the lecture's waveform has not been built yet")
+	errVersionsDiffer   = errors.New("the versions of the recording differ in length by more than 30 seconds")
+	errCutBusy          = errors.New("the lecture is being converted")
+	errCutOpen          = errors.New("an earlier cut of the lecture is not finished: retry or abandon it")
+	errNoOpenCut        = errors.New("the lecture has no cut that is not finished")
+	errNothingToRetry   = errors.New("no version of the cut failed")
+	errCutPartlyStarted = errors.New("only some versions could be started: retry the cut to start the rest")
 )
 
 // recordedVersions lists the versions of a lecture that have a VOD, best first.
@@ -199,9 +204,10 @@ func validateCut(discard []*protobuf.LectureCutRange, length float64) ([]model.C
 // recording, in place or into a copy of the lecture.
 //
 // The versions are cut by one job each, and what moves with the times of the recording,
-// the sections and offsets, only once all of them are done, see runner_manager. A job
-// that fails leaves its version as it was and the lecture's progress says so; cutting again
-// replaces that.
+// the sections and offsets, only once all of them are done, see runner_manager. The cut is
+// kept until then, with its ranges. A version that fails leaves itself as it was and is
+// listed as failed, and RetryLectureCut cuts just those again; AbandonLectureCut gives up.
+// Starting one is claimed in the database, so a lecture has at most one cut at a time.
 func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (*protobuf.CutLectureResponse, error) {
 	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
 	if err != nil {
@@ -218,18 +224,20 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 		return nil, e.WithStatus(http.StatusServiceUnavailable, errNoCutRunner)
 	}
 
-	// A version that failed has no conversion under way, and cutting again is the retry.
-	for _, v := range cutVersions {
-		p, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(v, stream.ID)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			continue
-		}
-		if err != nil {
-			return nil, e.WithStatus(http.StatusInternalServerError, err)
-		}
-		if !p.Failed {
-			return nil, e.WithStatus(http.StatusConflict, errCutBusy)
-		}
+	// A conversion that is under way, an upload say, owns the files. One that failed does not.
+	rows, err := a.cutProgress(stream.ID)
+	if err != nil {
+		return nil, err
+	}
+	if slices.ContainsFunc(rows, func(p model.TranscodingProgress) bool { return !p.Failed }) {
+		return nil, e.WithStatus(http.StatusConflict, errCutBusy)
+	}
+	// Said before the waveform is asked for, which a cut that is not finished has taken away
+	// and which nobody needs to build to cut again. Claiming below is what makes it atomic.
+	if _, err := a.dao.LectureCutDao.GetLectureCutBySource(stream.ID); err == nil {
+		return nil, e.WithStatus(http.StatusConflict, errCutOpen)
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
 
 	w, err := a.lectureWaveform(stream.ID)
@@ -264,15 +272,12 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
 	}
-	// Taken back if the cut can't be started, so that no empty copy is left behind.
-	abandon := func() {
+	// Taken back if the cut does not start, so that no empty copy is left behind. Before the
+	// cut is claimed this is all there is to take back: the progress of the lecture is
+	// someone else's, as a cut that is not finished keeps its failed versions there.
+	dropCopy := func() {
 		if !duplicate {
 			return
-		}
-		for _, v := range versions {
-			if err := a.dao.StreamsDao.RemoveTranscodingProgress(v, target.ID); err != nil {
-				a.log.Warn("can't clear the progress of a cut that wasn't started", "stream", target.ID, "err", err)
-			}
 		}
 		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", target.ID)); err != nil {
 			a.log.Warn("can't remove the copy of a cut that wasn't started", "stream", target.ID, "err", err)
@@ -280,42 +285,46 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 	}
 
 	cut := model.LectureCut{TargetStreamID: target.ID, SourceStreamID: stream.ID, SourcePrivate: stream.Private, Discard: discard}
-	if err := a.dao.LectureCutDao.SaveLectureCut(cut); err != nil {
-		abandon()
+	claimed, err := a.dao.LectureCutDao.ClaimLectureCut(cut)
+	if err != nil {
+		dropCopy()
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	if !claimed {
+		dropCopy()
+		return nil, e.WithStatus(http.StatusConflict, errCutOpen)
+	}
+	// Once it is claimed the rows are this cut's, and go with it.
+	dropCut := func() {
+		if err := a.dao.LectureCutDao.DeleteLectureCut(target.ID); err != nil {
+			a.log.Warn("can't drop a cut that wasn't started", "stream", target.ID, "err", err)
+		}
+		for _, v := range versions {
+			if err := a.dao.StreamsDao.RemoveTranscodingProgress(v, target.ID); err != nil {
+				a.log.Warn("can't clear the progress of a cut that wasn't started", "stream", target.ID, "err", err)
+			}
+		}
+		dropCopy()
 	}
 	// The card shows the lecture as converting from here on, see proxyLectureMedia. Not
 	// optional, unlike for an upload: the cut is finished when no version has a row left, so
 	// a version without one would have it finished early.
 	for _, v := range versions {
 		if err := a.dao.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{StreamID: target.ID, Version: v}); err != nil {
-			if derr := a.dao.LectureCutDao.DeleteLectureCut(target.ID); derr != nil {
-				a.log.Warn("can't drop a cut that wasn't started", "stream", target.ID, "err", derr)
-			}
-			for _, done := range versions {
-				_ = a.dao.StreamsDao.RemoveTranscodingProgress(done, target.ID)
-			}
-			abandon()
+			dropCut()
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
 		}
 	}
-	if err := a.cutting.Cut(stream.ID, target.ID, sources, discard); err != nil {
-		a.log.Warn("can't hand a cut to the runners", "stream", stream.ID, "target", target.ID, "err", err)
-		if err := a.dao.LectureCutDao.DeleteLectureCut(target.ID); err != nil {
-			a.log.Warn("can't drop a cut that wasn't started", "stream", target.ID, "err", err)
+
+	started, err := a.startVersions(stream.ID, target.ID, sources, discard)
+	if err != nil {
+		if started == 0 {
+			// Nothing was handed over, so nothing has changed.
+			dropCut()
+			return nil, e.WithStatus(http.StatusServiceUnavailable, errNoCutRunner)
 		}
-		abandon()
-		if !duplicate {
-			// Versions that were handed over before the failing one are cut regardless, and the
-			// rest are not: the lecture is told so rather than left converting for good.
-			for _, v := range versions {
-				failed := model.TranscodingProgress{StreamID: target.ID, Version: v, Failed: true, Error: "The cut could not be handed to a runner."}
-				if err := a.dao.StreamsDao.SaveTranscodingProgress(failed); err != nil {
-					a.log.Warn("can't mark the cut as failed", "stream", target.ID, "err", err)
-				}
-			}
-		}
-		return nil, e.WithStatus(http.StatusServiceUnavailable, errNoCutRunner)
+		// Those that were are cut, and the rest are listed as failed for a retry.
+		return nil, e.WithStatus(http.StatusServiceUnavailable, errCutPartlyStarted)
 	}
 
 	mode := "in place"
@@ -324,6 +333,206 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 	}
 	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: %d ranges cut out %s", stream.ID, len(discard), mode), forStream(stream))
 	return &protobuf.CutLectureResponse{StreamId: uint32(target.ID)}, nil
+}
+
+// startVersions hands the versions to the runners one by one, and returns how many it got
+// to. When a runner takes one, it is not asked again: its job goes on, and its version
+// finishes or fails like any other. The version that was refused and the ones after it are
+// listed as failed, which is what a retry picks up.
+func (a *API) startVersions(sourceID, targetID uint, sources []CutSource, discard []model.CutRange) (started int, err error) {
+	for i, src := range sources {
+		if err := a.cutting.Cut(sourceID, targetID, src, discard); err != nil {
+			a.log.Warn("can't hand a cut to the runners", "stream", sourceID, "target", targetID, "version", src.Version, "err", err)
+			for _, rest := range sources[i:] {
+				failed := model.TranscodingProgress{StreamID: targetID, Version: rest.Version, Failed: true, Error: "The cut could not be handed to a runner."}
+				if serr := a.dao.StreamsDao.SaveTranscodingProgress(failed); serr != nil {
+					a.log.Warn("can't mark the cut as failed", "stream", targetID, "version", rest.Version, "err", serr)
+				}
+			}
+			return i, err
+		}
+	}
+	return len(sources), nil
+}
+
+// cutProgress is the progress rows a stream has, of the versions that are being converted
+// or failed.
+func (a *API) cutProgress(streamID uint) ([]model.TranscodingProgress, error) {
+	var rows []model.TranscodingProgress
+	for _, v := range cutVersions {
+		p, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(v, streamID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+		rows = append(rows, p)
+	}
+	return rows, nil
+}
+
+// openCut is the cut of a lecture that is not finished, 404 if there is none.
+func (a *API) openCut(sourceID uint) (model.LectureCut, error) {
+	cut, err := a.dao.LectureCutDao.GetLectureCutBySource(sourceID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return model.LectureCut{}, e.WithStatus(http.StatusNotFound, errNoOpenCut)
+	}
+	if err != nil {
+		return model.LectureCut{}, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	return cut, nil
+}
+
+// GetLectureCut tells whether a cut of the lecture is not finished, and how far its versions are.
+func (a *API) GetLectureCut(ctx context.Context, req *protobuf.GetLectureCutRequest) (*protobuf.GetLectureCutResponse, error) {
+	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
+	if err != nil {
+		return nil, err
+	}
+	cut, err := a.dao.LectureCutDao.GetLectureCutBySource(stream.ID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &protobuf.GetLectureCutResponse{}, nil
+	}
+	if err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+	rows, err := a.cutProgress(cut.TargetStreamID)
+	if err != nil {
+		return nil, err
+	}
+	progresses := make([]*protobuf.LectureTranscodingProgress, 0, len(rows))
+	for _, p := range rows {
+		progresses = append(progresses, &protobuf.LectureTranscodingProgress{
+			Version: string(p.Version), Progress: int32(p.Progress), Failed: p.Failed, Error: p.Error,
+		})
+	}
+	return &protobuf.GetLectureCutResponse{
+		Open: true, TargetStreamId: uint32(cut.TargetStreamID), Duplicate: cut.Duplicate(), Progresses: progresses,
+	}, nil
+}
+
+// RetryLectureCut cuts the versions of an open cut that failed, with the ranges it was made
+// with. The versions that are done are left alone: for a replaced recording they were cut
+// already, and cutting them again would cut the ranges out of what is left.
+func (a *API) RetryLectureCut(ctx context.Context, req *protobuf.RetryLectureCutRequest) (*emptypb.Empty, error) {
+	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
+	if err != nil {
+		return nil, err
+	}
+	cut, err := a.openCut(stream.ID)
+	if err != nil {
+		return nil, err
+	}
+	if a.cutting == nil {
+		return nil, e.WithStatus(http.StatusServiceUnavailable, errNoCutRunner)
+	}
+	rows, err := a.cutProgress(cut.TargetStreamID)
+	if err != nil {
+		return nil, err
+	}
+	var failed []model.StreamVersion
+	for _, p := range rows {
+		if !p.Failed {
+			return nil, e.WithStatus(http.StatusConflict, errCutBusy)
+		}
+		failed = append(failed, p.Version)
+	}
+	if len(failed) == 0 {
+		return nil, e.WithStatus(http.StatusConflict, errNothingToRetry)
+	}
+
+	all, err := cutSources(stream)
+	if err != nil {
+		return nil, err
+	}
+	var sources []CutSource
+	for _, s := range all {
+		if slices.Contains(failed, s.Version) {
+			sources = append(sources, s)
+		}
+	}
+	if len(sources) == 0 {
+		return nil, e.WithStatus(http.StatusConflict, errNothingToRetry)
+	}
+	for _, s := range sources {
+		if err := a.dao.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{StreamID: cut.TargetStreamID, Version: s.Version}); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+	}
+	if _, err := a.startVersions(stream.ID, cut.TargetStreamID, sources, cut.Discard); err != nil {
+		return nil, e.WithStatus(http.StatusServiceUnavailable, errNoCutRunner)
+	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: cut retried for %d versions", stream.ID, len(sources)), forStream(stream))
+	return &emptypb.Empty{}, nil
+}
+
+// AbandonLectureCut gives up an open cut that has no version still being cut.
+//
+// A new lecture that was made for it is removed, and nothing else has changed. A replaced
+// recording can't be put back: the versions that were cut stay cut. If the combined version
+// is one of them, the lecture's sections and trimming move with it, as they would have when
+// the cut finished. The versions that failed are left as they were, and the answer names them.
+func (a *API) AbandonLectureCut(ctx context.Context, req *protobuf.AbandonLectureCutRequest) (*protobuf.AbandonLectureCutResponse, error) {
+	stream, err := a.courseLecture(ctx, req.GetCourseId(), req.GetStreamId())
+	if err != nil {
+		return nil, err
+	}
+	cut, err := a.openCut(stream.ID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := a.cutProgress(cut.TargetStreamID)
+	if err != nil {
+		return nil, err
+	}
+	var failed []model.StreamVersion
+	for _, p := range rows {
+		if !p.Failed {
+			return nil, e.WithStatus(http.StatusConflict, errCutBusy)
+		}
+		failed = append(failed, p.Version)
+	}
+	clearRows := func() {
+		for _, v := range failed {
+			if err := a.dao.StreamsDao.RemoveTranscodingProgress(v, cut.TargetStreamID); err != nil {
+				a.log.Warn("can't clear the progress of an abandoned cut", "stream", cut.TargetStreamID, "err", err)
+			}
+		}
+	}
+
+	resp := &protobuf.AbandonLectureCutResponse{}
+	if cut.Duplicate() {
+		clearRows()
+		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", cut.TargetStreamID)); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+		if err := a.dao.LectureCutDao.DeleteLectureCut(cut.TargetStreamID); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+	} else {
+		recorded := recordedVersions(stream)
+		anyCut := len(recorded) > len(failed)
+		if slices.Contains(recorded, model.COMB) && !slices.Contains(failed, model.COMB) {
+			if _, err := a.dao.LectureCutDao.FinishLectureCut(cut); err != nil {
+				return nil, e.WithStatus(http.StatusInternalServerError, err)
+			}
+			if err := a.cutting.ScanSilences(stream.ID); err != nil {
+				a.log.Warn("can't request the silence scan of a cut lecture", "stream", stream.ID, "err", err)
+			}
+		} else if err := a.dao.LectureCutDao.DeleteLectureCut(cut.TargetStreamID); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+		clearRows()
+		// With nothing cut, nothing differs between the versions.
+		if anyCut {
+			for _, v := range failed {
+				resp.LeftUncut = append(resp.LeftUncut, string(v))
+			}
+		}
+	}
+	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: cut abandoned, %d versions left uncut", stream.ID, len(resp.LeftUncut)), forStream(stream))
+	return resp, nil
 }
 
 // cutVersions are the versions a lecture's VODs come in.

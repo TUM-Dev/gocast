@@ -182,14 +182,14 @@ func (m *Manager) afterVODReady(ctx context.Context, streamID uint) error {
 	m.logger.Info("cut finished", "stream", streamID, "source", cut.SourceStreamID)
 	// Its own step, after the lecture is on the new timeline: a scan that reported before
 	// would have its silences moved a second time.
-	if err := m.requestSilenceScan(ctx, streamID); err != nil {
+	if err := m.RequestSilenceScan(ctx, streamID); err != nil {
 		m.logger.Error("can't request the silence scan of a cut lecture", "stream", streamID, "err", err)
 	}
 	return nil
 }
 
-// requestSilenceScan has a runner scan the best version of the stream for silences.
-func (m *Manager) requestSilenceScan(ctx context.Context, streamID uint) error {
+// RequestSilenceScan has a runner scan the best version of the stream for silences.
+func (m *Manager) RequestSilenceScan(ctx context.Context, streamID uint) error {
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(streamID), 10))
 	if err != nil {
 		return err

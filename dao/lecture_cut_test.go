@@ -143,3 +143,46 @@ func TestFinishLectureCut(t *testing.T) {
 		}
 	})
 }
+
+func TestClaimLectureCut(t *testing.T) {
+	setupCutDB(t)
+	d := NewLectureCutDao()
+	cut := func(target, source uint) model.LectureCut {
+		return model.LectureCut{TargetStreamID: target, SourceStreamID: source, Discard: []model.CutRange{{Start: 1, End: 2}}}
+	}
+
+	if claimed, err := d.ClaimLectureCut(cut(1, 1)); err != nil || !claimed {
+		t.Fatalf("first claim = %v, %v, want it claimed", claimed, err)
+	}
+	// A lecture has one cut at a time, whatever the other one's target.
+	if claimed, err := d.ClaimLectureCut(cut(9, 1)); err != nil || claimed {
+		t.Errorf("second claim of the lecture = %v, %v, want it refused", claimed, err)
+	}
+	// And a new lecture is the target of one only.
+	if claimed, err := d.ClaimLectureCut(cut(1, 5)); err != nil || claimed {
+		t.Errorf("second claim of the target = %v, %v, want it refused", claimed, err)
+	}
+	if claimed, err := d.ClaimLectureCut(cut(8, 2)); err != nil || !claimed {
+		t.Errorf("claim of another lecture = %v, %v, want it claimed", claimed, err)
+	}
+
+	got, err := d.GetLectureCutBySource(2)
+	if err != nil || got.TargetStreamID != 8 || len(got.Discard) != 1 {
+		t.Errorf("GetLectureCutBySource = %+v, %v", got, err)
+	}
+	// The refused claims left the first one as it was.
+	if first, err := d.GetLectureCutBySource(1); err != nil || first.TargetStreamID != 1 {
+		t.Errorf("the first cut = %+v, %v", first, err)
+	}
+	if _, err := d.GetLectureCutBySource(3); err == nil {
+		t.Error("a lecture without a cut has one")
+	}
+
+	// Once it is finished, or dropped, the lecture can be cut again.
+	if err := d.DeleteLectureCut(1); err != nil {
+		t.Fatal(err)
+	}
+	if claimed, err := d.ClaimLectureCut(cut(1, 1)); err != nil || !claimed {
+		t.Errorf("claim after the cut was dropped = %v, %v, want it claimed", claimed, err)
+	}
+}

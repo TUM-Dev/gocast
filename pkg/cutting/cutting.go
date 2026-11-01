@@ -5,7 +5,6 @@ package cutting
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/model"
@@ -30,19 +29,21 @@ func (c Cutting) RequestWaveform(streamID uint, sources []apiv2.CutSource) error
 	return c.Manager.RequestWaveform(context.Background(), streamID, versions)
 }
 
-// Cut asks a runner to cut each of the versions. It stops at the first that is not taken.
-func (c Cutting) Cut(sourceStreamID, targetStreamID uint, sources []apiv2.CutSource, discard []model.CutRange) error {
+// Cut asks a runner to cut one version.
+func (c Cutting) Cut(sourceStreamID, targetStreamID uint, source apiv2.CutSource, discard []model.CutRange) error {
 	if c.Manager == nil {
 		return errors.New("no runner configured")
 	}
-	for _, s := range sources {
-		err := c.Manager.RequestCut(context.Background(), runner_manager.CutRequest{
-			SourceStreamID: sourceStreamID, TargetStreamID: targetStreamID,
-			Version: s.Version, PlaylistURL: s.PlaylistURL, Discard: discard,
-		})
-		if err != nil {
-			return fmt.Errorf("version %s: %w", s.Version, err)
-		}
+	return c.Manager.RequestCut(context.Background(), runner_manager.CutRequest{
+		SourceStreamID: sourceStreamID, TargetStreamID: targetStreamID,
+		Version: source.Version, PlaylistURL: source.PlaylistURL, Discard: discard,
+	})
+}
+
+// ScanSilences asks a runner to detect the silences of the stream again.
+func (c Cutting) ScanSilences(streamID uint) error {
+	if c.Manager == nil {
+		return errors.New("no runner configured")
 	}
-	return nil
+	return c.Manager.RequestSilenceScan(context.Background(), streamID)
 }

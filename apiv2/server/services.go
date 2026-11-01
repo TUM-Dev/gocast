@@ -167,6 +167,9 @@ var services = []service{
 			"requestLectureWaveform":        requiresCourseAdmin(),
 			"getLectureWaveform":            requiresCourseAdmin(),
 			"cutLecture":                    requiresCourseAdmin(),
+			"getLectureCut":                 requiresCourseAdmin(),
+			"retryLectureCut":               requiresCourseAdmin(),
+			"abandonLectureCut":             requiresCourseAdmin(),
 		},
 	},
 	{
