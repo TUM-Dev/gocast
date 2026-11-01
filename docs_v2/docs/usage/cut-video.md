@@ -122,7 +122,23 @@ When all versions are done, **Watch the cut video** opens the lecture.
   again in the **Recording** section. A new lecture starts without subtitles.
 - **Only one cut at a time.** The editor refuses to start a cut while a version of the
   lecture is converting, and it waits for the conversion if it is opened while one runs.
-- **If a version fails**, the page and the lecture's card name it and say why. Nothing is
-  replaced for a version that failed, but the other versions are cut already. Open the
-  editor and cut again to try once more, and check the result of all versions when you
-  replaced the recording.
+  A cut that is not finished counts too: until every version is cut, or the cut is given
+  up, the page shows how far it is instead of the editor.
+
+## If a version fails
+
+A cut is only finished when every version is cut. If one fails, for example because its
+video cannot be read, the page says **The cut did not finish** and names the version and
+the reason. The cut stays open, with the cuts you made, so nothing has to be marked again.
+
+- **Cut the failed versions again** runs just the versions that failed, with the same cuts.
+  The versions that are done are not cut a second time.
+- **Give up the cut** closes it.
+  - For a **new lecture**, the new lecture is removed. The original was never changed.
+  - For a **replaced recording**, the versions that are cut stay cut, as the original of
+    those is gone. If the combined version is one of them, the sections and trimming of the
+    lecture move along with it, as they would have when the cut was finished. The versions
+    that failed keep what you cut out of the others, and the page names them, so you know
+    to upload them again.
+
+If nothing was cut yet, giving up changes nothing.
