@@ -50,6 +50,7 @@ async function requestSubtitles(code: string, label: string): Promise<void> {
  * progress once it reloads. Not offered while the lecture is live: the server would
  * refuse it, since the live stream would race the upload for the same playlist. */
 const uploading = ref<MediaType | null>(null);
+const uploadFraction = ref(0);
 const uploadError = ref("");
 const uploadStatus = ref("");
 
@@ -67,8 +68,9 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
     return;
   }
   uploading.value = type;
+  uploadFraction.value = 0;
   try {
-    await uploadLectureRecording(props.courseId, props.lecture.id, type, file);
+    await uploadLectureRecording(props.courseId, props.lecture.id, type, file, (f) => (uploadFraction.value = f));
     uploadStatus.value = `${label} uploaded. It is being converted; the lecture shows the progress, or why it failed.`;
     emit("changed");
   } catch (err) {
@@ -141,7 +143,9 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
           @change="upload(type, label, $event)"
         />
         <span v-if="uploading === type" class="text-5 text-xs" aria-live="polite">
-          <i class="fas fa-circle-notch fa-spin mr-1"></i>Uploading…
+          <i class="fas fa-circle-notch fa-spin mr-1"></i>
+          <!-- At 100% the bytes are sent but the runner has yet to accept the file. -->
+          {{ uploadFraction >= 1 ? "Processing…" : `Uploading… ${Math.floor(uploadFraction * 100)}%` }}
         </span>
       </div>
       <p v-if="uploadError" class="rounded-lg bg-danger/25 px-2 py-1" role="alert">{{ uploadError }}</p>
