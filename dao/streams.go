@@ -64,6 +64,9 @@ type StreamsDao interface {
 	GetTranscodingProgressByVersion(streamVersion model.StreamVersion, streamId uint) (model.TranscodingProgress, error)
 	SaveStream(vod *model.Stream) error
 	ToggleVisibility(streamId uint, private bool) error
+	// SetDuration stores the length of the stream's VOD in seconds. It writes that one
+	// column, so it cannot undo what another update of the stream has just saved.
+	SetDuration(streamID uint, seconds uint32) error
 
 	DeleteStream(streamID string)
 	// RemoveStream is DeleteStream that reports a failure, for callers that audit the delete.
@@ -690,6 +693,11 @@ func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
 func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {
 	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamId).Updates(map[string]interface{}{"private": private}).Error
+}
+
+func (d streamsDao) SetDuration(streamID uint, seconds uint32) error {
+	defer Cache.Clear()
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Update("duration", seconds).Error
 }
 
 func (d streamsDao) SaveStream(vod *model.Stream) error {

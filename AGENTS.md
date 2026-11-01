@@ -111,6 +111,9 @@ contents. Treat its users, courses and lectures as an API.
 - Comments should explain *why*, especially where the code looks odd. This codebase
   does that well; match it. Several comments exist specifically to stop someone
   "fixing" a deliberate choice — leave those in place.
+- Short sentences. RFC 2119 keywords for obligations. Commit = imperative subject;
+  body only for a fact the diff cannot show.
+  Comments only where code needs clarification, never narration. 
 - **Releases are a tag push.** Everything downstream — images, Matrix notice, and the
   GitHub release notes rendered from the commit log — hangs off it. Use the
   **`release` skill** (`.claude/skills/release/`); don't hand-write a release body,

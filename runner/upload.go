@@ -21,9 +21,9 @@ import (
 // uses it right away, so this only has to cover the time to connect.
 const uploadTokenTTL = 10 * time.Minute
 
-// importActions is what an upload runs. The thumbnail is made from the VOD that
-// ImportVOD leaves, see its playlistURL. A variable so the tests can swap the import out.
-var importActions = []actions.Action{actions.ImportVOD, actions.RegenerateThumb}
+// importActions is what an upload runs. The duration and the thumbnail are made from the
+// VOD that ImportVOD leaves, see its playlistURL. A variable so the tests can swap the import out.
+var importActions = []actions.Action{actions.ImportVOD, actions.MkDuration, actions.RegenerateThumb}
 
 // uploadActions is importActions, followed by the silence scan if asked for.
 func uploadActions(detectSilence bool) []actions.Action {

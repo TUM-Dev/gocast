@@ -32,6 +32,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 	}
 	vod := []actions.Action{
 		actions.MkVOD,
+		actions.MkDuration,
 		actions.CheckVoD,
 		actions.MkThumb,
 	}
@@ -96,13 +97,15 @@ func (r *Runner) RequestSectionImages(ctx context.Context, req *protobuf.Section
 	return &protobuf.SectionImageResponse{JobId: ptr.Take(jID)}, nil
 }
 
-// regenerateActions is what RegenerateThumbnail runs: the thumbnail, then the silence scan
-// if asked for. The scan is last because it is the long one.
+// regenerateActions is what RegenerateThumbnail runs: the duration, the thumbnail, then the
+// silence scan if asked for. The scan is last because it is the long one. The duration is
+// redone every time, for the recordings that were made while nothing reported it, and comes
+// first because a thumbnail that can't be made aborts the job: those recordings still need it.
 func regenerateActions(detectSilence bool) []actions.Action {
 	if detectSilence {
-		return []actions.Action{actions.RegenerateThumb, actions.MkSilence}
+		return []actions.Action{actions.MkDuration, actions.RegenerateThumb, actions.MkSilence}
 	}
-	return []actions.Action{actions.RegenerateThumb}
+	return []actions.Action{actions.MkDuration, actions.RegenerateThumb}
 }
 
 // RegenerateThumbnail regenerates the thumbnail for an already-recorded VOD. The
