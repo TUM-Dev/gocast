@@ -211,21 +211,6 @@ func (mr *MockCoursesDaoMockRecorder) GetCourseById(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseById", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseById), ctx, id)
 }
 
-// GetCourseByShortLink mocks base method.
-func (m *MockCoursesDao) GetCourseByShortLink(link string) (model.Course, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCourseByShortLink", link)
-	ret0, _ := ret[0].(model.Course)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCourseByShortLink indicates an expected call of GetCourseByShortLink.
-func (mr *MockCoursesDaoMockRecorder) GetCourseByShortLink(link any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseByShortLink", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseByShortLink), link)
-}
-
 // GetCourseBySlugYearAndTerm mocks base method.
 func (m *MockCoursesDao) GetCourseBySlugYearAndTerm(ctx context.Context, slug, term string, year int) (model.Course, error) {
 	m.ctrl.T.Helper()
@@ -254,21 +239,6 @@ func (m *MockCoursesDao) GetCourseByToken(token string) (model.Course, error) {
 func (mr *MockCoursesDaoMockRecorder) GetCourseByToken(token any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseByToken", reflect.TypeOf((*MockCoursesDao)(nil).GetCourseByToken), token)
-}
-
-// GetCurrentOrNextLectureForCourse mocks base method.
-func (m *MockCoursesDao) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentOrNextLectureForCourse", ctx, courseID)
-	ret0, _ := ret[0].(model.Stream)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCurrentOrNextLectureForCourse indicates an expected call of GetCurrentOrNextLectureForCourse.
-func (mr *MockCoursesDaoMockRecorder) GetCurrentOrNextLectureForCourse(ctx, courseID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentOrNextLectureForCourse", reflect.TypeOf((*MockCoursesDao)(nil).GetCurrentOrNextLectureForCourse), ctx, courseID)
 }
 
 // GetInvitedUsersForCourse mocks base method.

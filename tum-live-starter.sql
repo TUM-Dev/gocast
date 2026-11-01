@@ -728,35 +728,6 @@ LOCK TABLES `server_notifications` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `short_links`
---
-
-DROP TABLE IF EXISTS `short_links`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `short_links` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  `deleted_at` datetime(3) DEFAULT NULL,
-  `link` varchar(256) NOT NULL,
-  `course_id` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `link` (`link`),
-  KEY `idx_short_links_deleted_at` (`deleted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `short_links`
---
-
-LOCK TABLES `short_links` WRITE;
-/*!40000 ALTER TABLE `short_links` DISABLE KEYS */;
-/*!40000 ALTER TABLE `short_links` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `silences`
 --
 
@@ -1109,12 +1080,6 @@ INSERT INTO `course_admins` (`course_id`,`user_id`) VALUES (4,2),(5,3);
 -- studi1 is enrolled in the enrolled-only course, studi2 in the hidden one. The
 -- other students are in neither, which is what makes them the negative cases.
 INSERT INTO `course_users` (`course_id`,`user_id`) VALUES (4,4),(5,5);
-
--- Short links (`/<link>`) to a public, a logged-in-only and an enrolled-only course:
--- they redirect to the current or next lecture, whose page then applies the course's
--- visibility, which is what short-link.spec.ts checks.
-INSERT INTO `short_links` (`created_at`,`updated_at`,`link`,`course_id`)
-VALUES (NOW(),NOW(),'brauer',1),(NOW(),NOW(),'games',2),(NOW(),NOW(),'bier',4);
 
 --
 -- Lectures.

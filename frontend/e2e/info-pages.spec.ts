@@ -82,8 +82,8 @@ test.describe("info pages", () => {
   });
 
   test("a path that is not a real info page is a 404", async ({ page }) => {
-    // web/course.go's shortLinkOrInfoPage checks the same table before falling back to
-    // a course short link, and then to the not-found page with that status.
+    // web/course.go's infoPage checks the same table and falls back to the not-found
+    // page with that status.
     const response = await page.goto("/this-page-does-not-exist");
 
     expect(response?.status()).toBe(404);

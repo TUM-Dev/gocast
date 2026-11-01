@@ -464,7 +464,7 @@ func configMainRoute(router *tools.Router) {
 	router.HandleFunc("GET /healthcheck", routes.HealthCheck)
 	router.HandleFunc("GET /jwtPubKey", routes.JWTPubKey)
 
-	router.HandleFunc("GET /{shortLink}", routes.shortLinkOrInfoPage)
+	router.HandleFunc("GET /{slug}", routes.infoPage)
 	// The course token in the mailed link is the credential; both pages ask v2 for it.
 	registerPage(router, http.MethodGet, "/edit-course")
 	registerPage(router, http.MethodGet, "/edit-course/opt-out")

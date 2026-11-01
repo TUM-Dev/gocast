@@ -23,7 +23,7 @@ func mainRouter(t *testing.T, ctx tools.TUMLiveContext) *tools.Router {
 	router.Use(testutils.InjectContext(ctx))
 	// ServeMux panics when two patterns can match one request and neither is more
 	// specific, so registering the whole table is itself a test: a page added next to
-	// "/{shortLink}" or "/w/{slug}/{streamID}/{version}" shows up here, not at boot.
+	// "/{slug}" or "/w/{slug}/{streamID}/{version}" shows up here, not at boot.
 	require.NotPanics(t, func() { configMainRoute(router) })
 	tools.SetErrorPageRenderer(nil)
 	return router

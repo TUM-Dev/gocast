@@ -120,7 +120,6 @@ func run(ctx context.Context) error {
 		&model.Chat{},
 		&model.RegisterLink{},
 		&model.Silence{},
-		&model.ShortLink{},
 		&model.Stat{},
 		&model.LectureHall{},
 		&model.IngestServer{},
