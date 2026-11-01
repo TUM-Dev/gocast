@@ -14,6 +14,7 @@ import {
   fetchTranscodingProgress,
   formatSectionStart,
   pollTranscodingProgress,
+  RECORDING_VERSIONS,
   requestLectureSubtitles,
   sectionChanged,
   shouldPollProgress,
@@ -21,6 +22,7 @@ import {
   subtitleErrorMessage,
   updateLectureSection,
   uploadLectureAttachment,
+  uploadLectureRecording,
   uploadProblem,
   type TranscodingProgress,
 } from "./lecture-content";
@@ -188,6 +190,40 @@ describe("the content calls", () => {
     const [url, init] = lastCall();
     expect(url).toBe("/api/v2/courses/1/streams/2/attachments");
     expect((init.body as FormData).get("file")).toBeInstanceOf(File);
+  });
+
+  it("report recording upload progress and surface failures as ApiError", async () => {
+    respondWith({}); // answers the token request
+    const sent: unknown[] = [];
+    class FakeXhr {
+      status = 0;
+      statusText = "";
+      responseText = "";
+      withCredentials = false;
+      upload: { onprogress?: (e: unknown) => void } = {};
+      onload?: () => void;
+      onerror?: () => void;
+      headers: Record<string, string> = {};
+      open = vi.fn();
+      setRequestHeader = (k: string, v: string) => (this.headers[k] = v);
+      send = (body: unknown) => {
+        sent.push([this.headers, body]);
+        this.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 4 });
+        this.upload.onprogress?.({ lengthComputable: true, loaded: 4, total: 4 });
+        this.status = 503;
+        this.responseText = JSON.stringify({ code: 14, message: "no runner" });
+        this.onload?.();
+      };
+    }
+    vi.stubGlobal("XMLHttpRequest", FakeXhr);
+    const progress: number[] = [];
+
+    const err = await uploadLectureRecording(1, 2, RECORDING_VERSIONS[0].type, new File(["x"], "a.mp4"), (f) => progress.push(f)).catch((e) => e);
+
+    expect(progress).toEqual([0.25, 1]);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.status).toBe(503);
+    expect((sent[0] as [Record<string, string>])[0].Authorization).toBe("Bearer t");
   });
 
   it("request subtitles in a language", async () => {

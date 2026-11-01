@@ -224,10 +224,72 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
  * Content-Type of our own: the browser sets it with the boundary the body needs. Their
  * failures come in the gateway's shape, so they surface as the same ApiError.
  *
- * fetch reports no upload progress; callers show a busy state instead.
+ * fetch reports no upload progress, so a caller that passes onProgress is sent through
+ * XMLHttpRequest instead; the rest keep the plain fetch path.
  */
-export function apiUpload<T>(path: string, form: FormData): Promise<T> {
-  return apiFetch<T>(path, { method: "POST", body: form });
+export function apiUpload<T>(path: string, form: FormData, onProgress?: (fraction: number) => void): Promise<T> {
+  if (!onProgress) {
+    return apiFetch<T>(path, { method: "POST", body: form });
+  }
+  return apiUploadWithProgress<T>(path, form, onProgress);
+}
+
+/** The XHR twin of send(): same token, same error shape, plus upload progress. */
+function sendWithProgress<T>(
+  path: string,
+  form: FormData,
+  token: string,
+  onProgress: (fraction: number) => void,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE}${path}`);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
+    };
+    xhr.onerror = () => reject(new ApiError(0, "network error"));
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // 204 and other empty answers carry no JSON.
+        try {
+          resolve((xhr.status === 204 || !xhr.responseText ? undefined : JSON.parse(xhr.responseText)) as T);
+        } catch {
+          reject(new ApiError(xhr.status, "invalid response"));
+        }
+        return;
+      }
+      let message = xhr.statusText || "request failed";
+      try {
+        const body = JSON.parse(xhr.responseText);
+        if (body && typeof body.message === "string") message = body.message;
+      } catch {
+        // response had no JSON body
+      }
+      reject(new ApiError(xhr.status, message));
+    };
+    xhr.send(form);
+  });
+}
+
+/** apiFetch's retry-once-on-401 around sendWithProgress. */
+async function apiUploadWithProgress<T>(
+  path: string,
+  form: FormData,
+  onProgress: (fraction: number) => void,
+): Promise<T> {
+  let token = await getToken();
+  try {
+    return await sendWithProgress<T>(path, form, token, onProgress);
+  } catch (err) {
+    if (!(err instanceof ApiError) || !err.isUnauthenticated) {
+      throw err;
+    }
+    token = await getToken(true);
+    return await sendWithProgress<T>(path, form, token, onProgress);
+  }
 }
 
 /** DELETE, for endpoints that answer with an empty body. */
