@@ -17,6 +17,7 @@ message Notification {
     VODFailedNotification vod_failed = 8;
     SilenceDetectedNotification silence_detected = 9;
     DurationProbedNotification duration_probed = 11;
+    SpriteReadyNotification sprite_ready = 12;
   }
   // W3C traceparent of the runner span that produced this notification, so that the
   // manager's handling of it joins the trace of the job. Empty when tracing is off, and
@@ -94,6 +95,15 @@ message ThumbnailReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   bytes thumbnail = 3;
+}
+
+// SpriteReadyNotification carries the sheet of seekbar preview frames of one version, a JPEG
+// of 160x90 frames in 17 columns, one frame every interval_seconds.
+message SpriteReadyNotification {
+  StreamInfo stream = 1;
+  StreamVersion stream_version = 2;
+  bytes sprite = 3;
+  uint32 interval_seconds = 4;
 }
 
 // SectionImage is a single generated video section thumbnail. The image is

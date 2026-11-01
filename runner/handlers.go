@@ -35,6 +35,7 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		actions.MkDuration,
 		actions.CheckVoD,
 		actions.MkThumb,
+		actions.MkSprite,
 	}
 	if req.GetDetectSilence() {
 		// Last, and non-fatal on failure: it is a long scan nobody should wait for or retry.
@@ -97,15 +98,19 @@ func (r *Runner) RequestSectionImages(ctx context.Context, req *protobuf.Section
 	return &protobuf.SectionImageResponse{JobId: ptr.Take(jID)}, nil
 }
 
-// regenerateActions is what RegenerateThumbnail runs: the duration, the thumbnail, then the
+// regenerateActions is what RegenerateThumbnail runs: the duration, the thumbnail, then the sprite and the
 // silence scan if asked for. The scan is last because it is the long one. The duration is
 // redone every time, for the recordings that were made while nothing reported it, and comes
 // first because a thumbnail that can't be made aborts the job: those recordings still need it.
-func regenerateActions(detectSilence bool) []actions.Action {
-	if detectSilence {
-		return []actions.Action{actions.MkDuration, actions.RegenerateThumb, actions.MkSilence}
+func regenerateActions(detectSilence, generateSprite bool) []actions.Action {
+	a := []actions.Action{actions.MkDuration, actions.RegenerateThumb}
+	if generateSprite {
+		a = append(a, actions.MkSprite)
 	}
-	return []actions.Action{actions.MkDuration, actions.RegenerateThumb}
+	if detectSilence {
+		a = append(a, actions.MkSilence)
+	}
+	return a
 }
 
 // RegenerateThumbnail regenerates the thumbnail for an already-recorded VOD. The
@@ -126,7 +131,7 @@ func (r *Runner) RegenerateThumbnail(ctx context.Context, req *protobuf.Regenera
 	}
 
 	// A thumbnail regeneration job has no VoD phase, so there is nothing to skip on discard.
-	jID := r.RunActionContext(ctx, regenerateActions(req.GetDetectSilence()), nil, data,
+	jID := r.RunActionContext(ctx, regenerateActions(req.GetDetectSilence(), req.GetGenerateSprite()), nil, data,
 		r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion()))
 	r.log.Info("thumbnail regeneration job added", "ID", jID)
 

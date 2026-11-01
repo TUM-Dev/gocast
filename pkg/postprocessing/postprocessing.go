@@ -1,5 +1,5 @@
 // Package postprocessing is how apiv2 reaches the redoing of VOD post-processing:
-// thumbnails, durations and silences.
+// thumbnails, sprites, durations and silences.
 package postprocessing
 
 import (
@@ -10,14 +10,14 @@ import (
 	"github.com/TUM-Dev/gocast/pkg/runner_manager"
 )
 
-// PostProcessing redoes the post-processing of one version of one VOD: its large thumbnail, its
-// duration and, if asked, the silences. Only a
+// PostProcessing redoes the post-processing of one version of one VOD, see
+// runner_manager.RedoPostProcessingRequest. Only a
 // runner can do this today, so Manager being nil means there is nobody to ask.
 type PostProcessing struct {
 	Manager *runner_manager.Manager
 }
 
-// Redo asks a runner to redo the thumbnail for one version of one VOD, and the
+// Redo asks a runner to redo the post-processing of one version of one VOD, with the
 // silences of the stream if detectSilence is set. playlistURL must be signed.
 func (t PostProcessing) Redo(streamID uint, version model.StreamVersion, playlistURL string, detectSilence bool) error {
 	if t.Manager == nil {

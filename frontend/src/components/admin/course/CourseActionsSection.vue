@@ -66,7 +66,7 @@ async function copy(): Promise<void> {
 
 async function redoPostProcessing(): Promise<void> {
   const confirmed = window.confirm(
-    `Redo the post-processing (thumbnails, durations and silences) for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
+    `Redo the post-processing (thumbnails, durations, missing seekbar previews and silences) for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
   );
   if (!confirmed) return;
   busy.value = true;
