@@ -1,4 +1,4 @@
-FROM alpine:3.22
+FROM alpine:3.24
 
 RUN apk add --no-cache nginx nginx-mod-rtmp bash curl ffmpeg jq
 
