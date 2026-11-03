@@ -177,7 +177,7 @@ func validateCut(discard []*protobuf.LectureCutRange, length float64) ([]model.C
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("nothing to cut"))
 	}
 	ranges := make([]model.CutRange, len(discard))
-	removed, prevEnd := 0.0, 0.0
+	prevEnd := 0.0
 	for i, r := range discard {
 		start, end := r.GetStart(), r.GetEnd()
 		switch {
@@ -191,13 +191,41 @@ func validateCut(discard []*protobuf.LectureCutRange, length float64) ([]model.C
 			return nil, e.WithStatus(http.StatusBadRequest, fmt.Errorf("range %d starts after the recording ends", i))
 		}
 		ranges[i] = model.CutRange{Start: start, End: end}
-		removed += math.Min(end, length) - start
 		prevEnd = end
+	}
+	ranges = snapCut(ranges, length)
+	removed := 0.0
+	for _, r := range ranges {
+		removed += math.Min(r.End, length) - r.Start
 	}
 	if length-removed < 1 {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("the cut leaves less than a second of the recording"))
 	}
 	return ranges, nil
+}
+
+// minKeepSeconds is the shortest stretch the runner keeps, see runner/pkg/actions/cutvod.go.
+const minKeepSeconds = 0.1
+
+// snapCut folds the stretches between ranges, and before the first and after the last, that
+// are shorter than the runner keeps into the cut. Left out by the runner and not listed in the
+// ranges, they would be gone from the video while the times of the lecture keep counting them.
+func snapCut(ranges []model.CutRange, length float64) []model.CutRange {
+	out := make([]model.CutRange, 0, len(ranges))
+	for _, r := range ranges {
+		if last := len(out) - 1; last >= 0 && r.Start-out[last].End < minKeepSeconds {
+			out[last].End = math.Max(out[last].End, r.End)
+			continue
+		}
+		out = append(out, r)
+	}
+	if out[0].Start < minKeepSeconds {
+		out[0].Start = 0
+	}
+	if last := &out[len(out)-1]; length-last.End < minKeepSeconds {
+		last.End = math.Max(last.End, length)
+	}
+	return out
 }
 
 // CutLecture has the runners cut the discarded ranges out of every version of the lecture's
@@ -284,7 +312,7 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 		}
 	}
 
-	cut := model.LectureCut{TargetStreamID: target.ID, SourceStreamID: stream.ID, SourcePrivate: stream.Private, Discard: discard}
+	cut := model.LectureCut{TargetStreamID: target.ID, SourceStreamID: stream.ID, SourcePrivate: stream.Private, Discard: discard, Token: model.NewCutToken()}
 	claimed, err := a.dao.LectureCutDao.ClaimLectureCut(cut)
 	if err != nil {
 		dropCopy()
@@ -293,6 +321,19 @@ func (a *API) CutLecture(ctx context.Context, req *protobuf.CutLectureRequest) (
 	if !claimed {
 		dropCopy()
 		return nil, e.WithStatus(http.StatusConflict, errCutOpen)
+	}
+	// A version the lecture has no recording of, whose upload once failed, would keep an
+	// in-place cut open for good: nothing can be retried for it. For a copy they are the
+	// source's, and not in the way.
+	if !duplicate {
+		for _, p := range rows {
+			if slices.Contains(versions, p.Version) {
+				continue
+			}
+			if err := a.dao.StreamsDao.RemoveTranscodingProgress(p.Version, target.ID); err != nil {
+				a.log.Warn("can't clear the progress of a version that isn't cut", "stream", target.ID, "err", err)
+			}
+		}
 	}
 	// Once it is claimed the rows are this cut's, and go with it.
 	dropCut := func() {

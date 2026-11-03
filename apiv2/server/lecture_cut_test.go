@@ -278,7 +278,8 @@ func TestValidateCut(t *testing.T) {
 			if (err == nil) != tc.want {
 				t.Fatalf("err = %v, want ok=%v", err, tc.want)
 			}
-			if err == nil && len(got) != len(tc.in) {
+			// Ranges that touch are one.
+			if err == nil && len(got) != len(tc.in) && name != "touching" {
 				t.Errorf("got %v", got)
 			}
 			if err != nil {
@@ -290,9 +291,42 @@ func TestValidateCut(t *testing.T) {
 
 // progressRows expects the progress rows of the three versions of a stream: those in rows
 // exist, the others do not.
+// cutIgnoringToken matches a claimed cut by everything but its random token, which it also
+// insists on having.
+func cutIgnoringToken(want model.LectureCut) gomock.Matcher {
+	return gomock.Cond(func(x any) bool {
+		got, ok := x.(model.LectureCut)
+		if !ok || got.Token == "" {
+			return false
+		}
+		got.Token = ""
+		return reflect.DeepEqual(got, want)
+	})
+}
+
+func TestSnapCut(t *testing.T) {
+	for name, tc := range map[string]struct {
+		in, want []model.CutRange
+	}{
+		"apart":            {[]model.CutRange{{10, 20}, {30, 40}}, []model.CutRange{{10, 20}, {30, 40}}},
+		"touching":         {[]model.CutRange{{10, 20}, {20, 30}}, []model.CutRange{{10, 30}}},
+		"a sliver between": {[]model.CutRange{{10, 20}, {20.05, 30}}, []model.CutRange{{10, 30}}},
+		"a sliver first":   {[]model.CutRange{{0.05, 20}}, []model.CutRange{{0, 20}}},
+		"a sliver last":    {[]model.CutRange{{10, 99.95}}, []model.CutRange{{10, 100}}},
+		"exactly enough":   {[]model.CutRange{{10, 20}, {20.1, 30}}, []model.CutRange{{10, 20}, {20.1, 30}}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := snapCut(tc.in, 100); !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func progressRows(m cutMocks, stream uint, rows map[model.StreamVersion]model.TranscodingProgress) {
 	for _, v := range []model.StreamVersion{model.COMB, model.CAM, model.PRES} {
 		if p, ok := rows[v]; ok {
+			p.StreamID, p.Version = stream, v
 			m.streams.EXPECT().GetTranscodingProgressByVersion(v, stream).Return(p, nil)
 		} else {
 			m.streams.EXPECT().GetTranscodingProgressByVersion(v, stream).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound)
@@ -327,7 +361,7 @@ func TestCutLecture(t *testing.T) {
 		idle(m)
 		storeWaveform(t, m, hourLong)
 		want := model.LectureCut{TargetStreamID: 7, SourceStreamID: 7, Discard: []model.CutRange{{Start: 60, End: 120}, {Start: 300, End: 400}}}
-		m.cuts.EXPECT().ClaimLectureCut(want).Return(true, nil)
+		m.cuts.EXPECT().ClaimLectureCut(cutIgnoringToken(want)).Return(true, nil)
 		saveRows(m, 7)
 
 		resp, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120, 300, 400))
@@ -358,9 +392,9 @@ func TestCutLecture(t *testing.T) {
 			created = *s
 			return nil
 		})
-		m.cuts.EXPECT().ClaimLectureCut(model.LectureCut{
+		m.cuts.EXPECT().ClaimLectureCut(cutIgnoringToken(model.LectureCut{
 			TargetStreamID: 8, SourceStreamID: 7, SourcePrivate: false, Discard: []model.CutRange{{Start: 60, End: 120}},
-		}).Return(true, nil)
+		})).Return(true, nil)
 		saveRows(m, 8)
 
 		resp, err := api.CutLecture(asCaller(lectureAdmin), req(duplicate, 60, 120))
@@ -536,6 +570,20 @@ func TestCutLecture(t *testing.T) {
 		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
 		storeWaveform(t, m, hourLong)
 		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		saveRows(m, 7)
+		if _, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120)); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("clears a failed row of a version it has no recording of", func(t *testing.T) {
+		api, m := newCutAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
+		progressRows(m, 7, map[model.StreamVersion]model.TranscodingProgress{model.PRES: {Failed: true}})
+		m.cuts.EXPECT().GetLectureCutBySource(uint(7)).Return(model.LectureCut{}, gorm.ErrRecordNotFound)
+		storeWaveform(t, m, hourLong)
+		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
+		m.streams.EXPECT().RemoveTranscodingProgress(model.PRES, uint(7)).Return(nil)
 		saveRows(m, 7)
 		if _, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120)); err != nil {
 			t.Fatal(err)
