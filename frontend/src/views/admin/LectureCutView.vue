@@ -400,7 +400,7 @@ function reload(): void {
             outcome === "done"
               ? "The video is cut."
               : cutRunning
-                ? "Cutting the video…"
+                ? "Cutting the video… You can close this page."
                 : cutFailed
                   ? "The cut did not finish."
                   : "Finishing the cut…"
