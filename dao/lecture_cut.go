@@ -24,7 +24,8 @@ type LectureCutDao interface {
 	DeleteLectureCut(targetStreamID uint) error
 	// FinishLectureCut moves what the lecture has that refers to times in the recording onto
 	// the cut one, and ends the cut. All of it or none, so that a second try after a failure
-	// cannot move it twice. Two versions finishing at once both get here: only the one that
+	// cannot move it twice. The cut is matched by its token, so that a call that read it
+	// before another finished it cannot finish the next cut of the lecture. Two versions finishing at once both get here: only the one that
 	// takes the cut's row does the work, and finished says whether that was this call.
 	//
 	// The offsets and video sections are moved, the silences, which are measured on the
@@ -66,7 +67,7 @@ func (d lectureCutDao) FinishLectureCut(cut model.LectureCut) (finished bool, er
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		// First, so that a concurrent call blocks on the row until this one commits and then
 		// finds it gone.
-		claimed := tx.Delete(&model.LectureCut{}, "target_stream_id = ?", cut.TargetStreamID)
+		claimed := tx.Delete(&model.LectureCut{}, "target_stream_id = ? AND token = ?", cut.TargetStreamID, cut.Token)
 		if claimed.Error != nil || claimed.RowsAffected == 0 {
 			return claimed.Error
 		}

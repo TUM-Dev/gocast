@@ -186,3 +186,18 @@ func TestClaimLectureCut(t *testing.T) {
 		t.Errorf("claim after the cut was dropped = %v, %v, want it claimed", claimed, err)
 	}
 }
+
+func TestFinishLectureCutIgnoresALaterCut(t *testing.T) {
+	setupCutDB(t)
+	DB.Create(&cutStream{Model: gorm.Model{ID: 1}})
+	old := model.LectureCut{TargetStreamID: 1, SourceStreamID: 1, Token: "old", Discard: []model.CutRange{{Start: 1, End: 2}}}
+	DB.Create(&model.LectureCut{TargetStreamID: 1, SourceStreamID: 1, Token: "new", Discard: []model.CutRange{{Start: 5, End: 6}}})
+
+	finished, err := NewLectureCutDao().FinishLectureCut(old)
+	if err != nil || finished {
+		t.Fatalf("finished = %v, %v for a cut that is gone", finished, err)
+	}
+	if _, err := NewLectureCutDao().GetLectureCut(1); err != nil {
+		t.Errorf("the later cut was taken: %v", err)
+	}
+}

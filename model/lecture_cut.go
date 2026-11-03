@@ -1,6 +1,8 @@
 package model
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"math"
 	"time"
 )
@@ -29,7 +31,18 @@ type LectureCut struct {
 	// finishing the cut must not mistake for the source's own.
 	SourcePrivate bool       `gorm:"not null;default:false"`
 	Discard       []CutRange `gorm:"serializer:json;type:text;not null"`
-	CreatedAt     time.Time
+	// Token tells this cut from the next one of the same lecture, which has the same target
+	// when the VOD is replaced. A handler that read the cut and was slow to finish it must not
+	// finish its successor, see FinishLectureCut. Empty on cuts from before it existed.
+	Token     string `gorm:"not null;default:''"`
+	CreatedAt time.Time
+}
+
+// NewCutToken is a random value for LectureCut.Token.
+func NewCutToken() string {
+	b := make([]byte, 8)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 // Duplicate tells whether the cut made a copy of the lecture.
