@@ -60,6 +60,7 @@ func MkWaveform(ctx context.Context, logger *slog.Logger, notify chan *protobuf.
 		Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 		BucketSeconds: ptr.Take(uint32(waveformBucketSeconds)),
 	}
+	hasAudio, flatSeconds := true, 0.0
 	for v, url := range sources {
 		probe, err := ffmpeg.Probe(ctx, url)
 		if err != nil || probe.Duration() <= 0 {
@@ -68,18 +69,29 @@ func MkWaveform(ctx context.Context, logger *slog.Logger, notify chan *protobuf.
 			logger.Warn("couldn't measure version", "version", v, "err", err)
 			continue
 		}
+		if v == source {
+			hasAudio = probe.Codec("audio") != ""
+			flatSeconds = probe.Duration()
+		}
 		n.Durations = append(n.Durations, &protobuf.WaveformReadyNotification_VersionDuration{
 			StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[v])),
 			Seconds:       ptr.Take(probe.Duration()),
 		})
 	}
 
-	logger.Info("building waveform", "version", source)
-	peaks, err := decodePeaks(ctx, sources[source])
-	if err != nil {
-		return err
+	if !hasAudio {
+		// Uploads and cuts take recordings without sound, and ffmpeg has no output to make
+		// of one. A silent timeline still lets the editor seek and cut by the video.
+		logger.Info("version has no audio, flat waveform", "version", source)
+		n.Peaks = make([]byte, max(1, int(math.Ceil(flatSeconds/waveformBucketSeconds))))
+	} else {
+		logger.Info("building waveform", "version", source)
+		peaks, err := decodePeaks(ctx, sources[source])
+		if err != nil {
+			return err
+		}
+		n.Peaks = peaks
 	}
-	n.Peaks = peaks
 	notify <- &protobuf.Notification{Data: &protobuf.Notification_WaveformReady{WaveformReady: n}}
 	return nil
 }
