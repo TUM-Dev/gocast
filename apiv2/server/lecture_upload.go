@@ -96,7 +96,7 @@ func (a *API) handleLectureUpload(w http.ResponseWriter, r *http.Request, route 
 		return
 	}
 	if route.kind == uploadMedia {
-		a.proxyLectureMedia(w, r, stream)
+		a.proxyLectureMedia(w, r, stream, model.VideoType(r.URL.Query().Get("type")))
 		return
 	}
 	if a.massStorage == "" {

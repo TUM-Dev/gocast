@@ -8,11 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/netip"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"golang.org/x/net/idna"
 	"gorm.io/gorm"
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
@@ -23,6 +26,9 @@ import (
 
 // integrationUploadPrefix is the path a ticket from createIntegrationUpload is used on.
 const integrationUploadPrefix = "/api/v2/integration/uploads/"
+
+// integrationUploadPath is the pattern of that path.
+const integrationUploadPath = integrationUploadPrefix + "{ticket}"
 
 // integrationUploadTicketTTL is how long a ticket waits for its upload to start. A
 // ticket is handed to the integration's browser page, which starts at once.
@@ -80,4 +86,81 @@ func (a *API) CreateIntegrationUpload(ctx context.Context, req *protobuf.CreateI
 		StreamId:   uint32(stream.ID),
 		UploadPath: integrationUploadPrefix + base64.RawURLEncoding.EncodeToString(ticket),
 	}, nil
+}
+
+// handleIntegrationUpload takes the recording for a lecture an integration created. It
+// needs no login: only the integration, with its API key and an active grant, can get a
+// ticket, and it hands the ticket to the browser of one of its users. CORS is allowed for
+// the origin of the integration's registered return URL only, since a browser refuses an
+// upload with progress from another origin otherwise; the ticket is the protection. The
+// ticket is used up before the body is read, and the recording is always the combined
+// version.
+func (a *API) handleIntegrationUpload(w http.ResponseWriter, r *http.Request, rawTicket string) {
+	notFound := e.WithStatus(http.StatusNotFound, errors.New("upload not found"))
+	ticket, err := base64.RawURLEncoding.DecodeString(rawTicket)
+	if err != nil || len(ticket) != 32 || base64.RawURLEncoding.EncodeToString(ticket) != rawTicket {
+		writeUploadError(w, notFound)
+		return
+	}
+	hash := sha256.Sum256(ticket)
+	ctx, now := r.Context(), time.Now()
+
+	origin := r.Header.Get("Origin")
+	if r.Method == http.MethodOptions || origin != "" {
+		returnURL, err := a.dao.IntegrationGrantDao.GetIntegrationUploadReturnURL(ctx, hash[:], now)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				a.log.Error("integration upload lookup failed", "err", err)
+			}
+			writeUploadError(w, notFound)
+			return
+		}
+		if origin == "" || origin != originOf(returnURL) {
+			writeUploadError(w, e.WithStatus(http.StatusForbidden, errors.New("uploads are only accepted from the integration's origin")))
+			return
+		}
+		header := w.Header()
+		header.Set("Access-Control-Allow-Origin", origin)
+		header.Add("Vary", "Origin")
+		if r.Method == http.MethodOptions {
+			header.Set("Access-Control-Allow-Methods", "POST")
+			header.Set("Access-Control-Allow-Headers", "Content-Type")
+			header.Set("Access-Control-Max-Age", "600")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+
+	stream, err := a.dao.IntegrationGrantDao.ConsumeIntegrationUploadTicket(ctx, hash[:], now)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			a.log.Error("integration upload ticket failed", "err", err)
+		}
+		writeUploadError(w, notFound)
+		return
+	}
+	a.proxyLectureMedia(w, r, stream, model.VideoTypeCombined)
+}
+
+// originOf is the origin a browser sends for pages under rawURL: the host in its
+// canonical form (ASCII for an internationalized name, the short form of an IPv6
+// address) and without the scheme's default port, which browsers leave out.
+func originOf(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Hostname() == "" {
+		return ""
+	}
+	scheme, host := strings.ToLower(u.Scheme), u.Hostname()
+	if addr, err := netip.ParseAddr(host); err == nil {
+		host = addr.WithZone("").String()
+		if addr.Is6() {
+			host = "[" + host + "]"
+		}
+	} else if host, err = idna.Lookup.ToASCII(host); err != nil {
+		return ""
+	}
+	if port := u.Port(); port != "" && !(scheme == "https" && port == "443") && !(scheme == "http" && port == "80") {
+		host += ":" + port
+	}
+	return scheme + "://" + host
 }
