@@ -67,6 +67,9 @@ type StreamsDao interface {
 	// SetDuration stores the length of the stream's VOD in seconds. It writes that one
 	// column, so it cannot undo what another update of the stream has just saved.
 	SetDuration(streamID uint, seconds uint32) error
+	// SetThumbInterval stores the seconds between two frames of the stream's sprites. It
+	// writes that one column, like SetDuration.
+	SetThumbInterval(streamID uint, seconds uint32) error
 
 	DeleteStream(streamID string)
 	// RemoveStream is DeleteStream that reports a failure, for callers that audit the delete.
@@ -698,6 +701,11 @@ func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {
 func (d streamsDao) SetDuration(streamID uint, seconds uint32) error {
 	defer Cache.Clear()
 	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Update("duration", seconds).Error
+}
+
+func (d streamsDao) SetThumbInterval(streamID uint, seconds uint32) error {
+	defer Cache.Clear()
+	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Update("thumb_interval", seconds).Error
 }
 
 func (d streamsDao) SaveStream(vod *model.Stream) error {

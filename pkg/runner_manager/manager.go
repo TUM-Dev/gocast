@@ -322,6 +322,8 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
 	case *protobuf.Notification_DurationProbed:
 		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
+	case *protobuf.Notification_SpriteReady:
+		return &protobuf.NotificationResponse{}, m.saveSprite(ctx, notification.GetSpriteReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}

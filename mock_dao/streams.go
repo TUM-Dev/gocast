@@ -607,6 +607,20 @@ func (mr *MockStreamsDaoMockRecorder) SetStreamNotLiveById(streamID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamNotLiveById", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamNotLiveById), streamID)
 }
 
+// SetThumbInterval mocks base method.
+func (m *MockStreamsDao) SetThumbInterval(streamID uint, seconds uint32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetThumbInterval", streamID, seconds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetThumbInterval indicates an expected call of SetThumbInterval.
+func (mr *MockStreamsDaoMockRecorder) SetThumbInterval(streamID, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetThumbInterval", reflect.TypeOf((*MockStreamsDao)(nil).SetThumbInterval), streamID, seconds)
+}
+
 // ToggleVisibility mocks base method.
 func (m *MockStreamsDao) ToggleVisibility(streamId uint, private bool) error {
 	m.ctrl.T.Helper()

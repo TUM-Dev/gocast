@@ -435,6 +435,7 @@ func isCritical(n *protobuf.Notification) bool {
 		*protobuf.Notification_SectionImagesReady,
 		*protobuf.Notification_SilenceDetected,
 		*protobuf.Notification_DurationProbed,
+		*protobuf.Notification_SpriteReady,
 		*protobuf.Notification_VodFailed:
 		return true
 	}
@@ -652,6 +653,12 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 				"stream", notification.GetSectionImagesReady().GetStream().GetId(),
 				// strip the images from this notification log to avoid noise
 				"images", len(notification.GetSectionImagesReady().GetImages()))
+		case *protobuf.Notification_SpriteReady:
+			r.log.Debug("send notification", "type", "SpriteReady",
+				"stream", notification.GetSpriteReady().GetStream().GetId(),
+				"version", notification.GetSpriteReady().GetStreamVersion().String(),
+				// strip the sheet from this notification log to avoid noise
+				"bytes", len(notification.GetSpriteReady().GetSprite()))
 		default:
 			r.log.Debug("send notification", "notification", notification)
 		}

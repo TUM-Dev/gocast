@@ -8,11 +8,18 @@ import (
 )
 
 func TestRegenerateActions(t *testing.T) {
-	if got := len(regenerateActions(false)); got != 2 {
-		t.Errorf("without silence detection: %d actions, want 2", got)
-	}
-	if got := len(regenerateActions(true)); got != 3 {
-		t.Errorf("with silence detection: %d actions, want 3", got)
+	for _, tc := range []struct {
+		silence, sprite bool
+		want            int
+	}{
+		{false, false, 2},
+		{true, false, 3},
+		{false, true, 3},
+		{true, true, 4},
+	} {
+		if got := len(regenerateActions(tc.silence, tc.sprite)); got != tc.want {
+			t.Errorf("silence=%v sprite=%v: %d actions, want %d", tc.silence, tc.sprite, got, tc.want)
+		}
 	}
 }
 
@@ -20,7 +27,7 @@ func TestRegenerateActions(t *testing.T) {
 // ones that may well have none: the duration must not depend on it.
 func TestRegenerateActionsProbeDurationBeforeThumbnail(t *testing.T) {
 	for _, silence := range []bool{false, true} {
-		got := regenerateActions(silence)
+		got := regenerateActions(silence, true)
 		if reflect.ValueOf(got[0]).Pointer() != reflect.ValueOf(actions.MkDuration).Pointer() {
 			t.Errorf("detectSilence=%v: the first action is not MkDuration", silence)
 		}

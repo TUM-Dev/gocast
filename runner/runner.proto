@@ -81,6 +81,8 @@ message RegenerateThumbnailRequest {
   // Also scan the VoD for silences, see StreamRequest.detect_silence. The playlist_url is
   // read for that too.
   bool detect_silence = 4;
+  // Also make the sheet of seekbar preview frames. The playlist_url is read for that too.
+  bool generate_sprite = 5;
 }
 
 message RegenerateThumbnailResponse {

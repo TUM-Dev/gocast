@@ -11,7 +11,7 @@ import (
 )
 
 // RedoPostProcessingRequest describes the VOD whose post-processing, its thumbnail and
-// duration and optionally its silences, should be redone.
+// duration, its sprite if it has none, and optionally its silences, should be redone.
 // PlaylistURL must be signed, as for SectionImageRequest.
 type RedoPostProcessingRequest struct {
 	StreamID    uint
@@ -35,10 +35,8 @@ func protobufStreamVersion(version model.StreamVersion) protobuf.StreamVersion {
 }
 
 // RequestRedoPostProcessing asks a runner to redo the post-processing of an
-// already-recorded VOD. The runner answers asynchronously with a DurationProbedNotification,
-// a ThumbnailReadyNotification, which saveThumbnail then stores, and a
-// SilenceDetectedNotification if silences were asked for, so this returns as soon as the
-// job is accepted. The runner's RPC still has the name it was introduced with.
+// already-recorded VOD. The runner answers asynchronously in notifications, so this returns as
+// soon as the job is accepted. The runner's RPC still has the name it was introduced with.
 func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostProcessingRequest) (err error) {
 	version := protobufStreamVersion(req.Version)
 	ctx, span := startSpan(withStreamTrace(ctx, uint64(req.StreamID), version), "manager.request_redo_postprocessing", streamAttrs(uint64(req.StreamID), version)...)
@@ -55,10 +53,11 @@ func (m *Manager) RequestRedoPostProcessing(ctx context.Context, req RedoPostPro
 	defer cancel()
 
 	resp, err := client.RegenerateThumbnail(ctx, &protobuf.RegenerateThumbnailRequest{
-		StreamId:      ptr.Take(uint64(req.StreamID)),
-		Version:       ptr.Take(protobufStreamVersion(req.Version)),
-		PlaylistUrl:   ptr.Take(req.PlaylistURL),
-		DetectSilence: ptr.Take(req.DetectSilence),
+		StreamId:       ptr.Take(uint64(req.StreamID)),
+		Version:        ptr.Take(protobufStreamVersion(req.Version)),
+		PlaylistUrl:    ptr.Take(req.PlaylistURL),
+		DetectSilence:  ptr.Take(req.DetectSilence),
+		GenerateSprite: ptr.Take(m.needsSprite(req.StreamID, req.Version)),
 	})
 	if err != nil {
 		return fmt.Errorf("RegenerateThumbnail: %w", err)
