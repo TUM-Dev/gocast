@@ -308,12 +308,12 @@ func TestSnapCut(t *testing.T) {
 	for name, tc := range map[string]struct {
 		in, want []model.CutRange
 	}{
-		"apart":            {[]model.CutRange{{10, 20}, {30, 40}}, []model.CutRange{{10, 20}, {30, 40}}},
-		"touching":         {[]model.CutRange{{10, 20}, {20, 30}}, []model.CutRange{{10, 30}}},
-		"a sliver between": {[]model.CutRange{{10, 20}, {20.05, 30}}, []model.CutRange{{10, 30}}},
-		"a sliver first":   {[]model.CutRange{{0.05, 20}}, []model.CutRange{{0, 20}}},
-		"a sliver last":    {[]model.CutRange{{10, 99.95}}, []model.CutRange{{10, 100}}},
-		"exactly enough":   {[]model.CutRange{{10, 20}, {20.1, 30}}, []model.CutRange{{10, 20}, {20.1, 30}}},
+		"apart":            {[]model.CutRange{{Start: 10, End: 20}, {Start: 30, End: 40}}, []model.CutRange{{Start: 10, End: 20}, {Start: 30, End: 40}}},
+		"touching":         {[]model.CutRange{{Start: 10, End: 20}, {Start: 20, End: 30}}, []model.CutRange{{Start: 10, End: 30}}},
+		"a sliver between": {[]model.CutRange{{Start: 10, End: 20}, {Start: 20.05, End: 30}}, []model.CutRange{{Start: 10, End: 30}}},
+		"a sliver first":   {[]model.CutRange{{Start: 0.05, End: 20}}, []model.CutRange{{Start: 0, End: 20}}},
+		"a sliver last":    {[]model.CutRange{{Start: 10, End: 99.95}}, []model.CutRange{{Start: 10, End: 100}}},
+		"exactly enough":   {[]model.CutRange{{Start: 10, End: 20}, {Start: 20.1, End: 30}}, []model.CutRange{{Start: 10, End: 20}, {Start: 20.1, End: 30}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if got := snapCut(tc.in, 100); !reflect.DeepEqual(got, tc.want) {
