@@ -129,7 +129,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		firstName := extractSamlField(response, "givenName")
 		lastName := extractSamlField(response, "sn")
 		subjectID := extractSamlField(response, "samlSubjectID") // used to logout from the IDP
-		email := extractSamlField(response, "email")
+		email := extractSamlField(response, "mail")
 		var lastNameUser *string
 		if lastName != "" {
 			lastNameUser = &lastName
