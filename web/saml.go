@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"database/sql"
 	"net/http"
 	"net/url"
 	"strings"
@@ -128,6 +129,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		firstName := extractSamlField(response, "givenName")
 		lastName := extractSamlField(response, "sn")
 		subjectID := extractSamlField(response, "samlSubjectID") // used to logout from the IDP
+		email := extractSamlField(response, "email")
 		var lastNameUser *string
 		if lastName != "" {
 			lastNameUser = &lastName
@@ -147,11 +149,14 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		// Email is unique and nullable: an absent attribute must stay NULL, not "".
+		dbEmail := sql.NullString{String: email, Valid: email != ""}
 		user := model.User{
 			Name:                firstName,
 			LastName:            lastNameUser,
 			MatriculationNumber: matrNr,
 			LrzID:               lrzID,
+			Email:               dbEmail,
 		}
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {

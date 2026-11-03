@@ -193,6 +193,9 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	user.Model = foundUser.Model
 	foundUser.LrzID = user.LrzID
 	foundUser.Name = user.Name
+	if user.Email.Valid {
+		foundUser.Email = user.Email
+	}
 	if user.Role != 0 {
 		foundUser.Role = user.Role
 	}
