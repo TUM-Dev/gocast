@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"math"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -109,5 +110,34 @@ func TestMkWaveform(t *testing.T) {
 	if len(n.GetDurations()) != 1 || n.GetDurations()[0].GetStreamVersion() != protobuf.StreamVersion_STREAM_VERSION_COMBINED ||
 		math.Abs(n.GetDurations()[0].GetSeconds()-3) > 0.5 {
 		t.Errorf("durations = %v, want only the combined one, 3 s", n.GetDurations())
+	}
+}
+
+func TestMkWaveformWithoutAudio(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	silent := filepath.Join(t.TempDir(), "silent.mp4")
+	out, err := exec.Command("ffmpeg", "-nostdin", "-v", "error", "-f", "lavfi", "-i", "testsrc=duration=3:size=64x64:rate=10",
+		"-c:v", "libx264", "-pix_fmt", "yuv420p", silent).CombinedOutput()
+	if err != nil {
+		t.Fatalf("make fixture: %v: %s", err, out)
+	}
+	notify := make(chan *protobuf.Notification, 1)
+	d := map[string]any{"streamID": uint64(7), "sources": map[string]string{"STREAM_VERSION_COMBINED": silent}}
+	if err := MkWaveform(context.Background(), testLogger(), notify, d, nil); err != nil {
+		t.Fatalf("MkWaveform = %v", err)
+	}
+	n := (<-notify).GetWaveformReady()
+	if got := len(n.GetPeaks()); got != 3 {
+		t.Errorf("%d peaks for 3 s without audio", got)
+	}
+	for i, p := range n.GetPeaks() {
+		if p != 0 {
+			t.Errorf("peak %d = %d, want silence", i, p)
+		}
+	}
+	if len(n.GetDurations()) != 1 || math.Abs(n.GetDurations()[0].GetSeconds()-3) > 0.5 {
+		t.Errorf("durations = %v", n.GetDurations())
 	}
 }
