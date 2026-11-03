@@ -292,6 +292,16 @@ function resize(id: number, edge: "start" | "end", to: number): void {
   cuts.value = resizeCut(cuts.value, id, edge, to, duration.value);
 }
 
+// The same resize as dragging an edge. The field is put back to the cut afterwards: the resize
+// clamps the value, and when the clamped one is the old one nothing would redraw the field.
+function resizeFromInput(id: number, edge: "start" | "end", e: Event): void {
+  const input = e.target as HTMLInputElement;
+  const to = Number(input.value);
+  if (input.value !== "" && Number.isFinite(to)) resize(id, edge, to);
+  const c = cuts.value.find((x) => x.id === id);
+  if (c) input.value = c[edge].toFixed(1);
+}
+
 function remove(id: number): void {
   cuts.value = removeCut(cuts.value, id);
   if (selectedId.value === id) selectedId.value = null;
@@ -602,6 +612,30 @@ function reload(): void {
                 <button type="button" class="text-2 font-mono hover:underline" @click="seek(c.start)">
                   {{ formatTime(c.start, true) }} – {{ formatTime(c.end, true) }}
                 </button>
+                <span v-if="!c.suggested" class="flex items-center gap-1 text-xs">
+                  <label class="sr-only" :for="`cut-start-${c.id}`">Start of cut, in seconds</label>
+                  <input
+                    :id="`cut-start-${c.id}`"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    class="w-20 rounded border px-1 dark:border-gray-600 dark:bg-gray-900"
+                    :value="c.start.toFixed(1)"
+                    data-testid="cut-start-input"
+                    @change="resizeFromInput(c.id, 'start', $event)"
+                  />
+                  <label class="sr-only" :for="`cut-end-${c.id}`">End of cut, in seconds</label>
+                  <input
+                    :id="`cut-end-${c.id}`"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    class="w-20 rounded border px-1 dark:border-gray-600 dark:bg-gray-900"
+                    :value="c.end.toFixed(1)"
+                    data-testid="cut-end-input"
+                    @change="resizeFromInput(c.id, 'end', $event)"
+                  />
+                </span>
                 <span class="text-5 text-xs">{{ formatTime(c.end - c.start) }}</span>
                 <span v-if="c.suggested" class="rounded bg-amber-400/30 px-1 text-xs">suggested</span>
                 <span class="ml-auto flex gap-1">

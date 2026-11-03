@@ -138,6 +138,23 @@ describe("LectureCutView", () => {
     expect(byTestId(w, "cut-submit").attributes("disabled")).toBeUndefined();
   });
 
+  it("moves the edges of a cut from the number fields", async () => {
+    const w = mountIt();
+    await flushPromises();
+    await byTestId(w, "cut-accept-all").trigger("click");
+
+    const start = byTestId(w, "cut-start-input");
+    const end = byTestId(w, "cut-end-input");
+    expect((start.element as HTMLInputElement).value).toBe("21.5");
+    await start.setValue("30");
+    await end.setValue("50");
+    expect(byTestId(w, "cut-row").text()).toContain("0:30.0 – 0:50.0");
+
+    // past the end of the recording: clamped, and the field shows what the cut is
+    await end.setValue("500");
+    expect((end.element as HTMLInputElement).value).toBe("100.0");
+  });
+
   it("asks before replacing the recording, then sends the accepted cuts", async () => {
     const w = mountIt();
     await flushPromises();
