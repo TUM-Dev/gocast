@@ -846,7 +846,7 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
       summary: "Cut parts out of a lecture's recording."
-      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course."
+      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 60 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course."
     };
   }
   rpc getLectureCut(GetLectureCutRequest) returns (GetLectureCutResponse) {
@@ -3357,7 +3357,7 @@ message GetLectureWaveformResponse {
   // The length in seconds of each version the runner could measure, by version (COMB,
   // CAM, PRES).
   map<string, double> version_durations = 4;
-  // The versions differ in length by more than the 30 seconds one cut can span, so
+  // The versions differ in length by more than the 60 seconds one cut can span, so
   // cutLecture refuses the lecture.
   bool versions_differ = 5;
   // The lecture's detected silences, from which the editor suggests cuts.

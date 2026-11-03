@@ -60,7 +60,7 @@ type Waveform struct {
 
 // MaxVersionDurationGap is how much the versions of a stream may differ in length for one
 // cut to fit them all.
-const MaxVersionDurationGap = 30.0
+const MaxVersionDurationGap = 60.0
 
 // DurationGap is the difference between the longest and the shortest version.
 func (w Waveform) DurationGap() float64 {

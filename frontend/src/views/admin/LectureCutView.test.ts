@@ -214,13 +214,13 @@ describe("LectureCutView", () => {
     expect(w.find("[data-testid=cut-progress]").exists()).toBe(false);
   });
 
-  it("refuses versions that differ by more than 30 seconds", async () => {
+  it("refuses versions that differ by more than 60 seconds", async () => {
     m.fetchWaveform.mockResolvedValue(waveform({ versionsDiffer: true, versionDurations: { COMB: 100, CAM: 60 } }));
     const w = mountIt();
     await flushPromises();
     await byTestId(w, "cut-accept-all").trigger("click");
 
-    expect(byTestId(w, "cut-versions-differ").text()).toContain("differ in length by more than 30 seconds");
+    expect(byTestId(w, "cut-versions-differ").text()).toContain("differ in length by more than 60 seconds");
     expect(byTestId(w, "cut-submit").attributes("disabled")).toBeDefined();
   });
 

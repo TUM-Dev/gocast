@@ -46,7 +46,7 @@ func WithCutting(c Cutting) Option {
 var (
 	errNoCutRunner      = errors.New("no runner is available to take the job")
 	errNoWaveform       = errors.New("the lecture's waveform has not been built yet")
-	errVersionsDiffer   = errors.New("the versions of the recording differ in length by more than 30 seconds")
+	errVersionsDiffer   = errors.New("the versions of the recording differ in length by more than 60 seconds")
 	errCutBusy          = errors.New("the lecture is being converted")
 	errCutOpen          = errors.New("an earlier cut of the lecture is not finished: retry or abandon it")
 	errNoOpenCut        = errors.New("the lecture has no cut that is not finished")

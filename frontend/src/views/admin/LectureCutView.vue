@@ -503,7 +503,7 @@ function reload(): void {
           >
             The versions of this recording (<span v-for="(d, v) in waveform.versionDurations" :key="v"
               >{{ v }} {{ formatTime(d) }}; </span
-            >) differ in length by more than 30 seconds, so they can't be cut together.
+            >) differ in length by more than 60 seconds, so they can't be cut together.
           </p>
 
           <div class="flex flex-wrap items-center gap-2">

@@ -13460,7 +13460,7 @@ type GetLectureWaveformResponse struct {
 	// The length in seconds of each version the runner could measure, by version (COMB,
 	// CAM, PRES).
 	VersionDurations map[string]float64 `protobuf:"bytes,4,rep,name=version_durations,json=versionDurations,proto3" json:"version_durations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"fixed64,2,opt,name=value"`
-	// The versions differ in length by more than the 30 seconds one cut can span, so
+	// The versions differ in length by more than the 60 seconds one cut can span, so
 	// cutLecture refuses the lecture.
 	VersionsDiffer bool `protobuf:"varint,5,opt,name=versions_differ,json=versionsDiffer,proto3" json:"versions_differ,omitempty"`
 	// The lecture's detected silences, from which the editor suggests cuts.
@@ -22272,7 +22272,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\aCourses\x12*Get the audio level timeline of a lecture.\x1a\x95\x01Not ready until a runner has delivered what requestLectureWaveform asked for. A new VOD of the lecture removes it. Requires administering the course.\x82\xd3\xe4\x93\x023\x121/courses/{course_id}/streams/{stream_id}/waveform\x12\x84\x05\n" +
 	"\n" +
 	"cutLecture\x12\x1b.protobuf.CutLectureRequest\x1a\x1c.protobuf.CutLectureResponse\"\xba\x04\x92A\xff\x03\n" +
-	"\aCourses\x12'Cut parts out of a lecture's recording.\x1a\xca\x03Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 30 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course.\x82\xd3\xe4\x93\x021:\x01*\",/courses/{course_id}/streams/{stream_id}/cut\x12\x80\x03\n" +
+	"\aCourses\x12'Cut parts out of a lecture's recording.\x1a\xca\x03Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 60 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course.\x82\xd3\xe4\x93\x021:\x01*\",/courses/{course_id}/streams/{stream_id}/cut\x12\x80\x03\n" +
 	"\rgetLectureCut\x12\x1e.protobuf.GetLectureCutRequest\x1a\x1f.protobuf.GetLectureCutResponse\"\xad\x02\x92A\xf5\x01\n" +
 	"\aCourses\x12.Get the cut of a lecture that is not finished.\x1a\xb9\x01A cut stays open until every version is cut, so that a version that failed can be retried with the same ranges. Not open once it is done or abandoned. Requires administering the course.\x82\xd3\xe4\x93\x02.\x12,/courses/{course_id}/streams/{stream_id}/cut\x12\xb1\x03\n" +
 	"\x0fretryLectureCut\x12 .protobuf.RetryLectureCutRequest\x1a\x16.google.protobuf.Empty\"\xe3\x02\x92A\xa5\x02\n" +

@@ -237,7 +237,7 @@ func TestGetLectureWaveform(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
 		w := hourLong
-		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3560}
+		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3530}
 		storeWaveform(t, m, w)
 		resp, err := api.GetLectureWaveform(asCaller(lectureAdmin), req)
 		if err != nil || !resp.VersionsDiffer {
@@ -590,12 +590,12 @@ func TestCutLecture(t *testing.T) {
 		}
 	})
 
-	t.Run("refuses versions that differ by more than 30 seconds", func(t *testing.T) {
+	t.Run("refuses versions that differ by more than 60 seconds", func(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
 		idle(m)
 		w := hourLong
-		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3569}
+		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3539}
 		storeWaveform(t, m, w)
 		_, err := api.CutLecture(asCaller(lectureAdmin), req(overwrite, 60, 120))
 		wantCode(t, err, codes.InvalidArgument)
@@ -604,12 +604,12 @@ func TestCutLecture(t *testing.T) {
 		}
 	})
 
-	t.Run("accepts versions that differ by 30 seconds", func(t *testing.T) {
+	t.Run("accepts versions that differ by 60 seconds", func(t *testing.T) {
 		api, m := newCutAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(cuttableLecture(), nil)
 		idle(m)
 		w := hourLong
-		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3570}
+		w.Durations = map[model.StreamVersion]float64{model.COMB: 3600, model.CAM: 3540}
 		storeWaveform(t, m, w)
 		m.cuts.EXPECT().ClaimLectureCut(gomock.Any()).Return(true, nil)
 		saveRows(m, 7)

@@ -111,7 +111,7 @@ When all versions are done, **Watch the cut video** opens the lecture.
 
 - **All versions are cut the same.** A lecture can have a combined, a presentation and a
   camera version. You see and cut the combined one, and the same ranges are cut from the
-  others. If the versions differ in length by more than 30 seconds, they cannot be cut
+  others. If the versions differ in length by more than 60 seconds, they cannot be cut
   together and the editor says so instead of cutting.
 - **Sections and trimming move along.** The video sections of the lecture, and a start and
   end set earlier, move to where they are in the cut recording. A section that was inside
