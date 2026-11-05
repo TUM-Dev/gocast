@@ -35,15 +35,13 @@ var spaFS embed.FS
 // client router decides what to render.
 const spaShellPath = "spa/index.html"
 
-// The URL grammar for /admin. The shapes are effectively permanent once a sibling
-// exists: ServeMux panics at startup when two patterns can match the same request and
-// neither is more specific.
 // spaServiceWorkerPath is the SPA's service worker (frontend/src/sw.ts), built beside
 // the shell.
 const spaServiceWorkerPath = "spa/sw.js"
 
-// The URL grammar for /admin. gin panics when two parameters with different names
-// share a position, so these shapes are effectively permanent once a sibling exists.
+// The URL grammar for /admin. The shapes are effectively permanent once a sibling
+// exists: ServeMux panics at startup when two patterns can match the same request and
+// neither is more specific.
 //
 //  1. Kebab-case: /admin/lecture-halls. The old spellings redirect.
 //  2. Plural collections: /admin/courses/:courseID.
@@ -221,19 +219,19 @@ func readSPAFile(name string) ([]byte, error) {
 // serveServiceWorker serves the SPA's service worker from the root. A worker only
 // controls pages under the path it is served from, so the build's own path,
 // /spa-assets/sw.js, would leave every page uncontrolled.
-func serveServiceWorker(c *gin.Context) {
+func serveServiceWorker(w http.ResponseWriter, _ *http.Request) {
 	worker, err := readSPAFile(spaServiceWorkerPath)
 	if err != nil {
 		logger.Error("can't read SPA service worker", "err", err)
-		c.AbortWithStatus(http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	// Browsers may answer the update check for a worker from their HTTP cache for up
 	// to a day; no-cache sends every check to the server, so a deploy is noticed on
 	// the next page load.
-	c.Header("Cache-Control", "no-cache")
-	c.Data(http.StatusOK, "text/javascript; charset=utf-8", worker)
+	w.Header().Set("Cache-Control", "no-cache")
+	tools.WriteData(w, http.StatusOK, "text/javascript; charset=utf-8", worker)
 }
 
 // serveSPAShell responds with the SPA's entry document. Written directly rather than
@@ -325,7 +323,7 @@ func configStaticRouter(router *tools.Router) {
 
 	// The SPA's own worker, under a different URL so the route above keeps retiring
 	// the old one.
-	router.GET("/sw.js", serveServiceWorker)
+	router.HandleFunc("GET /sw.js", serveServiceWorker)
 }
 
 const retireServiceWorker = `self.addEventListener("install", () => self.skipWaiting());
