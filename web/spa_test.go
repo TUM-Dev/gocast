@@ -204,9 +204,8 @@ func TestSPAAssetsAreEmbedded(t *testing.T) {
 func TestServiceWorkerIsServedFromTheRoot(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.GET("/sw.js", serveServiceWorker)
+	router := tools.NewRouter()
+	router.HandleFunc("GET /sw.js", serveServiceWorker)
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/sw.js", nil))
@@ -219,7 +218,7 @@ func TestServiceWorkerIsServedFromTheRoot(t *testing.T) {
 	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
 		t.Errorf("Cache-Control = %q, want no-cache", cc)
 	}
-	// The precache list names the hashed assets under the prefix gin mounts them at;
+	// The precache list names the hashed assets under the prefix they are mounted at;
 	// relative to the worker they would resolve to the root, where nothing serves them.
 	if !strings.Contains(rec.Body.String(), `"/spa-assets/assets/`) {
 		t.Errorf("worker does not precache /spa-assets/assets/: %q", truncate(rec.Body.String()))
