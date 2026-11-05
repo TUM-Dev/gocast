@@ -387,7 +387,7 @@ func configMainRoute(router *tools.Router) {
 	registerPage(router, http.MethodGet, "/search")
 
 	// Public: the lectures saved on the device; nothing on it comes from the server.
-	registerPage(&router.RouterGroup, http.MethodGet, "/offline")
+	registerPage(router, http.MethodGet, "/offline")
 
 	// admins
 	//
