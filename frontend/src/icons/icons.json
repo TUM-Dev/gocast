@@ -59,6 +59,7 @@
     "pen": "pen",
     "plus": "plus",
     "power-off": "power-off",
+    "rotate": "rotate",
     "satellite-dish": "satellite-dish",
     "scissors": "scissors",
     "search": "magnifying-glass",
@@ -76,6 +77,7 @@
     "undo": "arrow-rotate-left",
     "upload": "upload",
     "user": "user",
+    "wifi": "wifi",
     "xmark": "xmark"
   },
   "regular": {

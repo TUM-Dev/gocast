@@ -5,3 +5,4 @@
 # which is why .gitignore and .gitkeep are committed.
 index.html
 assets/
+sw.js

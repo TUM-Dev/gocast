@@ -1,4 +1,8 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
+
+/** Whether the service worker runs under `vite dev`; set in vite.config.ts. */
+declare const __PWA_DEV__: boolean;
 
 declare module "*.vue" {
   import type { DefineComponent } from "vue";
