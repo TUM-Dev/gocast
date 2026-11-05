@@ -4289,6 +4289,147 @@
         ]
       }
     },
+    "/offline/sync": {
+      "post": {
+        "summary": "Renew the licences of the lectures saved on a device.",
+        "description": "Checks again whether the caller may still have each lecture, and answers every package with a new expiry or as revoked. Packages that are not the caller's, or no longer exist, are revoked.",
+        "operationId": "StreamService_syncOfflineLicenses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufSyncOfflineLicensesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/protobufSyncOfflineLicensesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Offline"
+        ]
+      }
+    },
+    "/offline/{packageId}": {
+      "get": {
+        "summary": "Get a saved lecture's state, and its licence once it is ready.",
+        "description": "The licence, with the key and the package's signed URL, is only in the answer while the package is ready to download. 404 for another caller's package.",
+        "operationId": "StreamService_getOfflineLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufOfflineLecture"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Offline"
+        ]
+      },
+      "delete": {
+        "summary": "Give up a saved lecture.",
+        "description": "Revokes the licence and deletes a package still on the server. 404 for another caller's package.",
+        "operationId": "StreamService_deleteOfflineLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Offline"
+        ]
+      }
+    },
+    "/offline/{packageId}/complete": {
+      "post": {
+        "summary": "Report that the device has downloaded a package.",
+        "description": "The package is deleted from the server; the licence lives on. 404 for another caller's package.",
+        "operationId": "StreamService_completeOfflineDownload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "packageId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServicecompleteOfflineDownloadBody"
+            }
+          }
+        ],
+        "tags": [
+          "Offline"
+        ]
+      }
+    },
     "/progress": {
       "get": {
         "summary": "Get watch progress for a batch of streams.",
@@ -5422,6 +5563,47 @@
         ]
       }
     },
+    "/streams/{streamId}/offline": {
+      "post": {
+        "summary": "Save a lecture for offline viewing.",
+        "description": "Asks a runner to package the recording; poll getOfflineLecture until it is ready. Only where the caller may download the recording: signed in and the course allows downloads, or the caller administers the course. 403 otherwise, 429 when the caller saved too many lectures lately or has too many being prepared, 503 when the server has too many packages waiting or no runner.",
+        "operationId": "StreamService_requestOfflineLecture",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufOfflineLecture"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StreamServicerequestOfflineLectureBody"
+            }
+          }
+        ],
+        "tags": [
+          "Offline"
+        ]
+      }
+    },
     "/streams/{streamId}/reactions": {
       "post": {
         "summary": "React to a stream.",
@@ -6359,6 +6541,9 @@
         }
       }
     },
+    "StreamServicecompleteOfflineDownloadBody": {
+      "type": "object"
+    },
     "StreamServiceendStreamBody": {
       "type": "object",
       "properties": {
@@ -6402,6 +6587,9 @@
           "description": "Seconds into the recording that the viewer jumped to."
         }
       }
+    },
+    "StreamServicerequestOfflineLectureBody": {
+      "type": "object"
     },
     "StreamServiceupdateBookmarkBody": {
       "type": "object",
@@ -9028,6 +9216,105 @@
       "default": "TARGET_UNSPECIFIED",
       "description": "The user group a notification is shown to. The numbers deliberately match\nmodel.NotificationTarget, which starts at 1, so the two cannot drift; proto3 needs\na zero value, and an unset target is not \"everyone\" but a bug, so it gets its own."
     },
+    "protobufOfflineLecture": {
+      "type": "object",
+      "properties": {
+        "packageId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "state": {
+          "$ref": "#/definitions/protobufOfflineLectureState"
+        },
+        "error": {
+          "type": "string",
+          "description": "Why it failed, for the viewer."
+        },
+        "stream": {
+          "$ref": "#/definitions/protobufWatchStream",
+          "description": "What the offline library shows, so it never needs the API."
+        },
+        "course": {
+          "$ref": "#/definitions/protobufWatchCourse"
+        },
+        "kind": {
+          "$ref": "#/definitions/protobufWatchViewKind",
+          "description": "Which view was saved: the first the watch page would offer."
+        },
+        "startOffset": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The cut, in seconds, as on StreamWatch."
+        },
+        "endOffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "segmentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "sizeBytes": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "license": {
+          "$ref": "#/definitions/protobufOfflineLicense",
+          "description": "Only while state is READY."
+        }
+      },
+      "description": "A lecture saved, or being saved, for offline viewing: one package."
+    },
+    "protobufOfflineLectureState": {
+      "type": "string",
+      "enum": [
+        "OFFLINE_LECTURE_STATE_UNSPECIFIED",
+        "OFFLINE_LECTURE_STATE_PREPARING",
+        "OFFLINE_LECTURE_STATE_READY",
+        "OFFLINE_LECTURE_STATE_DOWNLOADED",
+        "OFFLINE_LECTURE_STATE_FAILED",
+        "OFFLINE_LECTURE_STATE_REVOKED"
+      ],
+      "default": "OFFLINE_LECTURE_STATE_UNSPECIFIED",
+      "description": " - OFFLINE_LECTURE_STATE_PREPARING: A runner is packaging the recording.\n - OFFLINE_LECTURE_STATE_READY: The package waits for the device; the answer carries the licence.\n - OFFLINE_LECTURE_STATE_DOWNLOADED: The device has the package, and the server no longer does."
+    },
+    "protobufOfflineLicense": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "format": "byte",
+          "description": "The AES-128 key the package's segments are encrypted with (HLS AES-128: CBC, the\nIV is the segment's media sequence number)."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Until when the lecture may be played without renewing."
+        },
+        "playlistUrl": {
+          "type": "string",
+          "description": "The package's playlist on the edge, signed."
+        }
+      }
+    },
+    "protobufOfflineLicenseStatus": {
+      "type": "object",
+      "properties": {
+        "packageId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "revoked": {
+          "type": "boolean",
+          "description": "The device must delete the lecture and its key."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The new expiry, when not revoked."
+        }
+      }
+    },
     "protobufPinCourseResponse": {
       "type": "object",
       "properties": {
@@ -9928,6 +10215,30 @@
         }
       },
       "description": "Everything the watch page renders. The page's URL decides the layout (/w/{slug}/{id}\nwith an optional COMB, PRES, CAM or SPLIT after it) and the client picks the views\nto play from `views`; default_layout is what to use when the URL names none."
+    },
+    "protobufSyncOfflineLicensesRequest": {
+      "type": "object",
+      "properties": {
+        "packageIds": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "protobufSyncOfflineLicensesResponse": {
+      "type": "object",
+      "properties": {
+        "licenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufOfflineLicenseStatus"
+          }
+        }
+      }
     },
     "protobufToggleChatReactionResponse": {
       "type": "object",

@@ -292,6 +292,34 @@ func TestStreamIsDownloadable(t *testing.T) {
 	}
 }
 
+func TestStreamDownloadableBy(t *testing.T) {
+	recording := Stream{Recording: true, PlaylistUrl: "https://example.org/comb.m3u8"}
+	student := &User{Model: gorm.Model{ID: 1}, Role: StudentType}
+	admin := &User{Model: gorm.Model{ID: 2}, Role: LecturerType, AdministeredCourses: []Course{{Model: gorm.Model{ID: 5}}}}
+	allows := Course{Model: gorm.Model{ID: 5}, DownloadsEnabled: true}
+	forbids := Course{Model: gorm.Model{ID: 5}}
+
+	for _, c := range []struct {
+		name   string
+		stream Stream
+		user   *User
+		course Course
+		want   bool
+	}{
+		{"signed in, course allows", recording, student, allows, true},
+		{"anonymous, course allows", recording, nil, allows, false},
+		{"signed in, course forbids", recording, student, forbids, false},
+		{"administrator, course forbids", recording, admin, forbids, true},
+		{"administrator, no recording", Stream{LiveNow: true, PlaylistUrl: "x"}, admin, allows, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := c.stream.DownloadableBy(c.user, c.course); got != c.want {
+				t.Errorf("DownloadableBy = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
 func TestStreamIsSelfStream(t *testing.T) {
 	// A zero LectureHallID is how "no lecture hall" is stored, so the zero value of
 	// a freshly created stream must read as self-streamed.
