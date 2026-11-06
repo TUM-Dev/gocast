@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"html"
 	"io/fs"
@@ -587,7 +588,24 @@ func getFileHandler(file staticFile) http.HandlerFunc {
 	if tools.Cfg.Paths.Branding != "" && err == nil {
 		// Use customized file without embedded FS
 		return func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, pathToFile)
+			// Not http.ServeFile: the open must go through the storage limiter.
+			f, err := tools.OpenStorageFile(pathToFile)
+			if errors.Is(err, tools.ErrStorageBusy) {
+				w.Header().Set("Retry-After", "5")
+				http.Error(w, "storage busy", http.StatusServiceUnavailable)
+				return
+			}
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			defer func() { _ = f.Close() }()
+			info, err := f.Stat()
+			if err != nil || info.IsDir() {
+				http.NotFound(w, r)
+				return
+			}
+			http.ServeContent(w, r, file.Name, info.ModTime(), f)
 		}
 	}
 	// Use Default with embedded FS

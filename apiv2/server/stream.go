@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"strconv"
 
 	"google.golang.org/genproto/googleapis/api/httpbody"
@@ -15,6 +14,7 @@ import (
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/tools"
 	"github.com/TUM-Dev/gocast/tools/pathprovider"
 )
 
@@ -141,10 +141,10 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 		streamId := strconv.Itoa(int(req.StreamId))
 		path := pathprovider.LiveThumbnail(streamId)
 
-		data, err := os.ReadFile(path)
+		data, err := tools.ReadStorageFile(path)
 		if err != nil {
 			a.log.Error("Can't read live thumbnail", "err", err)
-			return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read live thumbnail"))
+			return nil, storageReadError(err, "Can't read live thumbnail")
 		}
 
 		return &httpbody.HttpBody{
@@ -158,10 +158,10 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 		if err != nil {
 			return nil, e.WithStatus(http.StatusNotFound, err)
 		}
-		data, err := os.ReadFile(thumb)
+		data, err := tools.ReadStorageFile(thumb)
 		if err != nil {
 			a.log.Error("Can't read large thumbnail", "err", err)
-			return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read large thumbnail"))
+			return nil, storageReadError(err, "Can't read large thumbnail")
 		}
 		return &httpbody.HttpBody{
 			ContentType: "image/jpeg",
@@ -174,13 +174,22 @@ func (a *API) GetThumbs(ctx context.Context, req *protobuf.GetThumbsRequest) (*h
 	if err != nil {
 		return nil, e.WithStatus(http.StatusNotFound, err)
 	}
-	data, err := os.ReadFile(thumb)
+	data, err := tools.ReadStorageFile(thumb)
 	if err != nil {
 		a.log.Error("Can't read thumbnail", "err", err)
-		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("Can't read thumbnail"))
+		return nil, storageReadError(err, "Can't read thumbnail")
 	}
 	return &httpbody.HttpBody{
 		ContentType: "image/jpeg",
 		Data:        data,
 	}, nil
+}
+
+// storageReadError answers a failed read from the mass storage. A busy storage is
+// 503 so clients retry; anything else keeps the message of the caller.
+func storageReadError(err error, msg string) error {
+	if errors.Is(err, tools.ErrStorageBusy) {
+		return e.WithStatus(http.StatusServiceUnavailable, err)
+	}
+	return e.WithStatus(http.StatusInternalServerError, errors.New(msg))
 }
