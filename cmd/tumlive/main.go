@@ -187,6 +187,11 @@ func run(ctx context.Context) error {
 	hub := realtimehub.NewMemory()
 	livestate.SetRealtimeHub(hub)
 
+	// m.Run only logs a failure below, so a broken setup has to stop the process here.
+	if err := tools.Cfg.RunnerTLS.Validate(); err != nil {
+		return fmt.Errorf("runnerTLS: %w", err)
+	}
+
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
 		runner_manager.WithTLS(tools.Cfg.RunnerTLS),

@@ -279,12 +279,8 @@ func (m *Manager) Run() error {
 
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	m.logger.Info("Register Runner", "d", req)
-	// A runner may only register under the name its certificate carries, so one runner
-	// can't take over another's hostname and with it its jobs.
-	if on, _ := m.tls.Enabled(); on {
-		if err := mtls.CheckPeer(ctx, req.GetHostname()); err != nil {
-			return nil, err
-		}
+	if err := m.requirePeer(ctx, req.GetHostname()); err != nil {
+		return nil, err
 	}
 	reg := &model.Runner{
 		Hostname:       req.GetHostname(),
@@ -305,6 +301,15 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	}
 
 	return &protobuf.RegisterResponse{}, nil
+}
+
+// requirePeer lets a runner act only under the name its certificate carries, so one runner
+// can't take over another's hostname and with it its jobs. Without mutual TLS it allows all.
+func (m *Manager) requirePeer(ctx context.Context, hostname string) error {
+	if on, _ := m.tls.Enabled(); !on {
+		return nil
+	}
+	return mtls.CheckPeer(ctx, hostname)
 }
 
 // recordCert copies what the caller's certificate says onto r. Without mutual TLS there is none
@@ -334,6 +339,9 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 func (m *Manager) handleNotification(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
+		if err := m.requirePeer(ctx, notification.GetHeartbeat().GetHostname()); err != nil {
+			return nil, err
+		}
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, lookupError(err, "runner %s", notification.GetHeartbeat().GetHostname())
