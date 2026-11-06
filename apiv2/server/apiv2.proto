@@ -2296,6 +2296,13 @@ message Runner {
   bool draining = 6;
   google.protobuf.Timestamp last_seen = 7;
   google.protobuf.Timestamp time_of_register = 8;
+  // The client certificate the runner last connected with. All empty while mutual TLS is off.
+  // Updated by heartbeats, so a rotated certificate shows within seconds.
+  string cert_serial = 9;
+  // SHA-256 of the DER encoding, in hex.
+  string cert_fingerprint = 10;
+  google.protobuf.Timestamp cert_not_after = 11;
+  repeated string cert_names = 12;
 }
 
 ///////////////////////////////

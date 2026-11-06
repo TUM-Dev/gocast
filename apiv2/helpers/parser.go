@@ -2,6 +2,7 @@
 package helpers
 
 import (
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -283,14 +284,23 @@ func ParseVideoSectionToProto(section model.VideoSection) *protobuf.VideoSection
 // ParseRunnerToProto converts a Runner model to its protobuf representation.
 // `alive` is derived here so a client cannot disagree with the scheduler about it.
 func ParseRunnerToProto(r model.Runner) *protobuf.Runner {
-	return &protobuf.Runner{
-		Hostname:       r.Hostname,
-		Port:           r.Port,
-		Version:        r.Version,
-		Alive:          r.Alive(),
-		JobCount:       r.JobCount,
-		Draining:       r.Draining,
-		LastSeen:       timestamppb.New(r.LastSeen),
-		TimeOfRegister: timestamppb.New(r.TimeOfRegister),
+	out := &protobuf.Runner{
+		Hostname:        r.Hostname,
+		Port:            r.Port,
+		Version:         r.Version,
+		Alive:           r.Alive(),
+		JobCount:        r.JobCount,
+		Draining:        r.Draining,
+		LastSeen:        timestamppb.New(r.LastSeen),
+		TimeOfRegister:  timestamppb.New(r.TimeOfRegister),
+		CertSerial:      r.CertSerial,
+		CertFingerprint: r.CertFingerprint,
 	}
+	if r.CertNotAfter != nil {
+		out.CertNotAfter = timestamppb.New(*r.CertNotAfter)
+	}
+	if r.CertNames != "" {
+		out.CertNames = strings.Split(r.CertNames, ",")
+	}
+	return out
 }

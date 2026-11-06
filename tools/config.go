@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
+
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 )
 
 var (
@@ -150,6 +152,9 @@ type Config struct {
 			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
+	// RunnerTLS switches the gRPC link to the runners to mutual TLS. Leave it out in
+	// development. The certificate must carry the name the runners dial (GOCAST_SERVER).
+	RunnerTLS    mtls.Files `yaml:"runnerTLS"`
 	VoiceService *struct {
 		Host      string `yaml:"host"`
 		Port      string `yaml:"port"`

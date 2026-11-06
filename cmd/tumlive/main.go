@@ -189,6 +189,7 @@ func run(ctx context.Context) error {
 
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
+		runner_manager.WithTLS(tools.Cfg.RunnerTLS),
 		runner_manager.WithCamService(camService),
 		runner_manager.WithLiveStateNotifier(livestate.NotifyViewersLiveState),
 	}

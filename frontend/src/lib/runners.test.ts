@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { deleteRunner, fetchRunners, timeAgo } from "./runners";
+import {
+  certState,
+  deleteRunner,
+  fetchRunners,
+  timeAgo,
+  type RunnerCert,
+} from "./runners";
 
 /**
  * The runners list, and the two things this page derives from it that the old one
@@ -19,6 +25,10 @@ interface WireRunner {
   draining?: boolean;
   /** protojson renders a Timestamp as an RFC 3339 string, not as {seconds}. */
   timeOfRegister?: string;
+  certSerial?: string;
+  certFingerprint?: string;
+  certNotAfter?: string;
+  certNames?: string[];
 }
 
 /** Answers the token request, then the given body for everything else. */
@@ -26,7 +36,9 @@ function respondWith(body: unknown, status = 200): void {
   fetchMock.mockImplementation((url: string) => {
     if (String(url).endsWith("/auth/token")) {
       return Promise.resolve(
-        new Response(JSON.stringify({ access_token: "t", expires_in: 900 }), { status: 200 }),
+        new Response(JSON.stringify({ access_token: "t", expires_in: 900 }), {
+          status: 200,
+        }),
       );
     }
     return Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -84,11 +96,19 @@ describe("fetchRunners", () => {
   it("sorts by hostname so rows do not move under the pointer", async () => {
     // The page refetches every five seconds and the endpoint returns database order.
     // Unsorted, a row could swap places between the click and the mouse-up on it.
-    withRunners([{ hostname: "runner-c" }, { hostname: "runner-a" }, { hostname: "runner-b" }]);
+    withRunners([
+      { hostname: "runner-c" },
+      { hostname: "runner-a" },
+      { hostname: "runner-b" },
+    ]);
 
     const runners = await fetchRunners();
 
-    expect(runners.map((r) => r.hostname)).toEqual(["runner-a", "runner-b", "runner-c"]);
+    expect(runners.map((r) => r.hostname)).toEqual([
+      "runner-a",
+      "runner-b",
+      "runner-c",
+    ]);
   });
 
   it("survives a runner that never registered", async () => {
@@ -150,5 +170,45 @@ describe("timeAgo", () => {
 
   it("says so when a runner has no registration time", () => {
     expect(timeAgo(null, now)).toBe("unknown");
+  });
+});
+
+describe("runner certificates", () => {
+  it("reads the certificate off the wire, and none while mutual TLS is off", async () => {
+    withRunners([
+      {
+        hostname: "a",
+        certSerial: "1f",
+        certFingerprint: "ab",
+        certNotAfter: "2028-01-01T00:00:00Z",
+        certNames: ["a.example"],
+      },
+      { hostname: "b" },
+    ]);
+
+    const [a, b] = await fetchRunners();
+
+    expect(a.cert).toEqual({
+      serial: "1f",
+      fingerprint: "ab",
+      notAfter: new Date("2028-01-01T00:00:00Z"),
+      names: ["a.example"],
+    });
+    expect(b.cert).toBeNull();
+  });
+
+  it("warns at 60 days, alerts at 30 and reports expiry", () => {
+    const now = new Date("2027-01-01T00:00:00Z");
+    const expiring = (days: number): RunnerCert => ({
+      serial: "1",
+      fingerprint: "ab",
+      names: [],
+      notAfter: new Date(now.getTime() + days * 86_400_000),
+    });
+
+    expect(certState(expiring(61), now)).toBe("ok");
+    expect(certState(expiring(59), now)).toBe("warn");
+    expect(certState(expiring(29), now)).toBe("alert");
+    expect(certState(expiring(-1), now)).toBe("expired");
   });
 });

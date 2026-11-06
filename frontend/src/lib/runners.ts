@@ -21,6 +21,37 @@ export interface Runner {
   /** Shutting down, so it is being given no further jobs. */
   draining: boolean;
   registeredAt: Date | null;
+  /** The client certificate the runner last connected with; null while mutual TLS is off. */
+  cert: RunnerCert | null;
+}
+
+export interface RunnerCert {
+  serial: string;
+  /** SHA-256 of the DER encoding, in hex. */
+  fingerprint: string;
+  notAfter: Date | null;
+  names: string[];
+}
+
+/** The days left before a certificate expires get a warning, then an alert. */
+export const CERT_WARN_DAYS = 60;
+export const CERT_ALERT_DAYS = 30;
+
+export type CertState = "ok" | "warn" | "alert" | "expired";
+
+/** Whole days until the certificate expires; negative once it has. */
+export function certDaysLeft(cert: RunnerCert, now: Date = new Date()): number | null {
+  if (!cert.notAfter) return null;
+  return Math.floor((cert.notAfter.getTime() - now.getTime()) / 86_400_000);
+}
+
+export function certState(cert: RunnerCert, now: Date = new Date()): CertState {
+  const days = certDaysLeft(cert, now);
+  if (days === null) return "ok";
+  if (days < 0) return "expired";
+  if (days < CERT_ALERT_DAYS) return "alert";
+  if (days < CERT_WARN_DAYS) return "warn";
+  return "ok";
 }
 
 /** How often the page refreshes, matching the old page's five-second poll. */
@@ -40,6 +71,14 @@ export async function fetchRunners(): Promise<Runner[]> {
       jobCount: Number(runner.jobCount),
       draining: runner.draining,
       registeredAt: runner.timeOfRegister ? timestampDate(runner.timeOfRegister) : null,
+      cert: runner.certFingerprint
+        ? {
+            serial: runner.certSerial,
+            fingerprint: runner.certFingerprint,
+            notAfter: runner.certNotAfter ? timestampDate(runner.certNotAfter) : null,
+            names: runner.certNames,
+          }
+        : null,
     }))
     .sort((a, b) => a.hostname.localeCompare(b.hostname));
 }
