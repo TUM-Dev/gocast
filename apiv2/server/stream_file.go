@@ -14,7 +14,7 @@ import (
 
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/pkg/storagelimit"
 )
 
 // streamFilePath is GET /api/v2/streams/{stream_id}/files/{file_id},
@@ -117,8 +117,8 @@ func (a *API) handleStreamFile(w http.ResponseWriter, r *http.Request, route str
 // sendStreamFile streams the file from disk, with Range support, rather than reading
 // it into memory: recordings are gigabytes.
 func (a *API) sendStreamFile(w http.ResponseWriter, r *http.Request, file model.File, download bool) {
-	f, err := tools.OpenStorageFile(file.Path)
-	if errors.Is(err, tools.ErrStorageBusy) {
+	f, info, err := storagelimit.Open(file.Path)
+	if errors.Is(err, storagelimit.ErrBusy) {
 		w.Header().Set("Retry-After", "5")
 		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, err))
 		return
@@ -128,8 +128,7 @@ func (a *API) sendStreamFile(w http.ResponseWriter, r *http.Request, file model.
 		return
 	}
 	defer func() { _ = f.Close() }()
-	info, err := f.Stat()
-	if err != nil || info.IsDir() {
+	if info.IsDir() {
 		writeUploadError(w, e.WithStatus(http.StatusNotFound, errNoSuchStreamFile))
 		return
 	}

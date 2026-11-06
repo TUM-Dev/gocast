@@ -15,6 +15,7 @@ import (
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
+	"github.com/TUM-Dev/gocast/pkg/storagelimit"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -589,8 +590,8 @@ func getFileHandler(file staticFile) http.HandlerFunc {
 		// Use customized file without embedded FS
 		return func(w http.ResponseWriter, r *http.Request) {
 			// Not http.ServeFile: the open must go through the storage limiter.
-			f, err := tools.OpenStorageFile(pathToFile)
-			if errors.Is(err, tools.ErrStorageBusy) {
+			f, info, err := storagelimit.Open(pathToFile)
+			if errors.Is(err, storagelimit.ErrBusy) {
 				w.Header().Set("Retry-After", "5")
 				http.Error(w, "storage busy", http.StatusServiceUnavailable)
 				return
@@ -600,8 +601,7 @@ func getFileHandler(file staticFile) http.HandlerFunc {
 				return
 			}
 			defer func() { _ = f.Close() }()
-			info, err := f.Stat()
-			if err != nil || info.IsDir() {
+			if info.IsDir() {
 				http.NotFound(w, r)
 				return
 			}

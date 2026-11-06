@@ -1,4 +1,4 @@
-package tools
+package storagelimit
 
 import (
 	"errors"
@@ -28,8 +28,8 @@ func TestWithStorageSlotRejectsWhenFull(t *testing.T) {
 	before := testutil.ToFloat64(storageCallsRejected)
 	called := false
 	_, err := withStorageSlot(func() (int, error) { called = true; return 0, nil })
-	if !errors.Is(err, ErrStorageBusy) || called {
-		t.Fatalf("want ErrStorageBusy without running fn, got err=%v called=%v", err, called)
+	if !errors.Is(err, ErrBusy) || called {
+		t.Fatalf("want ErrBusy without running fn, got err=%v called=%v", err, called)
 	}
 	if got := testutil.ToFloat64(storageCallsRejected) - before; got != 1 {
 		t.Fatalf("rejected counter grew by %v, want 1", got)
