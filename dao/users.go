@@ -2,11 +2,14 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 	"uuid"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -181,6 +184,9 @@ func (d usersDao) UpsertUser(user *model.User) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// User not found, try create
+		if err = d.dropTakenEmail(user, 0); err != nil {
+			return err
+		}
 		if err = DB.Create(&user).Error; err != nil {
 			return fmt.Errorf("create user failed: %w", err)
 		}
@@ -193,6 +199,9 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	user.Model = foundUser.Model
 	foundUser.LrzID = user.LrzID
 	foundUser.Name = user.Name
+	if err = d.dropTakenEmail(user, foundUser.ID); err != nil {
+		return err
+	}
 	if user.Email.Valid {
 		foundUser.Email = user.Email
 	}
@@ -202,6 +211,32 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	err = DB.Save(foundUser).Error
 	if err != nil {
 		return fmt.Errorf("update user failed: %w", err)
+	}
+	return nil
+}
+
+var samlEmailConflicts = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "gocast_user_email_conflicts_total",
+	Help: "Logins whose IdP email was dropped because another account already owns it",
+})
+
+// dropTakenEmail clears user.Email when another account (e.g. an internal one) already owns it.
+// The column is unique, so keeping it would fail the whole login; the email is only a nice-to-have.
+// Unscoped because the unique index also covers soft-deleted rows.
+func (d usersDao) dropTakenEmail(user *model.User, selfID uint) error {
+	if !user.Email.Valid {
+		return nil
+	}
+	var count int64
+	err := DB.Model(&model.User{}).Unscoped().
+		Where("email = ? AND id <> ?", user.Email.String, selfID).
+		Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("lookup user by email failed: %w", err)
+	}
+	if count > 0 {
+		user.Email = sql.NullString{}
+		samlEmailConflicts.Inc()
 	}
 	return nil
 }
