@@ -18,6 +18,10 @@ var Config struct {
 	GocastServer string `env:"GOCAST_SERVER" envDefault:"localhost:50056"`
 	Hostname     string `env:"REALHOST" envDefault:"localhost"`
 	EdgeServer   string `env:"EDGE_SERVER" envDefault:"http://localhost:8089"`
+	// TLS* switch the link to gocast to mutual TLS. All three set, or none (development).
+	TLSCert string `env:"TLS_CERT"`
+	TLSKey  string `env:"TLS_KEY"`
+	TLSCA   string `env:"TLS_CA"`
 	// MaxPostProcessing is how many thumbnail regenerations, sprites and silence scans run at once.
 	MaxPostProcessing int `env:"MAX_POSTPROCESSING" envDefault:"3"`
 }

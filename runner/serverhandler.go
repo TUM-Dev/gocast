@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -45,6 +48,31 @@ func (r *Runner) RegisterWithGocast(retries int) {
 	}
 }
 
+// tlsFiles are the certificate paths from the environment.
+func tlsFiles() mtls.Files {
+	return mtls.Files{Cert: config.Config.TLSCert, Key: config.Config.TLSKey, CA: config.Config.TLSCA}
+}
+
+// gocastName is the name gocast's certificate must carry: the host part of GOCAST_SERVER.
+func gocastName() string {
+	host, _, err := net.SplitHostPort(config.Config.GocastServer)
+	if err != nil {
+		return config.Config.GocastServer
+	}
+	return host
+}
+
+func managerCredentials() (credentials.TransportCredentials, error) {
+	on, err := tlsFiles().Enabled()
+	if err != nil {
+		return nil, err
+	}
+	if !on {
+		return insecure.NewCredentials(), nil
+	}
+	return tlsFiles().ClientCredentials(gocastName())
+}
+
 // getManagerClient returns a cached gRPC client to the manager, creating a new connection if needed.
 func (r *Runner) getManagerClient() (protobuf.RunnerManagerServiceClient, error) {
 	r.connMu.Lock()
@@ -54,8 +82,12 @@ func (r *Runner) getManagerClient() (protobuf.RunnerManagerServiceClient, error)
 		return r.managerClient, nil
 	}
 
+	creds, err := managerCredentials()
+	if err != nil {
+		return nil, fmt.Errorf("getManagerClient: %w", err)
+	}
 	conn, err := grpc.NewClient(config.Config.GocastServer,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                30 * time.Second,
 			Timeout:             10 * time.Second,

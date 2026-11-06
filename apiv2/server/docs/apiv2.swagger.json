@@ -9326,6 +9326,24 @@
         "timeOfRegister": {
           "type": "string",
           "format": "date-time"
+        },
+        "certSerial": {
+          "type": "string",
+          "description": "The client certificate the runner last connected with. All empty while mutual TLS is off.\nUpdated by heartbeats, so a rotated certificate shows within seconds."
+        },
+        "certFingerprint": {
+          "type": "string",
+          "description": "SHA-256 of the DER encoding, in hex."
+        },
+        "certNotAfter": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "certNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
