@@ -85,6 +85,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		}
 		err = getSamlSpFromHost(samlSPs, req.Host).ServiceProvider.ValidateLogoutResponseForm(req.PostFormValue("SAMLResponse"))
 		if err != nil {
+			countLogin(loginSAML, false)
 			tools.WriteJSON(w, http.StatusForbidden, map[string]any{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
 			return
 		}
@@ -138,6 +139,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 			matrNr = extractSamlField(response, "eduPersonPrincipalName") // MWN id if no matrNr
 			s := strings.Split(matrNr, "@")
 			if len(s) == 0 || s[0] == "" {
+				countLogin(loginSAML, false)
 				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -145,6 +147,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 			matrNr = s[0]
 		}
 		if firstName == "" {
+			countLogin(loginSAML, false)
 			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -160,11 +163,13 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		}
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
+			countLogin(loginSAML, false)
 			logger.Error("Could not upsert user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		recordLogin(daoWrapper.UsersDao, user.ID)
+		countLogin(loginSAML, true)
 		HandleValidLogin(w, req, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})
 }

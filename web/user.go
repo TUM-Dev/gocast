@@ -24,17 +24,23 @@ func (r mainRoutes) LoginHandler(w http.ResponseWriter, req *http.Request) {
 	)
 
 	if data = loginWithUserCredentials(username, password, r.UsersDao); data != nil {
+		countLogin(loginInternal, true)
 		HandleValidLogin(w, req, data)
 		return
 	}
 
 	if tools.Cfg.Ldap.UseForLogin {
+		// A failed internal attempt is not counted here: every LDAP user fails it first.
 		if data, err = loginWithTumCredentials(username, password, r.UsersDao); err == nil {
+			countLogin(loginLDAP, true)
 			HandleValidLogin(w, req, data)
 			return
 		} else if err != tum.ErrLdapBadAuth {
 			logger.Error("Login error", "err", err)
 		}
+		countLogin(loginLDAP, false)
+	} else {
+		countLogin(loginInternal, false)
 	}
 
 	// Redirect rather than render the login template inline: the login page may be
