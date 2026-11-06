@@ -17,7 +17,7 @@ import (
 	e "github.com/TUM-Dev/gocast/apiv2/errors"
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
 	"github.com/TUM-Dev/gocast/model"
-	"github.com/TUM-Dev/gocast/tools"
+	"github.com/TUM-Dev/gocast/pkg/storagelimit"
 )
 
 // CutSource is one version of a VOD and the signed playlist a runner reads it from. The
@@ -129,7 +129,7 @@ func (a *API) lectureWaveform(streamID uint) (*model.Waveform, error) {
 	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
-	b, err := tools.ReadStorageFile(file.Path)
+	b, err := storagelimit.ReadFile(file.Path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}

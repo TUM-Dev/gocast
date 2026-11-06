@@ -1,4 +1,5 @@
-package tools
+// Package storagelimit caps the calls that touch the mass storage.
+package storagelimit
 
 import (
 	"errors"
@@ -14,8 +15,8 @@ import (
 // threads. A healthy read takes milliseconds, so this is far above normal concurrency.
 const maxStorageCalls = 256
 
-// ErrStorageBusy is returned instead of waiting when all slots are taken.
-var ErrStorageBusy = errors.New("storage busy")
+// ErrBusy is returned instead of waiting when all slots are taken.
+var ErrBusy = errors.New("storage busy")
 
 var storageSlots = make(chan struct{}, maxStorageCalls)
 
@@ -34,7 +35,7 @@ var (
 	}, func() float64 { return maxStorageCalls })
 )
 
-// withStorageSlot runs fn holding a slot, or fails at once with ErrStorageBusy.
+// withStorageSlot runs fn holding a slot, or fails at once with ErrBusy.
 // The slot is held until fn returns, not until a caller gives up: the thread is
 // stuck until then.
 func withStorageSlot[T any](fn func() (T, error)) (T, error) {
@@ -43,7 +44,7 @@ func withStorageSlot[T any](fn func() (T, error)) (T, error) {
 	default:
 		storageCallsRejected.Inc()
 		var zero T
-		return zero, ErrStorageBusy
+		return zero, ErrBusy
 	}
 	storageCallsInFlight.Inc()
 	defer func() {
@@ -53,13 +54,29 @@ func withStorageSlot[T any](fn func() (T, error)) (T, error) {
 	return fn()
 }
 
-// ReadStorageFile is os.ReadFile, limited to maxStorageCalls concurrent calls.
-func ReadStorageFile(path string) ([]byte, error) {
+// ReadFile is os.ReadFile, limited to maxStorageCalls concurrent calls.
+func ReadFile(path string) ([]byte, error) {
 	return withStorageSlot(func() ([]byte, error) { return os.ReadFile(path) })
 }
 
-// OpenStorageFile is os.Open, limited to maxStorageCalls concurrent calls.
-// Only the open is limited, not the reads from the returned file.
-func OpenStorageFile(path string) (*os.File, error) {
-	return withStorageSlot(func() (*os.File, error) { return os.Open(path) })
+// Open is os.Open followed by Stat, both under one slot, so neither can pin a thread
+// beyond the cap. The slot is released on return: reads from the file are not limited.
+func Open(path string) (*os.File, os.FileInfo, error) {
+	type opened struct {
+		f    *os.File
+		info os.FileInfo
+	}
+	o, err := withStorageSlot(func() (opened, error) {
+		f, err := os.Open(path)
+		if err != nil {
+			return opened{}, err
+		}
+		info, err := f.Stat()
+		if err != nil {
+			_ = f.Close()
+			return opened{}, err
+		}
+		return opened{f, info}, nil
+	})
+	return o.f, o.info, err
 }
