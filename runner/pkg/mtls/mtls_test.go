@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -186,6 +187,30 @@ func TestEnabled(t *testing.T) {
 	}
 }
 
+func TestValidate(t *testing.T) {
+	ca := newCA(t)
+	good := ca.issue(t, "tumlive")
+	missing := good
+	missing.Key = filepath.Join(ca.dir, "absent.key")
+
+	for _, tc := range []struct {
+		name    string
+		f       Files
+		wantErr bool
+	}{
+		{"off", Files{}, false},
+		{"usable", good, false},
+		{"partial", Files{Cert: good.Cert}, true},
+		{"unreadable key", missing, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.f.Validate(); (err != nil) != tc.wantErr {
+				t.Fatalf("Validate() = %v, wantErr %v", err, tc.wantErr)
+			}
+		})
+	}
+}
+
 func TestCertReload(t *testing.T) {
 	ca := newCA(t)
 	server := ca.issue(t, "runner-a.example")
@@ -204,5 +229,38 @@ func TestCertReload(t *testing.T) {
 	_ = os.WriteFile(gocast.Key, b, 0o600)
 	if got := status.Code(check(addr, grpc.WithTransportCredentials(creds))); got != codes.PermissionDenied {
 		t.Fatalf("code = %v, want PermissionDenied after swap", got)
+	}
+}
+
+// The configuration GetConfigForClient returns replaces the one credentials.NewTLS prepared.
+// gRPC adds h2 to it itself; this fails if a release stops doing that, since gRPC refuses
+// a connection that negotiated no protocol.
+func TestServerNegotiatesH2(t *testing.T) {
+	ca := newCA(t)
+	server := ca.issue(t, "runner-a.example")
+	client := ca.issue(t, "tumlive")
+	addr := serve(t, server, "tumlive")
+
+	cert, err := client.keyPair()
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool, err := client.caPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn, err := tls.Dial("tcp", addr, &tls.Config{
+		MinVersion:   tls.VersionTLS13,
+		ServerName:   "runner-a.example",
+		RootCAs:      pool,
+		Certificates: []tls.Certificate{*cert},
+		NextProtos:   []string{"h2"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	if got := conn.ConnectionState().NegotiatedProtocol; got != "h2" {
+		t.Fatalf("negotiated protocol = %q, want h2", got)
 	}
 }

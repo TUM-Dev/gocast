@@ -49,6 +49,18 @@ func (f Files) Enabled() (bool, error) {
 	return false, errors.New("mtls: cert, key and ca must be set together")
 }
 
+// Validate fails when mutual TLS is half configured or its files can't be used. A server calls
+// it at startup, so that a broken production setup stops it and doesn't surface at the first
+// handshake.
+func (f Files) Validate() error {
+	on, err := f.Enabled()
+	if err != nil || !on {
+		return err
+	}
+	_, err = f.ServerCredentials()
+	return err
+}
+
 func (f Files) caPool() (*x509.CertPool, error) {
 	pem, err := os.ReadFile(f.CA)
 	if err != nil {

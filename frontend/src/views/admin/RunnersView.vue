@@ -160,26 +160,39 @@ async function remove(runner: Runner): Promise<void> {
                 <td class="px-6 py-3 whitespace-nowrap">
                   {{ timeAgo(runner.registeredAt, now) }} ago
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap">
+                <td class="px-6 py-3">
                   <!-- Empty while mutual TLS is off, e.g. in development. -->
                   <span v-if="!runner.cert" class="text-4">none</span>
-                  <span
-                    v-else
-                    :title="`Serial ${runner.cert.serial}\nSHA-256 ${runner.cert.fingerprint}\n${runner.cert.names.join(', ')}`"
-                    :class="{
-                      'font-bold text-red-500': ['alert', 'expired'].includes(
-                        certState(runner.cert, now),
-                      ),
-                      'font-bold text-amber-500':
-                        certState(runner.cert, now) === 'warn',
-                    }"
-                  >
-                    {{
-                      certState(runner.cert, now) === "expired"
-                        ? "expired"
-                        : `${certDaysLeft(runner.cert, now) ?? "?"} days left`
-                    }}
-                  </span>
+                  <!--
+                    A disclosure rather than a tooltip: the serial and fingerprint are what
+                    one compares against the node, and a title is out of reach of the
+                    keyboard and of touch.
+                  -->
+                  <details v-else>
+                    <summary
+                      class="cursor-pointer whitespace-nowrap"
+                      :class="{
+                        'font-bold text-red-500': ['alert', 'expired'].includes(
+                          certState(runner.cert, now),
+                        ),
+                        'font-bold text-amber-500': certState(runner.cert, now) === 'warn',
+                      }"
+                    >
+                      {{
+                        certState(runner.cert, now) === "expired"
+                          ? "expired"
+                          : `${certDaysLeft(runner.cert, now) ?? "?"} days left`
+                      }}
+                    </summary>
+                    <dl class="text-4 mt-1 grid grid-cols-[auto_1fr] gap-x-2 text-xs">
+                      <dt>Names</dt>
+                      <dd>{{ runner.cert.names.join(", ") }}</dd>
+                      <dt>Serial</dt>
+                      <dd class="font-mono break-all">{{ runner.cert.serial }}</dd>
+                      <dt>SHA-256</dt>
+                      <dd class="font-mono break-all">{{ runner.cert.fingerprint }}</dd>
+                    </dl>
+                  </details>
                 </td>
                 <td class="px-6 py-3">
                   <button
