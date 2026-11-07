@@ -100,6 +100,9 @@ type Config struct {
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
 		Port     uint   `yaml:"port"`
+		// MaxOpenConns caps the pool. Zero keeps the default of 80, kept below
+		// the server's max_connections so a burst queues instead of failing.
+		MaxOpenConns int `yaml:"maxOpenConns"`
 	} `yaml:"db"`
 	Campus struct {
 		Base        string   `yaml:"base"`

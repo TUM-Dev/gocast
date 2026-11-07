@@ -95,7 +95,7 @@ func run(ctx context.Context) error {
 	)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local&timeout=5s",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
 		tools.Cfg.Db.Host,
@@ -107,6 +107,21 @@ func run(ctx context.Context) error {
 	})
 	if err != nil {
 		logger.Error("Error opening database", "err", err)
+	}
+	if err == nil {
+		// database/sql opens a connection per concurrent query and keeps two idle
+		// by default, so a burst hit max_connections and every restart refilled it.
+		sqlDB, err := db.DB()
+		if err != nil {
+			return fmt.Errorf("sql handle: %w", err)
+		}
+		maxOpen := tools.Cfg.Db.MaxOpenConns
+		if maxOpen <= 0 {
+			maxOpen = 80
+		}
+		sqlDB.SetMaxOpenConns(maxOpen)
+		sqlDB.SetMaxIdleConns(maxOpen / 2)
+		sqlDB.SetConnMaxLifetime(5 * time.Minute)
 	}
 	dao.DB = db
 
