@@ -195,7 +195,7 @@ async function create(): Promise<void> {
     () => {
       failed.value = "The recording could not be loaded.";
     },
-    { isIOS: videojs.browser.IS_IOS },
+    { isIOS: videojs.browser.IS_IOS, live: props.live },
   );
   cleanups.push(recovery.dispose);
 

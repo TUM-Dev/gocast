@@ -19,10 +19,11 @@ export interface Recovery {
   dispose(): void;
 }
 
-// MediaError codes that a reload cannot fix: the viewer aborted, the media is corrupt,
-// or it is encrypted. Everything else (network, "no playable source" and VHS' custom
-// errors) is what a server that is briefly gone looks like.
-const FATAL_CODES = new Set([1, 3, 5]);
+// MediaError codes that a reload cannot fix: the viewer aborted or the media is
+// encrypted. Everything else is what a server that is briefly gone looks like, decode
+// errors included: VHS reports a segment cut short by a restart as one. Corrupt media
+// costs one retry cycle before the message.
+const FATAL_CODES = new Set([1, 5]);
 
 /** Milliseconds to wait per attempt: about half a minute in all, to outlast a redeploy. */
 export const RECOVERY_DELAYS_MS = [1000, 2000, 4000, 8000, 8000, 8000];
@@ -39,7 +40,11 @@ export const RECOVERY_DELAYS_MS = [1000, 2000, 4000, 8000, 8000, 8000];
  * nothing, since the segment at the saved position may be the one that keeps failing.
  * Until then the attempts keep counting and the saved position is kept.
  *
- * `onGiveUp` runs when the error is not recoverable or the attempts are spent. iOS
+ * A live stream resumes at the live edge: its saved position has left the live window
+ * by the time the server is back.
+ *
+ * `onGiveUp` runs when the error is not recoverable or the attempts are spent, and
+ * leaves a clean slate for whatever the player does next. iOS
  * ignores a seek made on `loadedmetadata` and needs it again on `canplaythrough` (see
  * start-time.ts); that handler is registered after start-time's, so the saved position
  * wins over the `?t=` one.
@@ -48,7 +53,11 @@ export function recoverFromErrors(
   player: RecoverablePlayer,
   source: () => { src: string; type: string },
   onGiveUp: () => void,
-  { delays = RECOVERY_DELAYS_MS, isIOS = false }: { delays?: readonly number[]; isIOS?: boolean } = {},
+  {
+    delays = RECOVERY_DELAYS_MS,
+    isIOS = false,
+    live = false,
+  }: { delays?: readonly number[]; isIOS?: boolean; live?: boolean } = {},
 ): Recovery {
   let attempt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -92,23 +101,24 @@ export function recoverFromErrors(
     }
   };
 
-  const onError = () => {
-    if (timer !== undefined) return;
-    const code = player.error()?.code;
-    if ((code !== undefined && FATAL_CODES.has(code)) || attempt >= delays.length) {
-      onGiveUp();
-      return;
-    }
-    resume ??= { time: player.currentTime(), playing: !player.paused() };
-    timer = setTimeout(reload, delays[attempt++]);
-  };
-
   const reset = () => {
     clearTimeout(timer);
     timer = undefined;
     clearPending();
     attempt = 0;
     resume = undefined;
+  };
+
+  const onError = () => {
+    if (timer !== undefined) return;
+    const code = player.error()?.code;
+    if ((code !== undefined && FATAL_CODES.has(code)) || attempt >= delays.length) {
+      reset();
+      onGiveUp();
+      return;
+    }
+    resume ??= { time: live ? 0 : player.currentTime(), playing: !player.paused() };
+    timer = setTimeout(reload, delays[attempt++]);
   };
 
   player.on("error", onError);

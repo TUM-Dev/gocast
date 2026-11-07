@@ -127,8 +127,52 @@ describe("recoverFromErrors", () => {
     expect(listeners()).toBe(0);
   });
 
-  it("does not retry what a reload cannot fix", () => {
+  it("retries a decode error, which is how a segment cut short by a restart looks", () => {
     const { player, mock, fire } = fake(3);
+    const giveUp = vi.fn();
+    recoverFromErrors(player, source, giveUp, { delays: [10] });
+    fire("error");
+    vi.advanceTimersByTime(10);
+    expect(mock.src).toHaveBeenCalledOnce();
+    expect(giveUp).not.toHaveBeenCalled();
+  });
+
+  it("resumes a live stream at the live edge, not at the saved position", () => {
+    const { player, state, fire } = fake();
+    recoverFromErrors(player, source, vi.fn(), { delays: [10], live: true });
+    fire("error");
+    vi.advanceTimersByTime(10);
+    state.time = 0;
+    fire("loadedmetadata");
+    expect(state.time).toBe(0);
+    fire("canplay");
+  });
+
+  it("leaves a clean slate after giving up", () => {
+    const { player, mock, state, fire, listeners } = fake();
+    const giveUp = vi.fn();
+    recoverFromErrors(player, source, giveUp, { delays: [10] });
+    fire("error");
+    vi.advanceTimersByTime(10);
+    fire("loadedmetadata");
+    state.error = true;
+    fire("error");
+    expect(giveUp).toHaveBeenCalledOnce();
+    expect(listeners()).toBe(0);
+
+    // A later error gets a full budget and its own position.
+    state.time = 7;
+    state.error = true;
+    fire("error");
+    vi.advanceTimersByTime(10);
+    expect(mock.src).toHaveBeenCalledTimes(2);
+    state.time = 0;
+    fire("loadedmetadata");
+    expect(state.time).toBe(7);
+  });
+
+  it("does not retry what a reload cannot fix", () => {
+    const { player, mock, fire } = fake(5);
     const giveUp = vi.fn();
     recoverFromErrors(player, source, giveUp, { delays: [10] });
     fire("error");
