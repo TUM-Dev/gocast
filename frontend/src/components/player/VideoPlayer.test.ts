@@ -23,6 +23,7 @@ const state = vi.hoisted(() => ({
   levels: [] as { id: string; height: number; width: number; bitrate: number; enabled: boolean }[],
   length: 0,
   duration: NaN,
+  errorCode: 5,
 }));
 
 vi.mock("video.js/dist/video-js.css", () => ({}));
@@ -51,7 +52,7 @@ vi.mock("video.js", () => {
       addRemoteTextTrack: state.addRemoteTextTrack,
       removeRemoteTextTrack: state.removeRemoteTextTrack,
       qualityLevels: () => Object.assign(state.levels, { on: vi.fn(), off: vi.fn() }),
-      error: () => ({ code: 3 }),
+      error: (value?: null) => (value === null ? undefined : { code: state.errorCode }),
       getChild: () => undefined,
       controlBar: { getChild: () => undefined, children: () => [] },
     });
@@ -169,6 +170,42 @@ describe("VideoPlayer", () => {
     state.handlers.error();
     await flushPromises();
     expect(wrapper.find("[role=status]").exists()).toBe(true);
+  });
+
+  it("reloads the current source after a recoverable error before showing a message", async () => {
+    vi.useFakeTimers();
+    try {
+      state.errorCode = 2;
+      const wrapper = await mountPlayer();
+      state.src.mockClear();
+      state.handlers.error();
+      await wrapper.setProps({ src: "/b.m3u8" });
+      state.src.mockClear();
+      state.handlers.error();
+      vi.advanceTimersByTime(1000);
+      expect(state.src).toHaveBeenCalledOnce();
+      expect(state.src).toHaveBeenCalledWith({ src: "/b.m3u8", type: "application/x-mpegURL" });
+      expect(wrapper.find("[role=status]").exists()).toBe(false);
+    } finally {
+      state.errorCode = 5;
+      vi.useRealTimers();
+    }
+  });
+
+  it("drops a pending retry when the source changes", async () => {
+    vi.useFakeTimers();
+    try {
+      state.errorCode = 2;
+      const wrapper = await mountPlayer();
+      state.handlers.error();
+      await wrapper.setProps({ src: "/b.m3u8" });
+      state.src.mockClear();
+      vi.advanceTimersByTime(60_000);
+      expect(state.src).not.toHaveBeenCalled();
+    } finally {
+      state.errorCode = 5;
+      vi.useRealTimers();
+    }
   });
 
   it("disposes the player on unmount", async () => {
