@@ -53,7 +53,8 @@ func (d usersDao) AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
 	if found {
 		return false, nil
 	}
-	res := DB.Find(&model.User{})
+	// Find on a struct has no LIMIT: MySQL streams the whole users table and the driver drains it on Close.
+	res := DB.Select("id").Limit(1).Find(&model.User{})
 	if res.RowsAffected != 0 {
 		Cache.Set("areUsersEmpty", false, 1)
 	}
