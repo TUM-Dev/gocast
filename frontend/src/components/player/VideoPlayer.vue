@@ -8,7 +8,7 @@ import { createController } from "@/lib/player/controller";
 import { attachHotkeys, type Hotkey } from "@/lib/player/hotkeys";
 import { attachHoldSpeed } from "@/lib/player/hold-speed";
 import { resetRateAtLiveEdge, type LiveTrackerLike } from "@/lib/player/live";
-import { recoverFromErrors, type RecoverablePlayer } from "@/lib/player/recover";
+import { recoverFromErrors, type Recovery, type RecoverablePlayer } from "@/lib/player/recover";
 import type { QualityLevelListLike, QualityPreference } from "@/lib/player/quality";
 import { keepRateAcrossSources, menuRates } from "@/lib/player/speeds";
 import { isMobileViewport, markTimeTooltip, spriteOptions, type SpriteSource } from "@/lib/player/sprites";
@@ -123,6 +123,7 @@ let cleanups: (() => void)[] = [];
 let clipHandle: ClipHandle | null = null;
 let subtitleCleanup: (() => void) | null = null;
 let stats: StatsPanel | null = null;
+let recovery: Recovery | null = null;
 
 const controller = createController();
 
@@ -188,15 +189,15 @@ async function create(): Promise<void> {
     emit("loadedmetadata", seconds);
   });
   // A restart of the video server is an error to video.js; retry before telling the viewer.
-  cleanups.push(
-    recoverFromErrors(
-      created as unknown as RecoverablePlayer,
-      () => ({ src: props.src, type: HLS }),
-      () => {
-        failed.value = "The recording could not be loaded.";
-      },
-    ),
+  recovery = recoverFromErrors(
+    created as unknown as RecoverablePlayer,
+    () => ({ src: props.src, type: HLS }),
+    () => {
+      failed.value = "The recording could not be loaded.";
+    },
+    { isIOS: videojs.browser.IS_IOS },
   );
+  cleanups.push(recovery.dispose);
 
   controller.attach(p, {
     qualityLevels: typeof extras.qualityLevels === "function" ? extras.qualityLevels() : undefined,
@@ -288,6 +289,8 @@ function setSubtitles(tracks: SubtitleTrack[] | undefined): void {
 }
 
 function load(): void {
+  // A retry still pending would put the old recording's position on the new one.
+  recovery?.reset();
   failed.value = "";
   currentTime.value = 0;
   duration.value = 0;
@@ -336,6 +339,7 @@ onBeforeUnmount(() => {
   controller.detach();
   player?.dispose();
   player = null;
+  recovery = null;
 });
 </script>
 
