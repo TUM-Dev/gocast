@@ -51,6 +51,7 @@ vi.mock("video.js", () => {
       addRemoteTextTrack: state.addRemoteTextTrack,
       removeRemoteTextTrack: state.removeRemoteTextTrack,
       qualityLevels: () => Object.assign(state.levels, { on: vi.fn(), off: vi.fn() }),
+      error: () => ({ code: 3 }),
       getChild: () => undefined,
       controlBar: { getChild: () => undefined, children: () => [] },
     });
@@ -163,7 +164,7 @@ describe("VideoPlayer", () => {
     expect(state.fake.state.time).toBe(30);
   });
 
-  it("shows a message when the player errors", async () => {
+  it("shows a message when the player errors beyond recovery", async () => {
     const wrapper = await mountPlayer();
     state.handlers.error();
     await flushPromises();
