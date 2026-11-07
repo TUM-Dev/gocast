@@ -2,7 +2,6 @@
 export interface RecoverablePlayer {
   on(event: string, fn: () => void): void;
   off(event: string, fn: () => void): void;
-  one(event: string, fn: () => void): void;
   error(): { code: number } | null;
   /** Clears the error, which is what lets the next `src` start from a clean state. */
   error(value: null): void;
@@ -13,12 +12,19 @@ export interface RecoverablePlayer {
   play(): Promise<void> | undefined;
 }
 
+export interface Recovery {
+  /** Forgets the streak and everything pending, for a player that is given a new source. */
+  reset(): void;
+  /** Stops listening. */
+  dispose(): void;
+}
+
 // MediaError codes that a reload cannot fix: the viewer aborted, the media is corrupt,
 // or it is encrypted. Everything else (network, "no playable source" and VHS' custom
 // errors) is what a server that is briefly gone looks like.
 const FATAL_CODES = new Set([1, 3, 5]);
 
-/** Seconds of waiting per attempt: about half a minute in all, to outlast a redeploy. */
+/** Milliseconds to wait per attempt: about half a minute in all, to outlast a redeploy. */
 export const RECOVERY_DELAYS_MS = [1000, 2000, 4000, 8000, 8000, 8000];
 
 /**
@@ -28,36 +34,67 @@ export const RECOVERY_DELAYS_MS = [1000, 2000, 4000, 8000, 8000, 8000];
  * failure while the server is down for the first playlist, or for the last rendition, is
  * fatal and leaves a dead player behind.
  *
- * `onGiveUp` runs when the error is not recoverable or the attempts are spent. Returns
- * the function that stops listening.
+ * A reload only counts as recovered once the seek back to the saved position has
+ * completed (or, from the start, once the media can play): the metadata arriving proves
+ * nothing, since the segment at the saved position may be the one that keeps failing.
+ * Until then the attempts keep counting and the saved position is kept.
+ *
+ * `onGiveUp` runs when the error is not recoverable or the attempts are spent. iOS
+ * ignores a seek made on `loadedmetadata` and needs it again on `canplaythrough` (see
+ * start-time.ts); that handler is registered after start-time's, so the saved position
+ * wins over the `?t=` one.
  */
 export function recoverFromErrors(
   player: RecoverablePlayer,
   source: () => { src: string; type: string },
   onGiveUp: () => void,
-  delays: readonly number[] = RECOVERY_DELAYS_MS,
-): () => void {
+  { delays = RECOVERY_DELAYS_MS, isIOS = false }: { delays?: readonly number[]; isIOS?: boolean } = {},
+): Recovery {
   let attempt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Taken at the first error of a streak: the retries themselves reset the position.
   let resume: { time: number; playing: boolean } | undefined;
+  // Listeners of the reload in progress.
+  let pending: (() => void)[] = [];
+
+  const clearPending = () => {
+    for (const stop of pending) stop();
+    pending = [];
+  };
+  const listen = (event: string, fn: () => void) => {
+    player.on(event, fn);
+    pending.push(() => player.off(event, fn));
+  };
 
   const reload = () => {
     timer = undefined;
+    clearPending();
     const { time, playing } = resume!;
-    player.error(null);
-    player.src(source());
-    player.one("loadedmetadata", () => {
+    const recovered = () => {
       attempt = 0;
       resume = undefined;
+      clearPending();
+    };
+    player.error(null);
+    player.src(source());
+    listen("loadedmetadata", () => {
       if (time > 0) player.currentTime(time);
       if (playing) void player.play()?.catch(() => {});
+      listen(time > 0 ? "seeked" : "canplay", recovered);
     });
+    if (isIOS && time > 0) {
+      let repeated = false;
+      listen("canplaythrough", () => {
+        if (repeated) return;
+        repeated = true;
+        player.currentTime(time);
+      });
+    }
   };
 
   const onError = () => {
-    const code = player.error()?.code;
     if (timer !== undefined) return;
+    const code = player.error()?.code;
     if ((code !== undefined && FATAL_CODES.has(code)) || attempt >= delays.length) {
       onGiveUp();
       return;
@@ -66,9 +103,20 @@ export function recoverFromErrors(
     timer = setTimeout(reload, delays[attempt++]);
   };
 
-  player.on("error", onError);
-  return () => {
-    player.off("error", onError);
+  const reset = () => {
     clearTimeout(timer);
+    timer = undefined;
+    clearPending();
+    attempt = 0;
+    resume = undefined;
+  };
+
+  player.on("error", onError);
+  return {
+    reset,
+    dispose() {
+      player.off("error", onError);
+      reset();
+    },
   };
 }
