@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -665,13 +666,21 @@ func keepAlive() {
 	serversMu.Lock()
 	defer serversMu.Unlock()
 	var wg sync.WaitGroup
+	var drained atomic.Bool
+	drained.Store(true)
 	for _, srv := range servers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_ = srv.Shutdown(ctx)
+			if err := srv.Shutdown(ctx); err != nil {
+				log.With("addr", srv.Addr, "err", err).Warn("Drain cut short")
+				drained.Store(false)
+			}
 		}()
 	}
 	wg.Wait()
+	if !drained.Load() {
+		os.Exit(1)
+	}
 	os.Exit(0)
 }
