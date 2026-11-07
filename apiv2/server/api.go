@@ -121,9 +121,11 @@ func (a *API) Run(lis net.Listener) error {
 	a.log.Info("Running")
 	grpcServer := grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     time.Minute,
-			MaxConnectionAge:      time.Minute,
-			MaxConnectionAgeGrace: time.Second * 5,
+			MaxConnectionIdle: time.Minute,
+			MaxConnectionAge:  time.Minute,
+			// The gateway is a client of this server on loopback. A call still running when the
+			// grace ends is cut off with "closing transport ... max_age", so it MUST outlast the slowest call.
+			MaxConnectionAgeGrace: time.Minute * 2,
 			Time:                  time.Minute * 10,
 			Timeout:               time.Second * 20,
 		}),
