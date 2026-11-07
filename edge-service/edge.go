@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -108,6 +109,20 @@ func main() {
 
 var vodFileServer http.Handler
 
+// servers are drained on SIGTERM so that a redeploy does not cut segment downloads short.
+var (
+	serversMu sync.Mutex
+	servers   []*http.Server
+)
+
+func newServer(addr string, h http.Handler) *http.Server {
+	srv := &http.Server{Addr: addr, Handler: h}
+	serversMu.Lock()
+	servers = append(servers, srv)
+	serversMu.Unlock()
+	return srv
+}
+
 func ServeEdge(port string) {
 	prepare()
 	go func() {
@@ -129,8 +144,8 @@ func ServeEdge(port string) {
 	mux.HandleFunc("/", edgeHandler)
 
 	go func() {
-		err := http.ListenAndServe(port, mux)
-		if err != nil {
+		err := newServer(port, mux).ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.With("port", port, "err", err).Error("can't listen")
 			os.Exit(1)
 		}
@@ -329,8 +344,8 @@ func handleTLS(mux *http.ServeMux) {
 	}
 	if privkeyName != "" && fullchainName != "" {
 		go func() {
-			err := http.ListenAndServeTLS(":8443", fullchainName, privkeyName, mux)
-			if err != nil {
+			err := newServer(":8443", mux).ListenAndServeTLS(fullchainName, privkeyName)
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.With("err", err).Error("can't listen and serve tls")
 				os.Exit(1)
 			}
@@ -644,5 +659,19 @@ func keepAlive() {
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	s := <-sig
 	log.With("signal", s).Info("Terminating on signal")
-	os.Exit(1)
+	// Docker kills the container after 10s.
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	serversMu.Lock()
+	defer serversMu.Unlock()
+	var wg sync.WaitGroup
+	for _, srv := range servers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_ = srv.Shutdown(ctx)
+		}()
+	}
+	wg.Wait()
+	os.Exit(0)
 }
