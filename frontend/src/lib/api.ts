@@ -45,22 +45,36 @@ const TOKEN_FAILURE_COOLDOWN_MAX_MS = 60_000;
  * call of a client the server is shedding mints another token, which is the load that
  * made the server shed it.
  */
-let tokenFailure: { error: ApiError; until: number } | null = null;
+let tokenFailure: { error: unknown; until: number } | null = null;
 
+/** The wait a failed token response asks for: Retry-After as seconds or an HTTP date. */
 function cooldownOf(res: Response): number {
-  const seconds = Number(res.headers.get("Retry-After"));
-  if (Number.isFinite(seconds) && seconds > 0) {
-    return Math.min(seconds * 1000, TOKEN_FAILURE_COOLDOWN_MAX_MS);
+  const header = res.headers.get("Retry-After")?.trim();
+  if (header) {
+    const seconds = Number(header);
+    const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - Date.now();
+    if (Number.isFinite(ms) && ms > 0) {
+      return Math.min(ms, TOKEN_FAILURE_COOLDOWN_MAX_MS);
+    }
   }
   return TOKEN_FAILURE_COOLDOWN_MS;
 }
 
 async function requestToken(): Promise<string> {
-  const res = await fetch(`${API_BASE}/auth/token`, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { Accept: "application/json" },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/auth/token`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+  } catch (err) {
+    // No response at all (connection reset, offline): back off like for a 5xx, and hand
+    // the callers the original error.
+    accessToken = null;
+    tokenFailure = { error: err, until: Date.now() + TOKEN_FAILURE_COOLDOWN_MS };
+    throw err;
+  }
 
   if (!res.ok) {
     accessToken = null;
