@@ -35,6 +35,26 @@ let accessToken: string | null = null;
 /** In-flight token request, shared so concurrent 401s mint only one token. */
 let pendingToken: Promise<string> | null = null;
 
+/** How long a failed token request is remembered when the server names no time. */
+const TOKEN_FAILURE_COOLDOWN_MS = 5_000;
+const TOKEN_FAILURE_COOLDOWN_MAX_MS = 60_000;
+
+/**
+ * The last token request that failed for a reason other than a missing session (429,
+ * 5xx), and until when to answer with it instead of asking again. Without it every API
+ * call of a client the server is shedding mints another token, which is the load that
+ * made the server shed it.
+ */
+let tokenFailure: { error: ApiError; until: number } | null = null;
+
+function cooldownOf(res: Response): number {
+  const seconds = Number(res.headers.get("Retry-After"));
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return Math.min(seconds * 1000, TOKEN_FAILURE_COOLDOWN_MAX_MS);
+  }
+  return TOKEN_FAILURE_COOLDOWN_MS;
+}
+
 async function requestToken(): Promise<string> {
   const res = await fetch(`${API_BASE}/auth/token`, {
     method: "POST",
@@ -44,11 +64,17 @@ async function requestToken(): Promise<string> {
 
   if (!res.ok) {
     accessToken = null;
-    throw new ApiError(res.status, "could not obtain an access token");
+    const error = new ApiError(res.status, "could not obtain an access token");
+    // A 401 is answered once per page by sessionAbsent; anything else is worth backing off from.
+    if (!error.isUnauthenticated) {
+      tokenFailure = { error, until: Date.now() + cooldownOf(res) };
+    }
+    throw error;
   }
 
   const body = (await res.json()) as { access_token: string };
   accessToken = body.access_token;
+  tokenFailure = null;
   return accessToken;
 }
 
@@ -56,6 +82,9 @@ async function requestToken(): Promise<string> {
 function getToken(forceRefresh = false): Promise<string> {
   if (!forceRefresh && accessToken) {
     return Promise.resolve(accessToken);
+  }
+  if (tokenFailure && Date.now() < tokenFailure.until) {
+    return Promise.reject(tokenFailure.error);
   }
   if (!pendingToken) {
     pendingToken = requestToken().finally(() => {
@@ -76,6 +105,7 @@ let sessionAbsent = false;
 export function clearToken(): void {
   accessToken = null;
   sessionAbsent = false;
+  tokenFailure = null;
 }
 
 /** A token, or null when nobody is signed in. Anything else still throws. */
