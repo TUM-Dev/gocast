@@ -113,8 +113,11 @@ describe("progress reporter", () => {
     r.onPlay();
     r.onPause();
     r.onPlay();
-    vi.advanceTimersByTime(4_000);
+    // Past the held-back report's 5 s, before the resumed playback's own 10 s.
+    vi.advanceTimersByTime(6_000);
     expect(save).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(4_000);
+    expect(save).toHaveBeenCalledTimes(2);
     r.dispose();
   });
 

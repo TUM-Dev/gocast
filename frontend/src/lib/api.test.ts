@@ -233,6 +233,25 @@ describe("a failing token endpoint", () => {
     expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
   });
 
+  it("also backs off when the connection breaks while the token is being read", async () => {
+    const reset = new TypeError("terminated");
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: () => Promise.reject(reset),
+    });
+
+    await expect(apiGet("/courses")).rejects.toBe(reset);
+    await expect(apiGet("/courses/live")).rejects.toBe(reset);
+    expect(calls()).toEqual([TOKEN_URL]);
+
+    vi.advanceTimersByTime(5_000);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await apiGet("/courses");
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+
   it("does not hold off after a 401, which is answered once per page already", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ message: "no session" }, 401));
     await expect(apiGet("/courses")).rejects.toMatchObject({ status: 401 });

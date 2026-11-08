@@ -60,6 +60,12 @@ function cooldownOf(res: Response): number {
   return TOKEN_FAILURE_COOLDOWN_MS;
 }
 
+/** Remembers a failed token request, so the calls that follow answer with it until `ms` pass. */
+function rememberTokenFailure(error: unknown, ms: number): void {
+  accessToken = null;
+  tokenFailure = { error, until: Date.now() + ms };
+}
+
 async function requestToken(): Promise<string> {
   let res: Response;
   try {
@@ -71,22 +77,28 @@ async function requestToken(): Promise<string> {
   } catch (err) {
     // No response at all (connection reset, offline): back off like for a 5xx, and hand
     // the callers the original error.
-    accessToken = null;
-    tokenFailure = { error: err, until: Date.now() + TOKEN_FAILURE_COOLDOWN_MS };
+    rememberTokenFailure(err, TOKEN_FAILURE_COOLDOWN_MS);
     throw err;
   }
 
   if (!res.ok) {
-    accessToken = null;
     const error = new ApiError(res.status, "could not obtain an access token");
+    accessToken = null;
     // A 401 is answered once per page by sessionAbsent; anything else is worth backing off from.
     if (!error.isUnauthenticated) {
-      tokenFailure = { error, until: Date.now() + cooldownOf(res) };
+      rememberTokenFailure(error, cooldownOf(res));
     }
     throw error;
   }
 
-  const body = (await res.json()) as { access_token: string };
+  let body: { access_token: string };
+  try {
+    body = (await res.json()) as { access_token: string };
+  } catch (err) {
+    // The connection broke while the body was read: as good as no response.
+    rememberTokenFailure(err, TOKEN_FAILURE_COOLDOWN_MS);
+    throw err;
+  }
   accessToken = body.access_token;
   tokenFailure = null;
   return accessToken;
