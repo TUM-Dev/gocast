@@ -36,7 +36,8 @@ export const RECOVERY_DELAYS_MS = [1000, 2000, 4000, 8000, 8000, 8000];
  * fatal and leaves a dead player behind.
  *
  * A reload only counts as recovered once the seek back to the saved position has
- * completed (or, from the start, once the media can play): the metadata arriving proves
+ * completed (or, for a live stream, once the media can play). Position 0 is restored
+ * too: a `?t=` start time would otherwise win.: the metadata arriving proves
  * nothing, since the segment at the saved position may be the one that keeps failing.
  * Until then the attempts keep counting and the saved position is kept.
  *
@@ -87,11 +88,11 @@ export function recoverFromErrors(
     player.error(null);
     player.src(source());
     listen("loadedmetadata", () => {
-      if (time > 0) player.currentTime(time);
+      if (!live) player.currentTime(time);
       if (playing) void player.play()?.catch(() => {});
-      listen(time > 0 ? "seeked" : "canplay", recovered);
+      listen(live ? "canplay" : "seeked", recovered);
     });
-    if (isIOS && time > 0) {
+    if (isIOS && !live) {
       let repeated = false;
       listen("canplaythrough", () => {
         if (repeated) return;
@@ -117,6 +118,8 @@ export function recoverFromErrors(
       onGiveUp();
       return;
     }
+    // A reload that failed must not confirm itself later and clear `resume`.
+    clearPending();
     resume ??= { time: live ? 0 : player.currentTime(), playing: !player.paused() };
     timer = setTimeout(reload, delays[attempt++]);
   };

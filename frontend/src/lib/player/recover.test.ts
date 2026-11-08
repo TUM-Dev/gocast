@@ -111,7 +111,7 @@ describe("recoverFromErrors", () => {
     expect(giveUp).not.toHaveBeenCalled();
   });
 
-  it("counts a recording that failed at the start as recovered once it can play", () => {
+  it("counts a recording that failed at the start as recovered once the seek to 0 completes", () => {
     const { player, state, fire, listeners } = fake();
     state.time = 0;
     const giveUp = vi.fn();
@@ -121,10 +121,37 @@ describe("recoverFromErrors", () => {
       fire("error");
       vi.advanceTimersByTime(10);
       fire("loadedmetadata");
-      fire("canplay");
+      fire("seeked");
     }
     expect(giveUp).not.toHaveBeenCalled();
     expect(listeners()).toBe(0);
+  });
+
+  it("restores position 0, which a ?t= start time would otherwise override", () => {
+    const { player, mock, state, fire } = fake();
+    state.time = 0;
+    recoverFromErrors(player, source, vi.fn(), { delays: [10] });
+    fire("error");
+    vi.advanceTimersByTime(10);
+    state.time = 5;
+    fire("loadedmetadata");
+    expect(mock.currentTime).toHaveBeenLastCalledWith(0);
+    expect(state.time).toBe(0);
+  });
+
+  it("does not let a failed reload's late event clear the saved position", () => {
+    const { player, mock, state, fire } = fake();
+    const giveUp = vi.fn();
+    recoverFromErrors(player, source, giveUp, { delays: [10, 10] });
+    fire("error");
+    vi.advanceTimersByTime(10);
+    fire("loadedmetadata");
+    state.error = true;
+    fire("error");
+    fire("seeked");
+    expect(() => vi.advanceTimersByTime(10)).not.toThrow();
+    expect(mock.src).toHaveBeenCalledTimes(2);
+    expect(giveUp).not.toHaveBeenCalled();
   });
 
   it("retries a decode error, which is how a segment cut short by a restart looks", () => {
@@ -138,13 +165,14 @@ describe("recoverFromErrors", () => {
   });
 
   it("resumes a live stream at the live edge, not at the saved position", () => {
-    const { player, state, fire } = fake();
+    const { player, mock, state, fire } = fake();
     recoverFromErrors(player, source, vi.fn(), { delays: [10], live: true });
     fire("error");
     vi.advanceTimersByTime(10);
     state.time = 0;
     fire("loadedmetadata");
     expect(state.time).toBe(0);
+    expect(mock.currentTime).not.toHaveBeenCalledWith(42);
     fire("canplay");
   });
 
