@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -469,22 +468,45 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 	return &emptypb.Empty{}, nil
 }
 
-// discardLive stops the live ones of streams on their runners without keeping the recording.
-// Once the lecture is deleted nothing could ever publish the VoD, and the runner would keep
-// recording into the void. A failure is logged and does not block the delete: the admin
-// asked for it, and a runner that can't be reached has nothing to stop.
+// discardLiveTimeout bounds the stop of one stream: it dials the runner and switches the
+// lights, both of which can hang on an unreachable host.
+const discardLiveTimeout = 30 * time.Second
+
+// discardLive stops the runner jobs of streams that are about to be deleted, without keeping
+// the recording. Once the lecture is gone nothing could publish the VoD, and the runner would
+// keep recording into the void. A stream counts when it is live or a runner still holds a job
+// for it, which covers one that is starting up.
+//
+// The stops run in the background and a failure is only logged: the admin asked for the
+// delete, an unreachable runner has nothing to stop, and a slow one must not hold up the
+// response.
 func (a *API) discardLive(ctx context.Context, streams []model.Stream) {
 	if a.streamEnder == nil {
 		return
 	}
+	var ids []uint
 	for _, s := range streams {
-		if !s.LiveNow {
-			continue
+		jobs, err := a.dao.StreamsDao.GetRunnerJobsForStream(s.ID)
+		if err != nil {
+			a.log.Error("can't look up the runner jobs of a deleted lecture", "err", err, "stream", s.ID)
 		}
-		if err := a.streamEnder.EndStream(ctx, s.ID, true); err != nil {
-			a.log.Error("can't stop the live stream of a deleted lecture", "err", err, "stream", s.ID)
+		if s.LiveNow || len(jobs) > 0 {
+			ids = append(ids, s.ID)
 		}
 	}
+	if len(ids) == 0 {
+		return
+	}
+	ender, ctx := a.streamEnder, context.WithoutCancel(ctx)
+	go func() {
+		for _, id := range ids {
+			stopCtx, cancel := context.WithTimeout(ctx, discardLiveTimeout)
+			if err := ender.EndStream(stopCtx, id, true); err != nil {
+				a.log.Error("can't stop the live stream of a deleted lecture", "err", err, "stream", id)
+			}
+			cancel()
+		}
+	}()
 }
 
 // DeleteLectureSeries replaces v1's deleteLectureSeries, audited the same way and
@@ -504,13 +526,10 @@ func (a *API) DeleteLectureSeries(ctx context.Context, req *protobuf.DeleteLectu
 	}
 
 	if a.streamEnder != nil {
-		if live, err := a.dao.StreamsDao.GetCurrentLive(ctx); err != nil {
-			a.log.Error("can't look up live streams before deleting a series", "err", err, "stream", stream.ID)
+		if series, err := a.dao.StreamsDao.GetCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
+			a.log.Error("can't look up the series before deleting it", "err", err, "stream", stream.ID)
 		} else {
-			// A copy: GetCurrentLive hands out its cached slice.
-			a.discardLive(ctx, slices.DeleteFunc(slices.Clone(live), func(s model.Stream) bool {
-				return s.CourseID != stream.CourseID || s.SeriesIdentifier != stream.SeriesIdentifier
-			}))
+			a.discardLive(ctx, series)
 		}
 	}
 	if err := a.dao.StreamsDao.DeleteCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
