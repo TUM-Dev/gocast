@@ -84,6 +84,7 @@ type StreamsDao interface {
 	UpdateCourseLectureSeries(courseID uint, seriesIdentifier string, update LectureSeriesUpdate) error
 	UpdateCourseLectureSeriesTime(courseID, streamID uint, seriesIdentifier string, start, end time.Time) error
 	DeleteCourseLectureSeries(courseID uint, seriesIdentifier string) error
+	GetCourseLectureSeries(courseID uint, seriesIdentifier string) ([]model.Stream, error)
 }
 
 // LectureSeriesUpdate is what UpdateCourseLectureSeries sets; nil fields are left.
@@ -328,6 +329,13 @@ func (d streamsDao) DeleteCourseLectureSeries(courseID uint, seriesIdentifier st
 	defer Cache.Clear()
 	return DB.Where("course_id = ? AND series_identifier = ?", courseID, seriesIdentifier).
 		Delete(&model.Stream{}).Error
+}
+
+// GetCourseLectureSeries returns the streams of the course that belong to the series.
+func (d streamsDao) GetCourseLectureSeries(courseID uint, seriesIdentifier string) ([]model.Stream, error) {
+	var res []model.Stream
+	err := DB.Where("course_id = ? AND series_identifier = ?", courseID, seriesIdentifier).Find(&res).Error
+	return res, err
 }
 
 // GetAllStreams returns all streams of the tumlive
