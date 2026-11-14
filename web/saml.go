@@ -165,7 +165,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
 			countLogin(loginSAML, false)
-			logger.Error("Could not upsert user", "err", err, "assertion", assertionXML(response))
+			logger.Error("Could not upsert user", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
