@@ -944,13 +944,20 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 	m.notifyLiveState(streamID, false)
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(notification.GetStream().GetId(), 10))
-	if err != nil {
-		return err
-	}
 
 	m.camsHandledLock.Lock()
 	delete(m.camsHandled, streamID)
 	m.camsHandledLock.Unlock()
+
+	// A stream deleted while it was running is never found again. Returning the error would make
+	// the runner retry this StreamEnd forever, so acknowledge it.
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		m.logger.Info("stream ended but no longer exists", "stream", streamID, "version", version)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
 
 	// In the background for the same reason as in streamStarted: the runner retries a
 	// StreamEnd until it is acknowledged, and the power control can be slow or unreachable.
