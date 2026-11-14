@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"encoding/xml"
 	"net/http"
 	"net/url"
 	"strings"
@@ -140,7 +141,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 			s := strings.Split(matrNr, "@")
 			if len(s) == 0 || s[0] == "" {
 				countLogin(loginSAML, false)
-				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr)
+				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr, "assertion", assertionXML(response))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -148,7 +149,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		}
 		if firstName == "" {
 			countLogin(loginSAML, false)
-			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID)
+			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID, "assertion", assertionXML(response))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -164,7 +165,7 @@ func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
 			countLogin(loginSAML, false)
-			logger.Error("Could not upsert user", "err", err)
+			logger.Error("Could not upsert user", "err", err, "assertion", assertionXML(response))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -181,6 +182,16 @@ func getSamlSpFromHost(samlSPs []*samlsp.Middleware, host string) *samlsp.Middle
 		}
 	}
 	return samlSPs[0]
+}
+
+// assertionXML renders the decrypted assertion for the log. The POST body is
+// encrypted, so it is useless for finding out which attributes the IdP sent.
+func assertionXML(assertion *saml.Assertion) string {
+	b, err := xml.Marshal(assertion)
+	if err != nil {
+		return "unmarshalable assertion: " + err.Error()
+	}
+	return string(b)
 }
 
 // extractSamlField gets the value of the given field from the SAML response or an empty string if the field is not present.
