@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -457,6 +458,7 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 		return nil, e.FromGorm(err, "can't find course")
 	}
 
+	a.discardLive(ctx, streams)
 	for _, stream := range streams {
 		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", stream.ID)); err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
@@ -465,6 +467,24 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 			fmt.Sprintf("'%s': %s (%d)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID), forStream(stream))
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// discardLive stops the live ones of streams on their runners without keeping the recording.
+// Once the lecture is deleted nothing could ever publish the VoD, and the runner would keep
+// recording into the void. A failure is logged and does not block the delete: the admin
+// asked for it, and a runner that can't be reached has nothing to stop.
+func (a *API) discardLive(ctx context.Context, streams []model.Stream) {
+	if a.streamEnder == nil {
+		return
+	}
+	for _, s := range streams {
+		if !s.LiveNow {
+			continue
+		}
+		if err := a.streamEnder.EndStream(ctx, s.ID, true); err != nil {
+			a.log.Error("can't stop the live stream of a deleted lecture", "err", err, "stream", s.ID)
+		}
+	}
 }
 
 // DeleteLectureSeries replaces v1's deleteLectureSeries, audited the same way and
@@ -483,6 +503,16 @@ func (a *API) DeleteLectureSeries(ctx context.Context, req *protobuf.DeleteLectu
 		return nil, e.FromGorm(err, "can't find course")
 	}
 
+	if a.streamEnder != nil {
+		if live, err := a.dao.StreamsDao.GetCurrentLive(ctx); err != nil {
+			a.log.Error("can't look up live streams before deleting a series", "err", err, "stream", stream.ID)
+		} else {
+			// A copy: GetCurrentLive hands out its cached slice.
+			a.discardLive(ctx, slices.DeleteFunc(slices.Clone(live), func(s model.Stream) bool {
+				return s.CourseID != stream.CourseID || s.SeriesIdentifier != stream.SeriesIdentifier
+			}))
+		}
+	}
 	if err := a.dao.StreamsDao.DeleteCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}

@@ -458,6 +458,29 @@ func TestDeleteLectures(t *testing.T) {
 		}
 	})
 
+	t.Run("stops a live lecture on its runner, discarding the recording", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		f := &fakeEnder{err: errors.New("runner unreachable")}
+		api.streamEnder = f
+		live, idle := courseOneLecture(), courseOneLecture()
+		live.LiveNow, idle.ID = true, 8
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(live, nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(idle, nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}}, nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).Times(2)
+		m.streams.EXPECT().RemoveStream("7").Return(nil)
+		m.streams.EXPECT().RemoveStream("8").Return(nil)
+
+		if _, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
+			CourseId: 1, StreamIds: []uint32{7, 8},
+		}); err != nil {
+			t.Fatalf("a runner that can't be stopped must not block the delete: %v", err)
+		}
+		if len(f.streams) != 1 || f.streams[0] != 7 || !f.calls[0] {
+			t.Errorf("ended %v with discard %v, want only 7, discarded", f.streams, f.calls)
+		}
+	})
+
 	t.Run("audits nothing for a lecture whose delete failed", func(t *testing.T) {
 		api, m := newLectureAPI(t)
 		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
@@ -511,6 +534,30 @@ func TestDeleteLectureSeries(t *testing.T) {
 			CourseId: 1, StreamId: 7,
 		}); err != nil {
 			t.Fatalf("DeleteLectureSeries: %v", err)
+		}
+	})
+
+	t.Run("stops the live lectures of the series, discarding the recording", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		f := &fakeEnder{}
+		api.streamEnder = f
+		inSeries, otherSeries, otherCourse := courseOneLecture(), courseOneLecture(), courseOneLecture()
+		inSeries.ID, inSeries.LiveNow = 9, true
+		otherSeries.ID, otherSeries.LiveNow, otherSeries.SeriesIdentifier = 10, true, "s2"
+		otherCourse.ID, otherCourse.LiveNow, otherCourse.CourseID = 11, true, 2
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}}, nil)
+		m.streams.EXPECT().GetCurrentLive(gomock.Any()).Return([]model.Stream{inSeries, otherSeries, otherCourse}, nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+		m.streams.EXPECT().DeleteCourseLectureSeries(uint(1), "s1").Return(nil)
+
+		if _, err := api.DeleteLectureSeries(asCaller(lectureAdmin), &protobuf.DeleteLectureSeriesRequest{
+			CourseId: 1, StreamId: 7,
+		}); err != nil {
+			t.Fatalf("DeleteLectureSeries: %v", err)
+		}
+		if len(f.streams) != 1 || f.streams[0] != 9 || !f.calls[0] {
+			t.Errorf("ended %v with discard %v, want only 9, discarded", f.streams, f.calls)
 		}
 	})
 
