@@ -100,11 +100,13 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	if !ok || uploadPath == "" {
 		return AbortingError(fmt.Errorf("no upload path in context"))
 	}
-	// A browser recording's segments, of which uploadPath is the first.
+	// A browser recording's segments, of which uploadPath is the first, and how long
+	// before each the recording of this version was interrupted.
 	inputs := []string{uploadPath}
 	if paths, ok := d["uploadPaths"].([]string); ok && len(paths) > 1 {
 		inputs = paths
 	}
+	gaps, _ := d["uploadGaps"].([]float64)
 	defer func() {
 		for _, file := range inputs {
 			if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
@@ -143,22 +145,35 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	defer func() { _ = os.RemoveAll(workDir) }() // no-op once renamed
 
 	var args []string
-	if len(inputs) == 1 {
+	var duration float64
+	if len(inputs) == 1 && !hasGap(gaps) {
 		probe := probes[0]
 		transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level(), probe.PixelFormat())
 		logger.Info("importing upload", "transcode", transcode, "file", uploadPath)
 		args = importArgs(uploadPath, workDir, transcode)
+		duration = probe.Duration()
+		if duration <= 0 {
+			// Only for the progress: a MediaRecorder's WebM has no duration in its header.
+			duration, _ = ffmpeg.MeasureDuration(ctx, uploadPath)
+		}
 	} else {
+		segments := make([]segment, len(inputs))
+		for i, file := range inputs {
+			segments[i] = segment{path: file, audio: probes[i].Codec("audio") != ""}
+			if i < len(gaps) {
+				segments[i].gapBefore = gaps[i]
+			}
+			// The length is what silence for a segment without audio has to match.
+			d, err := ffmpeg.MeasureDuration(ctx, file)
+			if err != nil {
+				return failImport(reasonUnreadable, fmt.Errorf("measure segment %d: %w", i, err))
+			}
+			segments[i].duration = d
+			duration += segments[i].gapBefore + d
+		}
 		width, height := probes[0].Dimensions()
-		audio := true
-		for _, p := range probes {
-			audio = audio && p.Codec("audio") != ""
-		}
-		if !audio && probes[0].Codec("audio") != "" {
-			logger.Warn("joining segments of which some have no audio, dropping it", "segments", len(inputs))
-		}
-		logger.Info("joining uploaded segments", "segments", len(inputs), "width", width, "height", height, "audio", audio)
-		args = concatArgs(inputs, workDir, width, height, audio)
+		logger.Info("joining uploaded segments", "segments", len(inputs), "width", width, "height", height, "gaps", gaps)
+		args = concatArgs(segments, workDir, width, height)
 	}
 	// An argument slice, not a split string: the file name comes from the uploader.
 	command := exec.CommandContext(ctx, "ffmpeg", args...)
@@ -169,7 +184,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	command.Stderr = &stderr
 	// ffmpeg reports how far it is on stdout. A writer rather than a pipe for the reason
 	// above: Wait returns only once it has been handed everything.
-	command.Stdout = newProgressWriter(totalDuration(probes), progressReporter(notify, streamID, streamVersion))
+	command.Stdout = newProgressWriter(duration, progressReporter(notify, streamID, streamVersion))
 	if err := command.Run(); err != nil {
 		return failImport(reasonConversion, fmt.Errorf("ffmpeg failed: %w: %s", err, stderr.String()))
 	}
@@ -236,12 +251,35 @@ func importArgs(input, vodDir string, transcode bool) []string {
 	return append(args, hlsOutputArgs(vodDir)...)
 }
 
+// segment is one file of a browser recording.
+type segment struct {
+	path string
+	// audio is whether the file has an audio stream; one without gets silence.
+	audio bool
+	// duration is how long its video runs, in seconds.
+	duration float64
+	// gapBefore is how long, in seconds, the recording of this version was interrupted
+	// before the segment, while the other version went on: filled with black and
+	// silence, so both versions keep one timeline, as split view plays them.
+	gapBefore float64
+}
+
+func hasGap(gaps []float64) bool {
+	for _, g := range gaps {
+		if g > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // concatArgs builds the ffmpeg arguments that join the segments of a browser recording,
 // in order, into one VOD playlist in vodDir. Always transcoded: the timestamps of each
 // segment start at zero, and segments can differ in size, as a screen shared anew does.
-// Each is fitted into the first one's size, which the concat filter requires. So does
-// having the same streams in each: audio is kept only if every segment has it.
-func concatArgs(inputs []string, vodDir string, width, height int, audio bool) []string {
+// The concat filter wants the same streams in each part and the same size, so every
+// part gets video and audio, fitted into the first segment's size: a gap is a black
+// picture with silence, a segment without audio gets silence of its length.
+func concatArgs(segments []segment, vodDir string, width, height int) []string {
 	if width <= 0 || height <= 0 {
 		width, height = 1920, 1080
 	}
@@ -249,53 +287,52 @@ func concatArgs(inputs []string, vodDir string, width, height int, audio bool) [
 	width, height = width/2*2, height/2*2
 
 	args := []string{"-nostdin", "-y", "-nostats", "-progress", "pipe:1"}
-	for _, in := range inputs {
-		args = append(args, "-i", in)
+	next := 0
+	input := func(a ...string) int {
+		args = append(args, a...)
+		next++
+		return next - 1
 	}
-	var filter, joined strings.Builder
-	for i := range inputs {
-		fmt.Fprintf(&filter, "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p[v%d];",
-			i, width, height, width, height, i)
-		fmt.Fprintf(&joined, "[v%d]", i)
-		if audio {
-			fmt.Fprintf(&filter, "[%d:a]aresample=48000,aformat=channel_layouts=stereo[a%d];", i, i)
-			fmt.Fprintf(&joined, "[a%d]", i)
-		}
-	}
-	a := 0
-	if audio {
-		a = 1
-	}
-	fmt.Fprintf(&filter, "%sconcat=n=%d:v=1:a=%d[v]", joined.String(), len(inputs), a)
-	if audio {
-		filter.WriteString("[a]")
+	silence := func(seconds float64) int {
+		return input("-f", "lavfi", "-t", formatSeconds(seconds), "-i", "anullsrc=r=48000:cl=stereo")
 	}
 
-	args = append(args, "-filter_complex", filter.String(), "-map", "[v]")
-	if audio {
-		args = append(args, "-map", "[a]", "-c:a", "aac")
+	type part struct{ video, audio string }
+	var parts []part
+	for _, seg := range segments {
+		if seg.gapBefore > 0 {
+			black := input("-f", "lavfi", "-t", formatSeconds(seg.gapBefore), "-i",
+				fmt.Sprintf("color=c=black:s=%dx%d:r=30", width, height))
+			parts = append(parts, part{fmt.Sprintf("%d:v", black), fmt.Sprintf("%d:a", silence(seg.gapBefore))})
+		}
+		file := input("-i", seg.path)
+		audio := fmt.Sprintf("%d:a", file)
+		if !seg.audio {
+			audio = fmt.Sprintf("%d:a", silence(seg.duration))
+		}
+		parts = append(parts, part{fmt.Sprintf("%d:v", file), audio})
 	}
+
+	var filter, joined strings.Builder
+	for i, p := range parts {
+		fmt.Fprintf(&filter, "[%s]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p[v%d];",
+			p.video, width, height, width, height, i)
+		fmt.Fprintf(&filter, "[%s]aresample=48000,aformat=channel_layouts=stereo[a%d];", p.audio, i)
+		fmt.Fprintf(&joined, "[v%d][a%d]", i, i)
+	}
+	fmt.Fprintf(&filter, "%sconcat=n=%d:v=1:a=1[v][a]", joined.String(), len(parts))
+
 	args = append(args,
-		"-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+		"-filter_complex", filter.String(), "-map", "[v]", "-map", "[a]",
+		"-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac",
 		// Keyframes on the segment boundaries keep the segments close to hls_time.
 		"-force_key_frames", "expr:gte(t,n_forced*20)",
 	)
 	return append(args, hlsOutputArgs(vodDir)...)
 }
 
-// totalDuration is the length of the inputs together, or 0 when one has none: a
-// MediaRecorder's WebM has no duration in its header, and progress measured against
-// part of the length would be wrong.
-func totalDuration(probes []*ffmpeg.FFProbeResult) float64 {
-	var total float64
-	for _, p := range probes {
-		d := p.Duration()
-		if d <= 0 {
-			return 0
-		}
-		total += d
-	}
-	return total
+func formatSeconds(s float64) string {
+	return strconv.FormatFloat(s, 'f', 3, 64)
 }
 
 // hlsOutputArgs are the arguments that write the encoded streams as a VOD playlist into vodDir.

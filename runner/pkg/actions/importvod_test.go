@@ -167,7 +167,8 @@ func TestImportVOD(t *testing.T) {
 }
 
 // TestImportVODJoinsSegments joins what a browser makes when a screen is shared anew:
-// WebM segments of different sizes, each starting at zero, without a duration.
+// WebM segments of different sizes, each starting at zero, without a duration, one
+// after a gap and one without audio.
 func TestImportVODJoinsSegments(t *testing.T) {
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
 		t.Skip("ffmpeg not available")
@@ -184,6 +185,12 @@ func TestImportVODJoinsSegments(t *testing.T) {
 		return path
 	}
 	first, second := segment("0.webm", "320x240"), segment("1.webm", "240x320")
+	// The camera's microphone ended with it: the last segment has no audio.
+	silent := filepath.Join(t.TempDir(), "2.webm")
+	if out, err := exec.Command("ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=320x240:rate=5",
+		"-c:v", "libvpx", silent).CombinedOutput(); err != nil {
+		t.Skipf("could not create test segment: %v (%s)", err, out)
+	}
 	storage := t.TempDir()
 	config.Config.StoragePath = storage
 	config.Config.EdgeServer = "http://edge"
@@ -191,7 +198,9 @@ func TestImportVODJoinsSegments(t *testing.T) {
 	notify := make(chan *protobuf.Notification, 64)
 	data := map[string]any{
 		"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
-		"uploadPath": first, "uploadPaths": []string{first, second},
+		"uploadPath": first, "uploadPaths": []string{first, second, silent},
+		// Sharing stopped for a second and a half before the second segment.
+		"uploadGaps": []float64{0, 1.5, 0},
 	}
 	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
 		t.Fatalf("ImportVOD = %v", err)
@@ -202,8 +211,8 @@ func TestImportVODJoinsSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("probe the VOD: %v", err)
 	}
-	if d := probe.Duration(); d < 3.5 || d > 4.5 {
-		t.Errorf("duration = %.1fs, want both segments' 4s", d)
+	if d := probe.Duration(); d < 7 || d > 8 {
+		t.Errorf("duration = %.1fs, want the segments' 6s and the gap's 1.5s", d)
 	}
 	if w, h := probe.Dimensions(); w != 320 || h != 240 {
 		t.Errorf("size = %dx%d, want the first segment's 320x240", w, h)
@@ -211,7 +220,7 @@ func TestImportVODJoinsSegments(t *testing.T) {
 	if probe.Codec("audio") != "aac" {
 		t.Errorf("audio = %q, want aac", probe.Codec("audio"))
 	}
-	for _, f := range []string{first, second} {
+	for _, f := range []string{first, second, silent} {
 		if _, err := os.Stat(f); !os.IsNotExist(err) {
 			t.Errorf("segment %s still there: %v", f, err)
 		}
@@ -222,14 +231,30 @@ func TestImportVODJoinsSegments(t *testing.T) {
 }
 
 func TestConcatArgs(t *testing.T) {
-	args := strings.Join(concatArgs([]string{"a", "b"}, "/vod", 1281, 721, false), " ")
-	for _, want := range []string{"-i a -i b", "scale=1280:720", "concat=n=2:v=1:a=0[v]", "-map [v]"} {
+	args := strings.Join(concatArgs([]segment{
+		{path: "a", audio: true, duration: 10},
+		{path: "b", audio: false, duration: 5, gapBefore: 2.5},
+	}, "/vod", 1281, 721), " ")
+	for _, want := range []string{
+		"-i a",
+		// The gap: black of the first segment's size and silence, before b.
+		"-t 2.500 -i color=c=black:s=1280x720",
+		"-t 2.500 -i anullsrc",
+		"-i b",
+		// b has no audio: silence of its length.
+		"-t 5.000 -i anullsrc",
+		"concat=n=3:v=1:a=1[v][a]",
+		"-map [v] -map [a]",
+	} {
 		if !strings.Contains(args, want) {
 			t.Errorf("args lack %q:\n%s", want, args)
 		}
 	}
-	if strings.Contains(args, "[a]") {
-		t.Errorf("audio mapped without audio:\n%s", args)
+}
+
+func TestHasGap(t *testing.T) {
+	if hasGap(nil) || hasGap([]float64{0, 0}) || !hasGap([]float64{0, 1}) {
+		t.Error("hasGap is wrong")
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -152,6 +154,10 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	// only the server's browser-recording hand-off sends more than one. Should another
 	// upload ever do, PrepareUpload has to say which uploads are segments.
 	var files []string
+	// How long the recording was interrupted before each file, in seconds: a
+	// "gap_ms" field before the file part it belongs to. Left out, there is none.
+	var gaps []float64
+	var gap float64
 	fail := func(msg string, status int) {
 		for _, f := range files {
 			_ = os.Remove(f)
@@ -167,6 +173,16 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 			fail(err.Error(), http.StatusBadRequest)
 			return
 		}
+		if part.FormName() == "gap_ms" {
+			b, _ := io.ReadAll(io.LimitReader(part, 32))
+			ms, err := strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
+			if err != nil || ms < 0 {
+				fail("gap_ms must be milliseconds", http.StatusBadRequest)
+				return
+			}
+			gap = float64(ms) / 1000
+			continue
+		}
 		if part.FormName() != "file" {
 			continue
 		}
@@ -177,6 +193,8 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		files = append(files, file)
+		gaps = append(gaps, gap)
+		gap = 0
 		if size == 0 {
 			// Answering 200 would send the uploader off to wait for a video that
 			// the import can only fail to make.
@@ -196,6 +214,12 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	}
 	if len(files) > 1 {
 		data["uploadPaths"] = files
+	}
+	for _, g := range gaps {
+		if g > 0 {
+			data["uploadGaps"] = gaps
+			break
+		}
 	}
 	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)

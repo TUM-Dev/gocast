@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -127,7 +128,10 @@ func TestHandleUpload(t *testing.T) {
 		token, _ := r.uploads.create(9, "STREAM_VERSION_PRESENTATION", false)
 		body := &bytes.Buffer{}
 		mw := multipart.NewWriter(body)
-		for _, content := range []string{"first", "second"} {
+		for i, content := range []string{"first", "second"} {
+			if i == 1 {
+				_ = mw.WriteField("gap_ms", "1500")
+			}
 			fw, _ := mw.CreateFormFile("file", "segment")
 			_, _ = fw.Write([]byte(content))
 		}
@@ -154,6 +158,9 @@ func TestHandleUpload(t *testing.T) {
 		paths, _ := got["uploadPaths"].([]string)
 		if len(paths) != 2 || got["uploadPath"] != paths[0] {
 			t.Fatalf("job data = %v", got)
+		}
+		if gaps, _ := got["uploadGaps"].([]float64); !slices.Equal(gaps, []float64{0, 1.5}) {
+			t.Errorf("gaps = %v, want [0 1.5]", got["uploadGaps"])
 		}
 		for i, want := range []string{"first", "second"} {
 			if b, err := os.ReadFile(paths[i]); err != nil || string(b) != want {
