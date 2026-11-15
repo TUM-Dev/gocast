@@ -80,6 +80,7 @@ func ImportVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 					Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 					StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
 					Reason:        ptr.Take(reason),
+					ImportId:      importID(d),
 				},
 			},
 		}
@@ -209,8 +210,18 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 				Stream:        &protobuf.StreamInfo{Id: ptr.Take(streamID)},
 				StreamVersion: ptr.Take(protobuf.StreamVersion(protobuf.StreamVersion_value[streamVersion])),
 				Url:           ptr.Take(vodURL),
+				ImportId:      importID(d),
 			},
 		},
+	}
+	return nil
+}
+
+// importID is the import's ID for its notifications, nil for none: see
+// PrepareUploadRequest.import_id.
+func importID(d map[string]any) *string {
+	if id, ok := d["importID"].(string); ok && id != "" {
+		return &id
 	}
 	return nil
 }

@@ -203,6 +203,7 @@ func TestImportVODJoinsSegments(t *testing.T) {
 		// good a second before the end.
 		"uploadGaps":        []float64{0, 1.5, 0},
 		"uploadTrailingGap": 1.0,
+		"importID":          "browser-7-abc",
 	}
 	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
 		t.Fatalf("ImportVOD = %v", err)
@@ -227,8 +228,12 @@ func TestImportVODJoinsSegments(t *testing.T) {
 			t.Errorf("segment %s still there: %v", f, err)
 		}
 	}
-	if ns := drain(notify); len(ns) == 0 || ns[len(ns)-1].GetVodReady() == nil {
-		t.Errorf("last notification is not VodReady: %v", ns)
+	ns := drain(notify)
+	if len(ns) == 0 || ns[len(ns)-1].GetVodReady() == nil {
+		t.Fatalf("last notification is not VodReady: %v", ns)
+	}
+	if got := ns[len(ns)-1].GetVodReady().GetImportId(); got != "browser-7-abc" {
+		t.Errorf("VodReady import id = %q, want the upload's", got)
 	}
 }
 
@@ -506,6 +511,24 @@ func TestImportVODReasons(t *testing.T) {
 		}
 		return notify
 	}
+
+	t.Run("the failure names the import", func(t *testing.T) {
+		notify := make(chan *protobuf.Notification, 64)
+		data := map[string]any{
+			"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
+			"uploadPath": filepath.Join(t.TempDir(), "missing.webm"), "importID": "browser-7-abc",
+		}
+		_ = ImportVOD(context.Background(), testLogger(), notify, data, testBroker())
+		var failed *protobuf.VODFailedNotification
+		for _, n := range drain(notify) {
+			if f := n.GetVodFailed(); f != nil {
+				failed = f
+			}
+		}
+		if failed.GetImportId() != "browser-7-abc" {
+			t.Errorf("VodFailed = %v, want the upload's import id", failed)
+		}
+	})
 
 	t.Run("no video", func(t *testing.T) {
 		audio := filepath.Join(t.TempDir(), "audio.m4a")

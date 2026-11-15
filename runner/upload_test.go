@@ -126,6 +126,7 @@ func TestHandleUpload(t *testing.T) {
 	t.Run("keeps several files in order for the import to join", func(t *testing.T) {
 		r := newUploadTestRunner(t)
 		token, _ := r.uploads.create(9, "STREAM_VERSION_PRESENTATION", false)
+		r.uploads.attachImport(token, "browser-7-abc")
 		body := &bytes.Buffer{}
 		mw := multipart.NewWriter(body)
 		for i, content := range []string{"first", "second"} {
@@ -162,6 +163,9 @@ func TestHandleUpload(t *testing.T) {
 		}
 		if gaps, _ := got["uploadGaps"].([]float64); !slices.Equal(gaps, []float64{0, 1.5}) {
 			t.Errorf("gaps = %v, want [0 1.5]", got["uploadGaps"])
+		}
+		if got["importID"] != "browser-7-abc" {
+			t.Errorf("import id = %v, want the one PrepareUpload was given", got["importID"])
 		}
 		if got["uploadTrailingGap"] != 2.0 {
 			t.Errorf("trailing gap = %v, want 2", got["uploadTrailingGap"])
