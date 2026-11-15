@@ -8,8 +8,11 @@ import (
 	"io/fs"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
 )
@@ -22,8 +25,8 @@ var handOffTimeout = 2 * time.Hour
 // context, as the hand-off's may be what ran out.
 const bookkeepingTimeout = 30 * time.Second
 
-// markRetryDelay is how long markHandedOff waits before its second attempt, and twice
-// that before its third. A variable for the tests.
+// markRetryDelay is how long markHandedOff waits before its second attempt, growing by
+// as much with every attempt up to a minute. A variable for the tests.
 var markRetryDelay = time.Second
 
 // browserRecordingIdleTimeout is how long a recording that takes no chunks waits for
@@ -84,12 +87,7 @@ func (a *API) handOff(ctx context.Context, rec model.BrowserRecording) error {
 		}
 	}
 	if len(segments) == 0 {
-		// Finalizing needs chunks, so a finalized recording without any is one whose
-		// hand-off went through but could not be recorded, see below: its chunks went
-		// with it.
-		a.log.Warn("finalized browser recording has no chunks left, taking it as handed off", "recording", rec.ID)
-		a.markHandedOff(rec.ID)
-		return nil
+		return errRecordingEmpty
 	}
 
 	slot, err := a.uploads.Reserve(ctx, rec.StreamID, rec.Version)
@@ -118,22 +116,21 @@ func (a *API) handOff(ctx context.Context, rec model.BrowserRecording) error {
 		return fmt.Errorf("runner: %s", strings.TrimSpace(string(msg)))
 	}
 
-	// The runner has the file. Its chunks go whether or not that can be recorded: left
-	// in place they would be handed off again, and imported twice.
+	// The runner has the file, but only on its disk and in memory: a restart or a failed
+	// import loses it. The chunks stay until the VOD is there; see
+	// CheckBrowserRecordingConversions.
 	a.markHandedOff(rec.ID)
-	if err := store.remove(rec.ID); err != nil {
-		a.log.Warn("can't remove a handed-off browser recording", "recording", rec.ID, "err", err)
-	}
 	return nil
 }
 
-// markHandedOff records a hand-off, trying a few times: a database that blinked just
-// then should not leave the row to say otherwise.
+// markHandedOff records a hand-off. Until it is, the cron would hand the recording off
+// again and the runner import it twice, so it keeps trying for an hour, while the
+// hand-off's claim on the recording keeps another from starting.
 func (a *API) markHandedOff(id uint) {
 	var err error
-	for attempt := range 3 {
+	for attempt := range 60 {
 		if attempt > 0 {
-			time.Sleep(time.Duration(attempt) * markRetryDelay)
+			time.Sleep(min(time.Duration(attempt)*markRetryDelay, time.Minute))
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), bookkeepingTimeout)
 		err = a.dao.BrowserRecordingDao.MarkBrowserRecordingHandedOff(ctx, id, time.Now())
@@ -153,6 +150,11 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 	go func() {
 		err := func() error {
 			for _, seg := range segments {
+				if gap := store.gap(id, seg); gap > 0 {
+					if err := mw.WriteField("gap_ms", strconv.FormatInt(gap, 10)); err != nil {
+						return err
+					}
+				}
 				part, err := mw.CreateFormFile("file", fmt.Sprintf("segment-%d", seg))
 				if err != nil {
 					return err
@@ -169,6 +171,74 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 		_ = pw.CloseWithError(err)
 	}()
 	return pr, mw.FormDataContentType()
+}
+
+// lostConversionAfter is how long a conversion may show as under way before it is taken
+// to be lost with a runner that restarted. Far above what a lecture takes to transcode.
+const lostConversionAfter = 6 * time.Hour
+
+// CheckBrowserRecordingConversions removes the chunks of the recordings whose VOD is
+// there, and hands off again the ones whose conversion failed or was lost. Then it
+// resumes the hand-offs that are due. Run on boot and by a cron.
+func (a *API) CheckBrowserRecordingConversions() {
+	ctx := context.Background()
+	store, err := a.recordingStore()
+	if err != nil {
+		return
+	}
+	recs, err := a.dao.BrowserRecordingDao.ListConvertingBrowserRecordings(ctx)
+	if err != nil {
+		a.log.Error("can't list browser recordings being converted", "err", err)
+		return
+	}
+	for _, rec := range recs {
+		log := a.log.With("recording", rec.ID, "stream", rec.StreamID, "version", rec.Version)
+		done, retry, err := a.conversionState(ctx, rec)
+		switch {
+		case err != nil:
+			log.Warn("can't tell how a browser recording's conversion went", "err", err)
+		case done:
+			if err := a.dao.BrowserRecordingDao.MarkBrowserRecordingConverted(ctx, rec.ID, time.Now()); err != nil {
+				log.Warn("can't record a converted browser recording", "err", err)
+				continue
+			}
+			if err := store.remove(rec.ID); err != nil {
+				log.Warn("can't remove a converted browser recording's chunks", "err", err)
+			}
+		case retry != "":
+			log.Warn("browser recording's conversion failed, handing it off again", "reason", retry)
+			if err := a.dao.BrowserRecordingDao.RequeueBrowserRecordingHandOff(ctx, rec.ID, retry); err != nil {
+				log.Warn("can't take back a failed hand-off", "err", err)
+			}
+		}
+	}
+	a.ResumeBrowserRecordingHandOffs()
+}
+
+// conversionState tells whether a handed-off recording's VOD is done, or why it has to be
+// handed off again; neither while it is being converted. The progress row the hand-off
+// made goes away with VODReady and stays, marked failed, with VODFailed.
+func (a *API) conversionState(ctx context.Context, rec model.BrowserRecording) (done bool, retry string, err error) {
+	progress, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(rec.Version, rec.StreamID)
+	switch {
+	case err == nil && progress.Failed:
+		return false, "the conversion failed: " + progress.Error, nil
+	case err == nil:
+		if time.Since(*rec.HandedOffAt) > lostConversionAfter {
+			return false, "the conversion did not finish", nil
+		}
+		return false, "", nil
+	case !errors.Is(err, gorm.ErrRecordNotFound):
+		return false, "", err
+	}
+	stream, err := a.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(rec.StreamID), 10))
+	if err != nil {
+		return false, "", err
+	}
+	if *playlistOf(&stream, rec.Version) == "" {
+		return false, "the conversion ended without a video", nil
+	}
+	return true, "", nil
 }
 
 // ResumeBrowserRecordingHandOffs hands off the finalized recordings no runner has yet:

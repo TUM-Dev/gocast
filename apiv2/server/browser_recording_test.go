@@ -157,6 +157,24 @@ func (f *fakeRecordings) ResetBrowserRecordingHandOff(_ context.Context, id uint
 	return nil
 }
 
+func (f *fakeRecordings) ListConvertingBrowserRecordings(context.Context) ([]model.BrowserRecording, error) {
+	return f.filter(func(r model.BrowserRecording) bool { return r.HandedOffAt != nil && r.ConvertedAt == nil }), nil
+}
+
+func (f *fakeRecordings) MarkBrowserRecordingConverted(_ context.Context, id uint, now time.Time) error {
+	f.update(id, func(r *model.BrowserRecording) bool { r.ConvertedAt = &now; return true })
+	return nil
+}
+
+func (f *fakeRecordings) RequeueBrowserRecordingHandOff(_ context.Context, id uint, reason string) error {
+	f.update(id, func(r *model.BrowserRecording) bool {
+		r.HandedOffAt, r.HandOffError = nil, reason
+		r.HandOffAttempts++
+		return true
+	})
+	return nil
+}
+
 func (f *fakeRecordings) DeleteBrowserRecording(_ context.Context, id uint) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -176,16 +194,58 @@ type recordingEnv struct {
 	api  *API
 	recs *fakeRecordings
 	mux  *http.ServeMux
+	// The lecture and its progress rows, which the runner's reports would change.
+	mu       *sync.Mutex
+	lecture  *model.Stream
+	progress map[model.StreamVersion]model.TranscodingProgress
+}
+
+// converted is what the runner's VODReady leaves: the playlist, and no progress row.
+func (env recordingEnv) converted(v model.StreamVersion) {
+	env.mu.Lock()
+	defer env.mu.Unlock()
+	delete(env.progress, v)
+	*playlistOf(env.lecture, v) = "https://edge/" + string(v) + ".m3u8"
+}
+
+// failed is what the runner's VODFailed leaves.
+func (env recordingEnv) failed(v model.StreamVersion, reason string) {
+	env.mu.Lock()
+	defer env.mu.Unlock()
+	env.progress[v] = model.TranscodingProgress{Version: v, Failed: true, Error: reason}
 }
 
 func newRecordingAPI(t *testing.T, uploads Uploads, lecture model.Stream) recordingEnv {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	streams := mock_dao.NewMockStreamsDao(ctrl)
-	streams.EXPECT().GetStreamByID(gomock.Any(), gomock.Any()).Return(lecture, nil).AnyTimes()
-	streams.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), gomock.Any()).Return(model.TranscodingProgress{}, gorm.ErrRecordNotFound).AnyTimes()
-	streams.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil).AnyTimes()
-	streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	env := recordingEnv{mu: &sync.Mutex{}, lecture: &lecture, progress: map[model.StreamVersion]model.TranscodingProgress{}}
+	streams.EXPECT().GetStreamByID(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, string) (model.Stream, error) {
+		env.mu.Lock()
+		defer env.mu.Unlock()
+		return *env.lecture, nil
+	}).AnyTimes()
+	streams.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), gomock.Any()).DoAndReturn(func(v model.StreamVersion, _ uint) (model.TranscodingProgress, error) {
+		env.mu.Lock()
+		defer env.mu.Unlock()
+		p, ok := env.progress[v]
+		if !ok {
+			return p, gorm.ErrRecordNotFound
+		}
+		return p, nil
+	}).AnyTimes()
+	streams.EXPECT().SaveTranscodingProgress(gomock.Any()).DoAndReturn(func(p model.TranscodingProgress) error {
+		env.mu.Lock()
+		defer env.mu.Unlock()
+		env.progress[p.Version] = p
+		return nil
+	}).AnyTimes()
+	streams.EXPECT().RemoveTranscodingProgress(gomock.Any(), gomock.Any()).DoAndReturn(func(v model.StreamVersion, _ uint) error {
+		env.mu.Lock()
+		defer env.mu.Unlock()
+		delete(env.progress, v)
+		return nil
+	}).AnyTimes()
 	recs := newFakeRecordings()
 	api := &API{
 		dao:         dao.DaoWrapper{StreamsDao: streams, BrowserRecordingDao: recs, AuditDao: auditSink(t)},
@@ -195,7 +255,8 @@ func newRecordingAPI(t *testing.T, uploads Uploads, lecture model.Stream) record
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc(browserRecordingChunkPath, api.handleBrowserRecordingChunk)
-	return recordingEnv{api: api, recs: recs, mux: mux}
+	env.api, env.recs, env.mux = api, recs, mux
+	return env
 }
 
 func (env recordingEnv) create(t *testing.T, version string) *protobuf.CreateBrowserRecordingResponse {
@@ -302,12 +363,27 @@ func TestBrowserRecording(t *testing.T) {
 		if rec.HandedOffAt == nil {
 			t.Error("not marked as handed off")
 		}
-		store, _ := env.api.recordingStore()
-		if _, err := os.Stat(store.recordingDir(rec.ID)); !os.IsNotExist(err) {
-			t.Errorf("chunks left after the hand-off: %v", err)
-		}
 		if rec := env.put(path, "0", "3", "d"); rec.Code != http.StatusConflict {
 			t.Errorf("chunk after finalize: %d, want 409", rec.Code)
+		}
+
+		// The runner has the file, but could still lose it: the chunks stay.
+		store, _ := env.api.recordingStore()
+		env.api.CheckBrowserRecordingConversions()
+		if got, _ := store.received(rec.ID); !slices.Equal(got, []uint32{3, 1}) {
+			t.Errorf("received while converting = %v, want the chunks kept", got)
+		}
+		env.converted(model.PRES)
+		env.api.CheckBrowserRecordingConversions()
+		if rec, _ := env.recs.GetBrowserRecording(context.Background(), rec.ID); rec.ConvertedAt == nil {
+			t.Error("not marked as converted once the VOD is there")
+		}
+		if _, err := os.Stat(store.recordingDir(rec.ID)); !os.IsNotExist(err) {
+			t.Errorf("chunks left after the conversion: %v", err)
+		}
+		listed, _ := env.api.ListBrowserRecordings(asCaller(lectureAdmin), &protobuf.ListBrowserRecordingsRequest{CourseId: 1, StreamId: 7})
+		if len(listed.GetRecordings()) != 0 {
+			t.Errorf("a converted recording is still listed: %v", listed.GetRecordings())
 		}
 	})
 
@@ -505,8 +581,8 @@ func TestBrowserRecordingRaces(t *testing.T) {
 			t.Errorf("runner got %v", *parts)
 		}
 		store, _ := env.api.recordingStore()
-		if _, err := os.Stat(store.recordingDir(uint(created.GetRecording().GetId()))); !os.IsNotExist(err) {
-			t.Errorf("the late chunk brought the recording's directory back: %v", err)
+		if got, _ := store.received(uint(created.GetRecording().GetId())); !slices.Equal(got, []uint32{1}) {
+			t.Errorf("received = %v, want the late chunk left out", got)
 		}
 		if entries, _ := os.ReadDir(store.stagingDir()); len(entries) != 0 {
 			t.Errorf("%d staged chunks left", len(entries))
@@ -569,6 +645,72 @@ func TestBrowserRecordingRaces(t *testing.T) {
 		})
 		if statusOf(err) != http.StatusConflict {
 			t.Errorf("abandon: %v, want 409", err)
+		}
+	})
+}
+
+func TestBrowserRecordingConversion(t *testing.T) {
+	t.Run("a failed conversion is handed off again", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "CAM")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		env.failed(model.CAM, "The conversion was interrupted. Please upload the video again.")
+		env.api.CheckBrowserRecordingConversions()
+		env.api.handOffs.Wait()
+
+		if len(*parts) != 2 {
+			t.Errorf("runner got %v, want the recording twice", *parts)
+		}
+		rec, _ := env.recs.GetBrowserRecording(context.Background(), uint(created.GetRecording().GetId()))
+		if rec.HandedOffAt == nil || rec.HandOffAttempts != 1 {
+			t.Errorf("after a failed conversion: %+v", rec)
+		}
+	})
+
+	t.Run("a conversion that never finishes is taken as lost", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "CAM")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		long := time.Now().Add(-lostConversionAfter - time.Minute)
+		env.recs.update(uint(created.GetRecording().GetId()), func(r *model.BrowserRecording) bool { r.HandedOffAt = &long; return true })
+
+		env.api.CheckBrowserRecordingConversions()
+		env.api.handOffs.Wait()
+		if len(*parts) != 2 {
+			t.Errorf("runner got %v, want the recording again", *parts)
+		}
+	})
+
+	t.Run("the runner learns of the gap before a segment", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "PRES")
+		path := created.GetUploadPath()
+		env.mustPut(t, path, "0", "0", "a")
+		if rec := env.put(path+"", "1", "0?gap_ms=1500", "x"); rec.Code != http.StatusOK {
+			t.Fatalf("PUT with gap: %d %s", rec.Code, rec.Body)
+		}
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		if want := []string{"file=a", "gap_ms=1500", "file=x"}; !slices.Equal(*parts, want) {
+			t.Errorf("runner got %v, want %v", *parts, want)
+		}
+	})
+
+	t.Run("a gap that is no number is refused", func(t *testing.T) {
+		env := newRecordingAPI(t, &fakeUploads{}, courseOneLecture())
+		path := env.create(t, "PRES").GetUploadPath()
+		if rec := env.put(path, "1", "0?gap_ms=soon", "x"); rec.Code != http.StatusBadRequest {
+			t.Errorf("status = %d, want 400", rec.Code)
 		}
 	})
 }

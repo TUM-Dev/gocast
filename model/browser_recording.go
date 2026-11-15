@@ -5,7 +5,8 @@ import "time"
 // BrowserRecording is one version of a lecture recorded in an administrator's browser.
 // The browser uploads it in chunks while it records, which the server keeps on disk,
 // not here; see the apiv2 recording store. Once finalized, the chunks are handed to a
-// runner as an upload of that version, and the row stays to tell the browser so.
+// runner as an upload of that version. They stay until the runner has made the VOD,
+// as the runner keeps nothing of an import it loses, and the row stays to tell so.
 //
 // A recording has segments: each is what one MediaRecorder made, a file of its own. A
 // new one starts when the recording resumes after its tracks ended or the tab crashed.
@@ -20,8 +21,10 @@ type BrowserRecording struct {
 	TicketHash []byte `gorm:"type:binary(32);not null;uniqueIndex"`
 	// FinalizedAt is set once the recording takes no more chunks.
 	FinalizedAt *time.Time
-	// HandedOffAt is set once a runner has the recording; its chunks are gone then.
+	// HandedOffAt is set once a runner has taken the recording to convert.
 	HandedOffAt *time.Time
+	// ConvertedAt is set once the VOD is there; its chunks are gone then.
+	ConvertedAt *time.Time
 	// HandOffAttempts counts the hand-offs that failed. Retrying stops at
 	// MaxBrowserRecordingHandOffAttempts until an administrator retries.
 	HandOffAttempts int    `gorm:"not null;default:0"`

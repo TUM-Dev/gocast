@@ -2997,7 +2997,7 @@
     },
     "/courses/{courseId}/streams/{streamId}/browser-recordings": {
       "get": {
-        "summary": "List a lecture's browser recordings that no runner has yet.",
+        "summary": "List a lecture's browser recordings that are not converted yet.",
         "description": "Unfinished ones can be finalized with what arrived, from any device. Requires administering the course.",
         "operationId": "CourseService_listBrowserRecordings",
         "responses": {
@@ -6980,6 +6980,10 @@
         "handedOff": {
           "type": "boolean",
           "description": "A runner has it; its conversion shows in getLectureTranscodingProgress."
+        },
+        "converted": {
+          "type": "boolean",
+          "description": "The VOD is there and the chunks are gone. Not listed by listBrowserRecordings then."
         },
         "handOffError": {
           "type": "string",

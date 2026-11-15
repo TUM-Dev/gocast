@@ -906,7 +906,7 @@ service CourseService {
     option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/browser-recordings"};
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Courses"
-      summary: "List a lecture's browser recordings that no runner has yet."
+      summary: "List a lecture's browser recordings that are not converted yet."
       description: "Unfinished ones can be finalized with what arrived, from any device. Requires administering the course."
     };
   }
@@ -3506,6 +3506,8 @@ message BrowserRecording {
   bool finalized = 6;
   // A runner has it; its conversion shows in getLectureTranscodingProgress.
   bool handed_off = 7;
+  // The VOD is there and the chunks are gone. Not listed by listBrowserRecordings then.
+  bool converted = 11;
   // Why the last hand-off failed, if it did.
   string hand_off_error = 8;
   // The hand-off failed too often and waits for finalizeBrowserRecording.

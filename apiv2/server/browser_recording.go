@@ -268,12 +268,13 @@ func (a *API) browserRecordingToProto(rec model.BrowserRecording) (*protobuf.Bro
 		MimeType:      rec.MimeType,
 		Finalized:     rec.FinalizedAt != nil,
 		HandedOff:     rec.HandedOffAt != nil,
+		Converted:     rec.ConvertedAt != nil,
 		HandOffError:  rec.HandOffError,
 		HandOffGaveUp: rec.HandedOffAt == nil && rec.HandOffAttempts >= model.MaxBrowserRecordingHandOffAttempts,
 		CreatedAt:     timestamppb.New(rec.CreatedAt),
 	}
-	// Handed off, the chunks are gone.
-	if rec.HandedOffAt != nil {
+	// Converted, the chunks are gone.
+	if rec.ConvertedAt != nil {
 		return pb, nil
 	}
 	store, err := a.recordingStore()
@@ -344,7 +345,17 @@ func (a *API) handleBrowserRecordingChunk(w http.ResponseWriter, r *http.Request
 		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errors.New("the chunk could not be stored, try again")))
 		return
 	}
-	if err := a.commitChunk(r.Context(), store, rec.ID, staged, uint32(segment), uint32(seq)); err != nil {
+	// The first chunk of a segment after the first says how long recording was
+	// interrupted before it; see segment in the runner's import.
+	gapMs := int64(-1)
+	if raw := r.URL.Query().Get("gap_ms"); raw != "" && seq == 0 {
+		if gapMs, err = strconv.ParseInt(raw, 10, 64); err != nil || gapMs < 0 {
+			_ = os.Remove(staged)
+			writeUploadError(w, e.WithStatus(http.StatusBadRequest, errors.New("gap_ms must be milliseconds")))
+			return
+		}
+	}
+	if err := a.commitChunk(r.Context(), store, rec.ID, staged, uint32(segment), uint32(seq), gapMs); err != nil {
 		writeUploadError(w, err)
 		return
 	}
@@ -354,7 +365,7 @@ func (a *API) handleBrowserRecordingChunk(w http.ResponseWriter, r *http.Request
 // commitChunk puts a staged chunk into the recording, if it still takes chunks. Under
 // the recording's lock and with the recording read again: it may have been finalized
 // or thrown away while the body arrived.
-func (a *API) commitChunk(ctx context.Context, store recordingStore, id uint, staged string, segment, seq uint32) error {
+func (a *API) commitChunk(ctx context.Context, store recordingStore, id uint, staged string, segment, seq uint32, gapMs int64) error {
 	lock := a.recordingLock(id)
 	lock.RLock()
 	defer lock.RUnlock()
@@ -370,6 +381,14 @@ func (a *API) commitChunk(ctx context.Context, store recordingStore, id uint, st
 	case rec.FinalizedAt != nil:
 		_ = os.Remove(staged)
 		return e.WithStatus(http.StatusConflict, errRecordingFinalized)
+	}
+	// The gap before the chunk: answered for together, so it can't be lost alone.
+	if gapMs >= 0 {
+		if err := store.setGap(id, segment, gapMs); err != nil {
+			_ = os.Remove(staged)
+			a.log.Error("can't store a browser recording's gap", "recording", id, "segment", segment, "err", err)
+			return e.WithStatus(http.StatusServiceUnavailable, errors.New("the chunk could not be stored, try again"))
+		}
 	}
 	if err := store.commit(staged, id, segment, seq); err != nil {
 		a.log.Error("can't store a browser recording chunk", "recording", id, "segment", segment, "seq", seq, "err", err)

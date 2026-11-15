@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -110,6 +111,40 @@ func (s recordingStore) sweepStaging(before time.Time) {
 			_ = os.Remove(filepath.Join(s.stagingDir(), e.Name()))
 		}
 	}
+}
+
+// gapName holds how long, in milliseconds, the recording was interrupted before a
+// segment. Not a number, so received() doesn't take it for a chunk.
+const gapName = "gap-ms"
+
+// setGap records the interruption before a segment, synced like a chunk.
+func (s recordingStore) setGap(id uint, segment uint32, ms int64) error {
+	if segment >= maxRecordingSegments {
+		return errRecordingLayout
+	}
+	dir := s.segmentDir(id, segment)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	staged, err := s.stage(strings.NewReader(strconv.FormatInt(ms, 10)))
+	if err != nil {
+		return err
+	}
+	if err := os.Rename(staged, filepath.Join(dir, gapName)); err != nil {
+		_ = os.Remove(staged)
+		return err
+	}
+	return syncDir(dir)
+}
+
+// gap is the interruption before a segment in milliseconds, 0 when none was recorded.
+func (s recordingStore) gap(id uint, segment uint32) int64 {
+	b, err := os.ReadFile(filepath.Join(s.segmentDir(id, segment), gapName))
+	if err != nil {
+		return 0
+	}
+	ms, _ := strconv.ParseInt(string(b), 10, 64)
+	return max(ms, 0)
 }
 
 // put stages and commits a chunk in one go.

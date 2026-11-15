@@ -15,7 +15,7 @@ type BrowserRecordingDao interface {
 	CreateBrowserRecording(ctx context.Context, rec *model.BrowserRecording) error
 	GetBrowserRecording(ctx context.Context, id uint) (model.BrowserRecording, error)
 	GetBrowserRecordingByTicket(ctx context.Context, ticketHash []byte) (model.BrowserRecording, error)
-	// ListBrowserRecordings is a lecture's recordings that no runner has yet.
+	// ListBrowserRecordings is a lecture's recordings that are not converted yet.
 	ListBrowserRecordings(ctx context.Context, streamID uint) ([]model.BrowserRecording, error)
 	// FinalizeBrowserRecording stops a recording from taking chunks. finalized says
 	// whether this call did it; a second call changes nothing and answers false.
@@ -25,6 +25,13 @@ type BrowserRecordingDao interface {
 	// ListUnfinalizedBrowserRecordings is the recordings created before `before` that still take chunks.
 	ListUnfinalizedBrowserRecordings(ctx context.Context, before time.Time) ([]model.BrowserRecording, error)
 	MarkBrowserRecordingHandedOff(ctx context.Context, id uint, now time.Time) error
+	// ListConvertingBrowserRecordings is the recordings a runner took and has not
+	// turned into a VOD yet, as far as is known here.
+	ListConvertingBrowserRecordings(ctx context.Context) ([]model.BrowserRecording, error)
+	MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error
+	// RequeueBrowserRecordingHandOff takes back a hand-off whose conversion failed or
+	// was lost, to be handed off again; it counts as a failed attempt.
+	RequeueBrowserRecordingHandOff(ctx context.Context, id uint, reason string) error
 	// MarkBrowserRecordingHandOffFailed records why a hand-off failed. counts says whether
 	// it counts towards the attempt limit: a runner being away says nothing about the file.
 	MarkBrowserRecordingHandOffFailed(ctx context.Context, id uint, reason string, counts bool) error
@@ -54,7 +61,7 @@ func (d browserRecordingDao) GetBrowserRecordingByTicket(ctx context.Context, ti
 }
 
 func (d browserRecordingDao) ListBrowserRecordings(ctx context.Context, streamID uint) (recs []model.BrowserRecording, err error) {
-	err = d.db.WithContext(ctx).Where("stream_id = ? AND handed_off_at IS NULL", streamID).Order("id").Find(&recs).Error
+	err = d.db.WithContext(ctx).Where("stream_id = ? AND converted_at IS NULL", streamID).Order("id").Find(&recs).Error
 	return recs, err
 }
 
@@ -80,6 +87,26 @@ func (d browserRecordingDao) ListUnfinalizedBrowserRecordings(ctx context.Contex
 func (d browserRecordingDao) MarkBrowserRecordingHandedOff(ctx context.Context, id uint, now time.Time) error {
 	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).
 		Updates(map[string]any{"handed_off_at": now, "hand_off_error": ""}).Error
+}
+
+func (d browserRecordingDao) ListConvertingBrowserRecordings(ctx context.Context) (recs []model.BrowserRecording, err error) {
+	err = d.db.WithContext(ctx).Where("handed_off_at IS NOT NULL AND converted_at IS NULL").Order("id").Find(&recs).Error
+	return recs, err
+}
+
+func (d browserRecordingDao) MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error {
+	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).Update("converted_at", now).Error
+}
+
+func (d browserRecordingDao) RequeueBrowserRecordingHandOff(ctx context.Context, id uint, reason string) error {
+	if len(reason) > 512 {
+		reason = reason[:512]
+	}
+	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).Updates(map[string]any{
+		"handed_off_at":     nil,
+		"hand_off_attempts": gorm.Expr("hand_off_attempts + 1"),
+		"hand_off_error":    reason,
+	}).Error
 }
 
 func (d browserRecordingDao) MarkBrowserRecordingHandOffFailed(ctx context.Context, id uint, reason string, counts bool) error {

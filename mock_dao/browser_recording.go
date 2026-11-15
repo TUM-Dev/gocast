@@ -130,6 +130,21 @@ func (mr *MockBrowserRecordingDaoMockRecorder) ListBrowserRecordings(ctx, stream
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBrowserRecordings", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ListBrowserRecordings), ctx, streamID)
 }
 
+// ListConvertingBrowserRecordings mocks base method.
+func (m *MockBrowserRecordingDao) ListConvertingBrowserRecordings(ctx context.Context) ([]model.BrowserRecording, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListConvertingBrowserRecordings", ctx)
+	ret0, _ := ret[0].([]model.BrowserRecording)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConvertingBrowserRecordings indicates an expected call of ListConvertingBrowserRecordings.
+func (mr *MockBrowserRecordingDaoMockRecorder) ListConvertingBrowserRecordings(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConvertingBrowserRecordings", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ListConvertingBrowserRecordings), ctx)
+}
+
 // ListPendingHandOffs mocks base method.
 func (m *MockBrowserRecordingDao) ListPendingHandOffs(ctx context.Context) ([]model.BrowserRecording, error) {
 	m.ctrl.T.Helper()
@@ -160,6 +175,20 @@ func (mr *MockBrowserRecordingDaoMockRecorder) ListUnfinalizedBrowserRecordings(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUnfinalizedBrowserRecordings", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ListUnfinalizedBrowserRecordings), ctx, before)
 }
 
+// MarkBrowserRecordingConverted mocks base method.
+func (m *MockBrowserRecordingDao) MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkBrowserRecordingConverted", ctx, id, now)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkBrowserRecordingConverted indicates an expected call of MarkBrowserRecordingConverted.
+func (mr *MockBrowserRecordingDaoMockRecorder) MarkBrowserRecordingConverted(ctx, id, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBrowserRecordingConverted", reflect.TypeOf((*MockBrowserRecordingDao)(nil).MarkBrowserRecordingConverted), ctx, id, now)
+}
+
 // MarkBrowserRecordingHandOffFailed mocks base method.
 func (m *MockBrowserRecordingDao) MarkBrowserRecordingHandOffFailed(ctx context.Context, id uint, reason string, counts bool) error {
 	m.ctrl.T.Helper()
@@ -186,6 +215,20 @@ func (m *MockBrowserRecordingDao) MarkBrowserRecordingHandedOff(ctx context.Cont
 func (mr *MockBrowserRecordingDaoMockRecorder) MarkBrowserRecordingHandedOff(ctx, id, now any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBrowserRecordingHandedOff", reflect.TypeOf((*MockBrowserRecordingDao)(nil).MarkBrowserRecordingHandedOff), ctx, id, now)
+}
+
+// RequeueBrowserRecordingHandOff mocks base method.
+func (m *MockBrowserRecordingDao) RequeueBrowserRecordingHandOff(ctx context.Context, id uint, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequeueBrowserRecordingHandOff", ctx, id, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RequeueBrowserRecordingHandOff indicates an expected call of RequeueBrowserRecordingHandOff.
+func (mr *MockBrowserRecordingDaoMockRecorder) RequeueBrowserRecordingHandOff(ctx, id, reason any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequeueBrowserRecordingHandOff", reflect.TypeOf((*MockBrowserRecordingDao)(nil).RequeueBrowserRecordingHandOff), ctx, id, reason)
 }
 
 // ResetBrowserRecordingHandOff mocks base method.

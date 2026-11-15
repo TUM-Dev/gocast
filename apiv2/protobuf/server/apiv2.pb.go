@@ -14105,6 +14105,8 @@ type BrowserRecording struct {
 	Finalized bool     `protobuf:"varint,6,opt,name=finalized,proto3" json:"finalized,omitempty"`
 	// A runner has it; its conversion shows in getLectureTranscodingProgress.
 	HandedOff bool `protobuf:"varint,7,opt,name=handed_off,json=handedOff,proto3" json:"handed_off,omitempty"`
+	// The VOD is there and the chunks are gone. Not listed by listBrowserRecordings then.
+	Converted bool `protobuf:"varint,11,opt,name=converted,proto3" json:"converted,omitempty"`
 	// Why the last hand-off failed, if it did.
 	HandOffError string `protobuf:"bytes,8,opt,name=hand_off_error,json=handOffError,proto3" json:"hand_off_error,omitempty"`
 	// The hand-off failed too often and waits for finalizeBrowserRecording.
@@ -14189,6 +14191,13 @@ func (x *BrowserRecording) GetFinalized() bool {
 func (x *BrowserRecording) GetHandedOff() bool {
 	if x != nil {
 		return x.HandedOff
+	}
+	return false
+}
+
+func (x *BrowserRecording) GetConverted() bool {
+	if x != nil {
+		return x.Converted
 	}
 	return false
 }
@@ -22160,7 +22169,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1eCreateBrowserRecordingResponse\x128\n" +
 	"\trecording\x18\x01 \x01(\v2\x1a.protobuf.BrowserRecordingR\trecording\x12\x1f\n" +
 	"\vupload_path\x18\x02 \x01(\tR\n" +
-	"uploadPath\"\xd9\x02\n" +
+	"uploadPath\"\xf7\x02\n" +
 	"\x10BrowserRecording\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x1b\n" +
 	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12\x18\n" +
@@ -22169,7 +22178,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\breceived\x18\x05 \x03(\rR\breceived\x12\x1c\n" +
 	"\tfinalized\x18\x06 \x01(\bR\tfinalized\x12\x1d\n" +
 	"\n" +
-	"handed_off\x18\a \x01(\bR\thandedOff\x12$\n" +
+	"handed_off\x18\a \x01(\bR\thandedOff\x12\x1c\n" +
+	"\tconverted\x18\v \x01(\bR\tconverted\x12$\n" +
 	"\x0ehand_off_error\x18\b \x01(\tR\fhandOffError\x12'\n" +
 	"\x10hand_off_gave_up\x18\t \x01(\bR\rhandOffGaveUp\x129\n" +
 	"\n" +
@@ -22767,7 +22777,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x0fcreateFirstUser\x12 .protobuf.CreateFirstUserRequest\x1a\x16.google.protobuf.Empty\"\xf5\x01\x92A\xda\x01\n" +
 	"\x04User\x125Create the first administrator of a fresh deployment.\x1a\x9a\x01Only while the users table is empty (getFrontendConfig's isFreshInstallation); 403 afterwards. The user is a server administrator with the given password.\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/users/first\x12\x8b\x02\n" +
 	"\x0fgetLoginOptions\x12\x16.google.protobuf.Empty\x1a!.protobuf.GetLoginOptionsResponse\"\xbc\x01\x92A\xa2\x01\n" +
-	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\xac\xc3\x01\n" +
+	"\x04User\x12\x1cGet available login methods.\x1a|Reports whether single sign-on is configured, so that a login page knows which options to offer. Requires no authentication.\x82\xd3\xe4\x93\x02\x10\x12\x0e/login-options2\xb0\xc3\x01\n" +
 	"\rCourseService\x12\xc0\x01\n" +
 	"\x10getPublicCourses\x12!.protobuf.GetPublicCoursesRequest\x1a\".protobuf.GetPublicCoursesResponse\"e\x92AR\n" +
 	"\aCourses\x12\x13Get public courses.\x1a2Retrieves the public courses for a given semester.\x82\xd3\xe4\x93\x02\n" +
@@ -22895,9 +22905,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x16createBrowserRecording\x12'.protobuf.CreateBrowserRecordingRequest\x1a(.protobuf.CreateBrowserRecordingResponse\"\x95\x03\x92A\xcb\x02\n" +
 	"\aCourses\x126Start recording a version of a lecture in the browser.\x1a\x87\x02Answers where the chunks go. The path holds a ticket that is not bound to the session, so uploads go on when it expires; it works until the recording is finalized. Version is PRES or CAM, else 400; 409 while the lecture is live. Requires administering the course.\x82\xd3\xe4\x93\x02@:\x01*\";/courses/{course_id}/streams/{stream_id}/browser-recordings\x12\xba\x02\n" +
 	"\x13getBrowserRecording\x12$.protobuf.GetBrowserRecordingRequest\x1a\x1a.protobuf.BrowserRecording\"\xe0\x01\x92A\x8a\x01\n" +
-	"\aCourses\x12/Get what the server has of a browser recording.\x1aNA browser resumes its upload from received. Requires administering the course.\x82\xd3\xe4\x93\x02L\x12J/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}\x12\xe1\x02\n" +
-	"\x15listBrowserRecordings\x12&.protobuf.ListBrowserRecordingsRequest\x1a'.protobuf.ListBrowserRecordingsResponse\"\xf6\x01\x92A\xaf\x01\n" +
-	"\aCourses\x12;List a lecture's browser recordings that no runner has yet.\x1agUnfinished ones can be finalized with what arrived, from any device. Requires administering the course.\x82\xd3\xe4\x93\x02=\x12;/courses/{course_id}/streams/{stream_id}/browser-recordings\x12\xf8\x04\n" +
+	"\aCourses\x12/Get what the server has of a browser recording.\x1aNA browser resumes its upload from received. Requires administering the course.\x82\xd3\xe4\x93\x02L\x12J/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}\x12\xe5\x02\n" +
+	"\x15listBrowserRecordings\x12&.protobuf.ListBrowserRecordingsRequest\x1a'.protobuf.ListBrowserRecordingsResponse\"\xfa\x01\x92A\xb3\x01\n" +
+	"\aCourses\x12?List a lecture's browser recordings that are not converted yet.\x1agUnfinished ones can be finalized with what arrived, from any device. Requires administering the course.\x82\xd3\xe4\x93\x02=\x12;/courses/{course_id}/streams/{stream_id}/browser-recordings\x12\xf8\x04\n" +
 	"\x18finalizeBrowserRecording\x12).protobuf.FinalizeBrowserRecordingRequest\x1a\x1a.protobuf.BrowserRecording\"\x94\x04\x92A\xb2\x03\n" +
 	"\aCourses\x12'End a browser recording and convert it.\x1a\xfd\x02With expected, refuses with 409 until the server has that many chunks of each segment, so the browser can send the rest first; without it, uses what arrived. Then hands the recording to a runner, as an upload of its version, and retries that on its own. Calling it again is harmless, and retries a hand-off that gave up. 400 when nothing arrived. Requires administering the course.\x82\xd3\xe4\x93\x02X:\x01*\"S/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}/finalize\x12\xb1\x02\n" +
 	"\x17abandonBrowserRecording\x12(.protobuf.AbandonBrowserRecordingRequest\x1a\x16.google.protobuf.Empty\"\xd3\x01\x92A~\n" +

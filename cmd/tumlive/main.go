@@ -331,8 +331,9 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 	if !tools.TestEnv.Enabled {
 		// Browser recordings a restart cut off on their way to a runner. The cron below
 		// catches the ones this is too early for, before the runners are back.
-		go api2Client.ResumeBrowserRecordingHandOffs()
-		_ = tools.Cron.AddFunc("resumeBrowserRecordingHandOffs", api2Client.ResumeBrowserRecordingHandOffs, "*/10 * * * *")
+		go api2Client.CheckBrowserRecordingConversions()
+		// Also hands off again what a runner lost, and removes the chunks of what it converted.
+		_ = tools.Cron.AddFunc("checkBrowserRecordings", api2Client.CheckBrowserRecordingConversions, "*/10 * * * *")
 		_ = tools.Cron.AddFunc("finalizeIdleBrowserRecordings", api2Client.FinalizeIdleBrowserRecordings, "17 * * * *")
 	}
 
