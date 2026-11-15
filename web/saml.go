@@ -5,20 +5,21 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"database/sql"
+	"encoding/xml"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
-	"github.com/gin-gonic/gin"
 
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/tools"
 )
 
-func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
+func configSaml(r *tools.Router, daoWrapper dao.DaoWrapper) {
 	// don't configure saml if no config is set
 	if tools.Cfg.Saml == nil {
 		return
@@ -66,56 +67,62 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 	}
 
 	// serve metadata. This can be fetched periodically by the IDP.
-	r.GET("/saml/metadata", func(c *gin.Context) {
-		getSamlSpFromHost(samlSPs, c.Request.Host).ServeMetadata(c.Writer, c.Request)
+	r.HandleFunc("GET /saml/metadata", func(w http.ResponseWriter, req *http.Request) {
+		getSamlSpFromHost(samlSPs, req.Host).ServeMetadata(w, req)
 	})
 
 	// /saml/out is accessed to login with the IDP.
 	// It will redirect to http://login.idp.something/... which will redirect back to us on success.
-	r.GET("/saml/out", func(c *gin.Context) {
-		getSamlSpFromHost(samlSPs, c.Request.Host).HandleStartAuthFlow(c.Writer, c.Request)
+	r.HandleFunc("GET /saml/out", func(w http.ResponseWriter, req *http.Request) {
+		getSamlSpFromHost(samlSPs, req.Host).HandleStartAuthFlow(w, req)
 	})
 
 	// /saml/slo is accessed after the IDP logged out the user.
-	r.POST("/saml/slo", func(c *gin.Context) {
-		err := c.Request.ParseForm()
+	r.HandleFunc("POST /saml/slo", func(w http.ResponseWriter, req *http.Request) {
+		err := req.ParseForm()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			tools.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 			return
 		}
-		err = getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ValidateLogoutResponseForm(c.Request.PostFormValue("SAMLResponse"))
+		err = getSamlSpFromHost(samlSPs, req.Host).ServiceProvider.ValidateLogoutResponseForm(req.PostFormValue("SAMLResponse"))
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
+			countLogin(loginSAML, false)
+			tools.WriteJSON(w, http.StatusForbidden, map[string]any{"code": "403- Forbidden", "error": "Invalid logout data: " + err.Error()})
 			return
 		}
-		c.SetCookie("jwt", "", -1, "/", "", tools.CookieSecure, true)
-		c.Redirect(http.StatusFound, "/")
+		tools.SetCookie(w, "jwt", "", -1, tools.CookieSecure)
+		http.Redirect(w, req, "/", http.StatusFound)
 	})
 
 	// /saml/logout redirects to the idp with a logout request.
 	// The idp will redirect back to /saml/slo after the user logged out.
-	r.GET("/saml/logout", func(c *gin.Context) {
-		foundContext := c.MustGet("TUMLiveContext").(tools.TUMLiveContext)
+	r.HandleFunc("GET /saml/logout", func(w http.ResponseWriter, req *http.Request) {
+		foundContext, ok := tools.GetTUMLiveContext(req)
+		if !ok {
+			logger.Error("context should exist but doesn't")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		if foundContext.SamlSubjectID != nil {
-			request, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.MakeRedirectLogoutRequest(*foundContext.SamlSubjectID, "")
+			request, err := getSamlSpFromHost(samlSPs, req.Host).ServiceProvider.MakeRedirectLogoutRequest(*foundContext.SamlSubjectID, "")
 			if err != nil {
 				return
 			}
 			logger.Info("Logout request: " + request.String())
-			c.Redirect(http.StatusFound, request.String())
+			http.Redirect(w, req, request.String(), http.StatusFound)
 		}
 	})
 
 	// /shib is accessed after authentication with the IDP. The post body contains the encrypted SAMLResponse.
-	r.POST("/shib", func(c *gin.Context) {
-		err := c.Request.ParseForm()
+	r.HandleFunc("POST /shib", func(w http.ResponseWriter, req *http.Request) {
+		err := req.ParseForm()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "400 - Bad Request", "error": err.Error()})
+			tools.WriteJSON(w, http.StatusBadRequest, map[string]any{"code": "400 - Bad Request", "error": err.Error()})
 			return
 		}
-		response, err := getSamlSpFromHost(samlSPs, c.Request.Host).ServiceProvider.ParseResponse(c.Request, []string{""})
+		response, err := getSamlSpFromHost(samlSPs, req.Host).ServiceProvider.ParseResponse(req, []string{""})
 		if err != nil {
-			c.JSON(http.StatusForbidden, gin.H{"code": "403- Forbidden", "error": err.Error()})
+			tools.WriteJSON(w, http.StatusForbidden, map[string]any{"code": "403- Forbidden", "error": err.Error()})
 			return
 		}
 
@@ -124,6 +131,7 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 		firstName := extractSamlField(response, "givenName")
 		lastName := extractSamlField(response, "sn")
 		subjectID := extractSamlField(response, "samlSubjectID") // used to logout from the IDP
+		email := extractSamlField(response, "mail")
 		var lastNameUser *string
 		if lastName != "" {
 			lastNameUser = &lastName
@@ -132,30 +140,38 @@ func configSaml(r *gin.Engine, daoWrapper dao.DaoWrapper) {
 			matrNr = extractSamlField(response, "eduPersonPrincipalName") // MWN id if no matrNr
 			s := strings.Split(matrNr, "@")
 			if len(s) == 0 || s[0] == "" {
-				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr)
-				c.AbortWithStatus(http.StatusInternalServerError)
+				countLogin(loginSAML, false)
+				logger.Error("Can't extract mwn id", "LRZ-ID", lrzID, "firstName", firstName, "lastName", lastName, "mwnID", matrNr, "assertion", assertionXML(response))
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			matrNr = s[0]
 		}
 		if firstName == "" {
-			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			countLogin(loginSAML, false)
+			logger.Error("SAML response missing givenName attribute", "lrzID", lrzID, "assertion", assertionXML(response))
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		// Email is unique and nullable: an absent attribute must stay NULL, not "".
+		dbEmail := sql.NullString{String: email, Valid: email != ""}
 		user := model.User{
 			Name:                firstName,
 			LastName:            lastNameUser,
 			MatriculationNumber: matrNr,
 			LrzID:               lrzID,
+			Email:               dbEmail,
 		}
 		err = daoWrapper.UsersDao.UpsertUser(&user)
 		if err != nil {
+			countLogin(loginSAML, false)
 			logger.Error("Could not upsert user", "err", err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		HandleValidLogin(c, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
+		recordLogin(daoWrapper.UsersDao, user.ID)
+		countLogin(loginSAML, true)
+		HandleValidLogin(w, req, &tools.SessionData{Userid: user.ID, SamlSubjectID: &subjectID})
 	})
 }
 
@@ -166,6 +182,16 @@ func getSamlSpFromHost(samlSPs []*samlsp.Middleware, host string) *samlsp.Middle
 		}
 	}
 	return samlSPs[0]
+}
+
+// assertionXML renders the decrypted assertion for the log. The POST body is
+// encrypted, so it is useless for finding out which attributes the IdP sent.
+func assertionXML(assertion *saml.Assertion) string {
+	b, err := xml.Marshal(assertion)
+	if err != nil {
+		return "unmarshalable assertion: " + err.Error()
+	}
+	return string(b)
 }
 
 // extractSamlField gets the value of the given field from the SAML response or an empty string if the field is not present.

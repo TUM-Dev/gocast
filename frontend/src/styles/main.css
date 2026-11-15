@@ -495,11 +495,13 @@
  * not each draw one. From web/assets/css/home.css.
  */
 #content::-webkit-scrollbar,
+.tum-live-scroll-pane::-webkit-scrollbar,
 .tum-live-side-navigation::-webkit-scrollbar {
   display: none;
 }
 
 #content,
+.tum-live-scroll-pane,
 .tum-live-side-navigation {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */

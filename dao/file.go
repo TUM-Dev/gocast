@@ -15,6 +15,12 @@ type FileDao interface {
 	CountVoDFiles() (int64, error)
 	SetThumbnail(streamId uint, thumb model.File) error
 	GetThumbnail(streamId uint, fileType model.FileType) (f model.File, err error)
+	// SetStreamFile makes file the only file of its type the stream has.
+	SetStreamFile(streamId uint, file model.File) error
+	// GetStreamFile is the stream's file of the type, gorm.ErrRecordNotFound if it has none.
+	GetStreamFile(streamId uint, fileType model.FileType) (f model.File, err error)
+	// DeleteStreamFiles removes the rows of the stream's files of the type, not the files.
+	DeleteStreamFiles(streamId uint, fileType model.FileType) error
 }
 
 type fileDao struct {
@@ -57,4 +63,25 @@ func (d fileDao) SetThumbnail(streamId uint, thumb model.File) error {
 func (d fileDao) GetThumbnail(streamId uint, fileType model.FileType) (f model.File, err error) {
 	err = DB.Where("stream_id = ? AND type = ?", streamId, fileType).First(&f).Error
 	return f, err
+}
+
+func (d fileDao) SetStreamFile(streamId uint, file model.File) error {
+	defer Cache.Clear()
+	file.StreamID = streamId
+	return DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("stream_id = ? AND type = ?", streamId, file.Type).Delete(&model.File{}).Error; err != nil {
+			return err
+		}
+		return tx.Create(&file).Error
+	})
+}
+
+func (d fileDao) GetStreamFile(streamId uint, fileType model.FileType) (f model.File, err error) {
+	err = DB.Where("stream_id = ? AND type = ?", streamId, fileType).First(&f).Error
+	return f, err
+}
+
+func (d fileDao) DeleteStreamFiles(streamId uint, fileType model.FileType) error {
+	defer Cache.Clear()
+	return DB.Where("stream_id = ? AND type = ?", streamId, fileType).Delete(&model.File{}).Error
 }

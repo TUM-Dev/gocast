@@ -37,11 +37,11 @@ authMethod: http
 #   "query": "query"
 # }
 # If the response code is 20x, the action is allowed, otherwise it is forbidden.
-# GoCast answers this on /api/selfstream/onPublish: it validates the stream key
+# GoCast answers this on /api/v2/selfstream/on-publish: it validates the stream key
 # and slug carried in the query for "publish", and allows every other action.
 # Uncomment the other line for local use
-authHTTPAddress: https://tum.live/api/selfstream/onPublish
-#authHTTPAddress: http://localhost:8081/api/selfstream/onPublish
+authHTTPAddress: https://tum.live/api/v2/selfstream/on-publish
+#authHTTPAddress: http://localhost:8081/api/v2/selfstream/on-publish
 
 ###############################################
 # API and metrics

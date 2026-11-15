@@ -25,6 +25,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 	"go.opentelemetry.io/otel/attribute"
@@ -43,6 +44,8 @@ type Manager struct {
 	dao        dao.DaoWrapper
 	listenAddr string
 	logger     *log.Logger
+	// tls secures the link to the runners; the zero value leaves it plaintext (development).
+	tls mtls.Files
 
 	protobuf.UnimplementedRunnerManagerServiceServer
 
@@ -195,6 +198,13 @@ func WithListenAddr(addr string) Option {
 	}
 }
 
+// WithTLS secures the gRPC link to the runners with mutual TLS. Unset files leave it off.
+func WithTLS(files mtls.Files) Option {
+	return func(m *Manager) {
+		m.tls = files
+	}
+}
+
 func WithMassStorage(path string) Option {
 	return func(m *Manager) {
 		m.massStorage = path
@@ -233,13 +243,27 @@ func (m *Manager) Run() error {
 	if err != nil {
 		return fmt.Errorf("run manager: %v", err)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
+	serverOpts := []grpc.ServerOption{grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
 		MaxConnectionAge:      time.Minute,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
-	}))
+	})}
+	on, err := m.tls.Enabled()
+	if err != nil {
+		return fmt.Errorf("run manager: %w", err)
+	}
+	if on {
+		creds, err := m.tls.ServerCredentials()
+		if err != nil {
+			return fmt.Errorf("run manager: %w", err)
+		}
+		serverOpts = append(serverOpts, grpc.Creds(creds))
+	} else {
+		m.logger.Warn("mutual TLS is off: the gRPC link to the runners is unauthenticated and unencrypted")
+	}
+	grpcServer := grpc.NewServer(serverOpts...)
 	protobuf.RegisterRunnerManagerServiceServer(grpcServer, m)
 	reflection.Register(grpcServer)
 	go func(listener net.Listener) {
@@ -255,12 +279,17 @@ func (m *Manager) Run() error {
 
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	m.logger.Info("Register Runner", "d", req)
-	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
+	if err := m.requirePeer(ctx, req.GetHostname()); err != nil {
+		return nil, err
+	}
+	reg := &model.Runner{
 		Hostname:       req.GetHostname(),
 		Port:           uint32(req.GetPort()),
 		TimeOfRegister: time.Now(),
 		Version:        req.GetVersion(),
-	})
+	}
+	recordCert(ctx, reg)
+	err := m.dao.RunnerDao.Create(ctx, reg)
 	if err != nil {
 		return nil, fmt.Errorf("create runner: %v", err)
 	}
@@ -272,6 +301,29 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	}
 
 	return &protobuf.RegisterResponse{}, nil
+}
+
+// requirePeer lets a runner act only under the name its certificate carries, so one runner
+// can't take over another's hostname and with it its jobs. Without mutual TLS it allows all.
+func (m *Manager) requirePeer(ctx context.Context, hostname string) error {
+	if on, _ := m.tls.Enabled(); !on {
+		return nil
+	}
+	return mtls.CheckPeer(ctx, hostname)
+}
+
+// recordCert copies what the caller's certificate says onto r. Without mutual TLS there is none
+// and r keeps what it has.
+func recordCert(ctx context.Context, r *model.Runner) {
+	c := mtls.PeerCert(ctx)
+	if c == nil {
+		return
+	}
+	notAfter := c.NotAfter
+	r.CertSerial = c.SerialNumber.Text(16)
+	r.CertFingerprint = mtls.Fingerprint(c)
+	r.CertNotAfter = &notAfter
+	r.CertNames = strings.Join(c.DNSNames, ",")
 }
 
 func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (resp *protobuf.NotificationResponse, err error) {
@@ -287,6 +339,9 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 func (m *Manager) handleNotification(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
+		if err := m.requirePeer(ctx, notification.GetHeartbeat().GetHostname()); err != nil {
+			return nil, err
+		}
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, lookupError(err, "runner %s", notification.GetHeartbeat().GetHostname())
@@ -296,6 +351,9 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		if runner.Draining != newDraining || runner.JobCount != newJobCount {
 			m.logger.Info("Runner state changed", "hostname", notification.GetHeartbeat().GetHostname(), "draining", newDraining, "jobCount", newJobCount)
 		}
+		// Certificates reload on handshake, so a rotation shows up here and not at Register,
+		// which a runner does once per start.
+		recordCert(ctx, &runner)
 		runner.LastSeen = time.Now()
 		runner.Draining = newDraining
 		runner.JobCount = newJobCount
@@ -320,6 +378,12 @@ func (m *Manager) handleNotification(ctx context.Context, notification *protobuf
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	case *protobuf.Notification_SilenceDetected:
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
+	case *protobuf.Notification_DurationProbed:
+		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
+	case *protobuf.Notification_SpriteReady:
+		return &protobuf.NotificationResponse{}, m.saveSprite(ctx, notification.GetSpriteReady())
+	case *protobuf.Notification_WaveformReady:
+		return &protobuf.NotificationResponse{}, m.saveWaveform(ctx, notification.GetWaveformReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -355,7 +419,7 @@ func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerS
 		// without this the caller would only see a timeout dialing an empty host.
 		return model.Runner{}, nil, nil, ErrNoRunner
 	}
-	conn, err := dialRunner(r)
+	conn, err := m.dialRunner(r)
 	if err != nil {
 		return model.Runner{}, nil, nil, fmt.Errorf("dial runner: %w", err)
 	}
@@ -687,6 +751,10 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 		return nil, status.Errorf(codes.Internal, "can't clear the transcoding progress: %v", err)
 	}
 
+	if err := m.afterVODReady(ctx, stream.ID); err != nil {
+		return nil, err
+	}
+
 	err = m.requestSubtitles(ctx, stream, modelVersion)
 	if err != nil {
 		log.Error("failed to request subtitles", "stream", streamId, "version", modelVersion, "err", err)
@@ -953,7 +1021,7 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 	if err != nil {
 		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
 	}
-	conn, err := dialRunner(runner)
+	conn, err := m.dialRunner(runner)
 	if err != nil {
 		return fmt.Errorf("dial runner %s: %w", job.RunnerHostname, err)
 	}
@@ -977,8 +1045,18 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 	return nil
 }
 
-func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
-	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()), runnerClientTracing)
+func (m *Manager) dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
+	creds := insecure.NewCredentials()
+	on, err := m.tls.Enabled()
+	if err != nil {
+		return nil, err
+	}
+	if on {
+		if creds, err = m.tls.ClientCredentials(runner.Hostname); err != nil {
+			return nil, err
+		}
+	}
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(creds), runnerClientTracing)
 }
 
 // ReapStaleStreams finds streams that are stuck in live state and cleans them up.

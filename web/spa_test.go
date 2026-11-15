@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -31,7 +29,7 @@ func TestSPAShellReferencesAssetPrefix(t *testing.T) {
 		t.Fatalf("reading SPA shell: %v", err)
 	}
 
-	// Vite's `base` and the gin mount are configured independently; changing one
+	// Vite's `base` and the router mount are configured independently; changing one
 	// without the other leaves the shell asking for assets nothing serves.
 	if !strings.Contains(string(shell), "/spa-assets/") {
 		t.Errorf("SPA shell does not reference /spa-assets/; check `base` in frontend/vite.config.ts")
@@ -41,9 +39,8 @@ func TestSPAShellReferencesAssetPrefix(t *testing.T) {
 func TestRegisterPageServesSPAForMigratedRoutes(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	registerPage(&router.RouterGroup, http.MethodGet, "/settings")
+	router := tools.NewRouter()
+	registerPage(router, http.MethodGet, "/settings")
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/settings", nil))
@@ -60,9 +57,8 @@ func TestRegisterPageServesSPAForMigratedRoutes(t *testing.T) {
 func TestIntegrationAuthorizationPageDeniesFraming(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	registerPage(&router.RouterGroup, http.MethodGet, "/integration/authorize/:id")
+	router := tools.NewRouter()
+	registerPage(router, http.MethodGet, "/integration/authorize/:id")
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/integration/authorize/1", nil))
@@ -84,9 +80,8 @@ func TestLoginRouteKeepsSettingTheRedirectCookie(t *testing.T) {
 		t.Skip("/login is not migrated to the SPA")
 	}
 
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	registerPage(&router.RouterGroup, http.MethodGet, "/login")
+	router := tools.NewRouter()
+	registerPage(router, http.MethodGet, "/login")
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/login?return=%2Fw%2Fslug%2F42", nil))
@@ -98,7 +93,7 @@ func TestLoginRouteKeepsSettingTheRedirectCookie(t *testing.T) {
 	var redirect string
 	for _, cookie := range rec.Result().Cookies() {
 		if cookie.Name == redirCookieName {
-			// gin escapes cookie values on write, so compare what c.Cookie returns.
+			// Cookie values are escaped on write, so compare what tools.Cookie returns.
 			decoded, err := url.QueryUnescape(cookie.Value)
 			if err != nil {
 				t.Fatalf("redirect cookie is not a valid escaped value: %v", err)
@@ -128,8 +123,6 @@ func TestPageHandlerRefusesAPathOutsideSpaRoutes(t *testing.T) {
 func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-
 	const path = "/settings"
 	if !spaRoutes[path] {
 		t.Fatalf("%s is expected to be listed in spaRoutes", path)
@@ -144,9 +137,9 @@ func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 		}
 	})
 
-	spaRouteHooks[path] = func(c *gin.Context) {
-		c.String(http.StatusOK, "answered by the hook")
-		c.Abort()
+	spaRouteHooks[path] = func(w http.ResponseWriter, _ *http.Request) bool {
+		tools.WriteText(w, http.StatusOK, "answered by the hook")
+		return true
 	}
 
 	handler, err := pageHandler(path)
@@ -154,8 +147,8 @@ func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 		t.Fatalf("pageHandler: %v", err)
 	}
 
-	router := gin.New()
-	router.GET(path, handler)
+	router := tools.NewRouter()
+	router.HandleFunc("GET "+path, handler)
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
@@ -173,15 +166,13 @@ func TestPageHandlerLetsAHookAnswerTheRequest(t *testing.T) {
 func TestPageHandlerServesTheShellAfterANonAbortingHook(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-
 	handler, err := pageHandler("/login")
 	if err != nil {
 		t.Fatalf("pageHandler: %v", err)
 	}
 
-	router := gin.New()
-	router.GET("/login", handler)
+	router := tools.NewRouter()
+	router.HandleFunc("GET /login", handler)
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/login", nil))
@@ -220,14 +211,13 @@ func truncate(s string) string {
 func TestRenderErrorPage(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
 	tools.SetErrorPageRenderer(serveErrorPage)
 	t.Cleanup(func() { tools.SetErrorPageRenderer(nil) })
 
-	router := gin.New()
-	router.NoRoute(serveNotFound)
-	router.GET("/forbidden", func(c *gin.Context) {
-		tools.RenderErrorPage(c, http.StatusForbidden, `no <entry> "here"`)
+	router := tools.NewRouter()
+	router.NotFound(http.HandlerFunc(serveNotFound))
+	router.HandleFunc("GET /forbidden", func(w http.ResponseWriter, r *http.Request) {
+		tools.RenderErrorPage(w, r, http.StatusForbidden, `no <entry> "here"`)
 	})
 
 	rec := httptest.NewRecorder()
@@ -259,12 +249,10 @@ func TestRenderErrorPage(t *testing.T) {
 func TestUnknownWatchViewAnswers404WithTheShell(t *testing.T) {
 	spaIsBuilt(t)
 
-	gin.SetMode(gin.TestMode)
-	// serveNotFound renders through the error page renderer ConfigGinRouter installs.
+	// serveNotFound renders through the error page renderer ConfigRouter installs.
 	tools.SetErrorPageRenderer(serveErrorPage)
 	t.Cleanup(func() { tools.SetErrorPageRenderer(nil) })
-	router := gin.New()
-	group := router.Group("/")
+	group := tools.NewRouter()
 	registerPage(group, http.MethodGet, "/w/:slug/:streamID/:version")
 	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat")
 	registerPage(group, http.MethodGet, "/w/:slug/:streamID/chat/popup")
@@ -282,7 +270,7 @@ func TestUnknownWatchViewAnswers404WithTheShell(t *testing.T) {
 		"/w/ws/1/COMBINED":   http.StatusNotFound,
 	} {
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		group.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
 		if rec.Code != want {
 			t.Errorf("%s: status %d, want %d", path, rec.Code, want)
 		}

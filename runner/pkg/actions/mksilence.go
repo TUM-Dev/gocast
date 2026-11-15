@@ -43,18 +43,9 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	if !ok {
 		return AbortingError(fmt.Errorf("no stream version in context"))
 	}
-	// A recorded stream leaves its VoD at vodPath, an import at playlistURL. An empty one
-	// is as good as missing: ffmpeg would only fail on it, and quietly.
-	input, _ := d["vodPath"].(string)
-	if input == "" {
-		input, _ = d["playlistURL"].(string)
-	}
-	if input == "" {
-		recordingDir, ok := d["recordingDir"].(string)
-		if !ok {
-			return AbortingError(fmt.Errorf("none of vodPath, playlistURL and recordingDir in context"))
-		}
-		input = path.Join(recordingDir, "playlist.m3u8")
+	input, err := vodInput(d)
+	if err != nil {
+		return AbortingError(err)
 	}
 
 	// Waited for before the scan's own timeout starts, which is only for the scan.
@@ -83,6 +74,24 @@ func MkSilence(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	}
 	notify <- &protobuf.Notification{Data: &protobuf.Notification_SilenceDetected{SilenceDetected: n}}
 	return nil
+}
+
+// vodInput is where the actions that read a finished VoD find it. A recorded stream leaves
+// its VoD at vodPath, an import at playlistURL. An empty one is as good as missing: ffmpeg
+// would only fail on it, and quietly.
+func vodInput(d map[string]any) (string, error) {
+	input, _ := d["vodPath"].(string)
+	if input == "" {
+		input, _ = d["playlistURL"].(string)
+	}
+	if input == "" {
+		recordingDir, ok := d["recordingDir"].(string)
+		if !ok {
+			return "", fmt.Errorf("none of vodPath, playlistURL and recordingDir in context")
+		}
+		input = path.Join(recordingDir, "playlist.m3u8")
+	}
+	return input, nil
 }
 
 // silenceScanTimeout bounds one scan. It decodes the whole audio track, often of a remote

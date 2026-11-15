@@ -18,13 +18,8 @@ import {
 } from "@/gen/server/apiv2_pb";
 import { apiDelete, apiGetMessage, apiPostMessage } from "./api";
 
-/** model.TokenScope*, in the order the old page offered them. */
-export const TOKEN_SCOPES = [
-  { value: "lecturer", label: "Scope: lecturer" },
-  // Only offered to an administrator by the view; the server refuses it from
-  // anyone else regardless of what the client sends.
-  { value: "admin", label: "Scope: admin" },
-] as const;
+/** model.TokenScope*. The admin scope is gone; the server refuses it. */
+export const TOKEN_SCOPES = [{ value: "lecturer", label: "Scope: lecturer" }] as const;
 
 export type TokenScope = (typeof TOKEN_SCOPES)[number]["value"];
 

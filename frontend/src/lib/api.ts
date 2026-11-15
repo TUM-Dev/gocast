@@ -35,20 +35,60 @@ let accessToken: string | null = null;
 /** In-flight token request, shared so concurrent 401s mint only one token. */
 let pendingToken: Promise<string> | null = null;
 
+/** How long a failed token request is remembered when the server names no time. */
+const TOKEN_FAILURE_COOLDOWN_MS = 5_000;
+const TOKEN_FAILURE_COOLDOWN_MAX_MS = 60_000;
+
+/**
+ * The last token request that failed for a reason other than a missing session (429,
+ * 5xx), and until when to answer with it instead of asking again. Without it every API
+ * call of a client the server is shedding mints another token, which is the load that
+ * made the server shed it.
+ */
+let tokenFailure: { error: unknown; until: number } | null = null;
+
+/** The wait a failed token response asks for: Retry-After as seconds or an HTTP date. */
+function cooldownOf(res: Response): number {
+  const header = res.headers.get("Retry-After")?.trim();
+  if (header) {
+    const seconds = Number(header);
+    const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - Date.now();
+    if (Number.isFinite(ms) && ms > 0) {
+      return Math.min(ms, TOKEN_FAILURE_COOLDOWN_MAX_MS);
+    }
+  }
+  return TOKEN_FAILURE_COOLDOWN_MS;
+}
+
 async function requestToken(): Promise<string> {
-  const res = await fetch(`${API_BASE}/auth/token`, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { Accept: "application/json" },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/auth/token`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    });
+  } catch (err) {
+    // No response at all (connection reset, offline): back off like for a 5xx, and hand
+    // the callers the original error.
+    accessToken = null;
+    tokenFailure = { error: err, until: Date.now() + TOKEN_FAILURE_COOLDOWN_MS };
+    throw err;
+  }
 
   if (!res.ok) {
     accessToken = null;
-    throw new ApiError(res.status, "could not obtain an access token");
+    const error = new ApiError(res.status, "could not obtain an access token");
+    // A 401 is answered once per page by sessionAbsent; anything else is worth backing off from.
+    if (!error.isUnauthenticated) {
+      tokenFailure = { error, until: Date.now() + cooldownOf(res) };
+    }
+    throw error;
   }
 
   const body = (await res.json()) as { access_token: string };
   accessToken = body.access_token;
+  tokenFailure = null;
   return accessToken;
 }
 
@@ -56,6 +96,9 @@ async function requestToken(): Promise<string> {
 function getToken(forceRefresh = false): Promise<string> {
   if (!forceRefresh && accessToken) {
     return Promise.resolve(accessToken);
+  }
+  if (tokenFailure && Date.now() < tokenFailure.until) {
+    return Promise.reject(tokenFailure.error);
   }
   if (!pendingToken) {
     pendingToken = requestToken().finally(() => {
@@ -76,6 +119,7 @@ let sessionAbsent = false;
 export function clearToken(): void {
   accessToken = null;
   sessionAbsent = false;
+  tokenFailure = null;
 }
 
 /** A token, or null when nobody is signed in. Anything else still throws. */
@@ -224,10 +268,64 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
  * Content-Type of our own: the browser sets it with the boundary the body needs. Their
  * failures come in the gateway's shape, so they surface as the same ApiError.
  *
- * fetch reports no upload progress; callers show a busy state instead.
+ * fetch reports no upload progress, so a caller that passes onProgress is sent through
+ * XMLHttpRequest instead; the rest keep the plain fetch path.
  */
-export function apiUpload<T>(path: string, form: FormData): Promise<T> {
-  return apiFetch<T>(path, { method: "POST", body: form });
+export function apiUpload<T>(path: string, form: FormData, onProgress?: (fraction: number) => void): Promise<T> {
+  if (!onProgress) {
+    return apiFetch<T>(path, { method: "POST", body: form });
+  }
+  return apiUploadWithProgress<T>(path, form, onProgress);
+}
+
+/**
+ * The XHR twin of apiFetch, with upload progress.
+ *
+ * It mints a fresh token instead of retrying on a 401. The server checks the token
+ * before it reads the body, so one that is valid when the request starts carries an
+ * upload of any length. A cached token that had expired would be refused at once, and
+ * with a large body still going out the browser may report a reset connection rather
+ * than the 401, so the retry apiFetch relies on would not be reached.
+ */
+async function apiUploadWithProgress<T>(
+  path: string,
+  form: FormData,
+  onProgress: (fraction: number) => void,
+): Promise<T> {
+  const token = await getToken(true);
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE}${path}`);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && e.total > 0) onProgress(e.loaded / e.total);
+    };
+    // fetch rejects with a TypeError when the request does not complete, and callers
+    // already treat that as "something went wrong"; match it, so none of them has to
+    // know a second kind of failure.
+    xhr.onerror = () => reject(new TypeError("network error"));
+    xhr.onabort = () => reject(new TypeError("upload aborted"));
+    xhr.ontimeout = () => reject(new TypeError("upload timed out"));
+    xhr.onload = async () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(await toApiError(new Response(xhr.responseText, { status: xhr.status, statusText: xhr.statusText })));
+        return;
+      }
+      if (xhr.status === 204 || !xhr.responseText) {
+        resolve(undefined as T);
+        return;
+      }
+      try {
+        resolve(JSON.parse(xhr.responseText) as T);
+      } catch {
+        reject(new ApiError(xhr.status, "invalid response"));
+      }
+    };
+    xhr.send(form);
+  });
 }
 
 /** DELETE, for endpoints that answer with an empty body. */

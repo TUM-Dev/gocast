@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/meilisearch/meilisearch-go"
+
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 )
 
 var (
@@ -98,6 +100,9 @@ type Config struct {
 		Database string `yaml:"database"`
 		Host     string `yaml:"host"`
 		Port     uint   `yaml:"port"`
+		// MaxOpenConns caps the pool. Zero keeps the default of 80, kept below
+		// the server's max_connections so a burst queues instead of failing.
+		MaxOpenConns int `yaml:"maxOpenConns"`
 	} `yaml:"db"`
 	Campus struct {
 		Base        string   `yaml:"base"`
@@ -150,6 +155,9 @@ type Config struct {
 			AlertRoomID string `yaml:"alertRoomId"`
 		} `yaml:"matrix"`
 	} `yaml:"alerts"`
+	// RunnerTLS switches the gRPC link to the runners to mutual TLS. Leave it out in
+	// development. The certificate must carry the name the runners dial (GOCAST_SERVER).
+	RunnerTLS    mtls.Files `yaml:"runnerTLS"`
 	VoiceService *struct {
 		Host      string `yaml:"host"`
 		Port      string `yaml:"port"`

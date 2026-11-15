@@ -2,11 +2,8 @@ package testutils
 
 import (
 	"fmt"
-	"math"
 	"testing"
 	"time"
-
-	"github.com/gin-gonic/gin"
 
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -197,12 +194,6 @@ var (
 		PlaylistUrlPRES:  "https://url",
 		PlaylistUrlCAM:   "https://url",
 		LiveNow:          false,
-	}
-	AdminToken = model.Token{
-		UserID: Admin.ID,
-		User:   Admin,
-		Token:  "ed067f11-1337-4dcd-bfd2-4201b8d751d4",
-		Scope:  model.TokenScopeAdmin,
 	}
 	Attachment = model.File{
 		StreamID: 1969,
@@ -484,29 +475,6 @@ var (
 	}
 )
 
-// CreateVideoSeekData returns list of generated VideoSeekChunk and expected response object
-func CreateVideoSeekData(streamId uint, chunkCount int) ([]model.VideoSeekChunk, gin.H) {
-	var chunks []model.VideoSeekChunk
-	var responseChunks []gin.H
-
-	for i := 0; i < chunkCount; i++ {
-		chunk := model.VideoSeekChunk{
-			ChunkIndex: uint(i),
-			StreamID:   streamId,
-			Hits:       uint(chunkCount + i*int(math.Pow(-1.0, float64(i)))),
-		}
-
-		chunks = append(chunks, chunk)
-		responseChunks = append(responseChunks, gin.H{
-			"index": chunk.ChunkIndex,
-			"value": chunk.Hits,
-		})
-	}
-	return chunks, gin.H{
-		"values": responseChunks,
-	}
-}
-
 func GetStreamMock(t *testing.T) dao.StreamsDao {
 	streamsMock := mock_dao.NewMockStreamsDao(gomock.NewController(t))
 	streamsMock.
@@ -587,19 +555,6 @@ func GetLectureHallMock(t *testing.T) dao.LectureHallsDao {
 		GetLectureHallByID(LectureHall.ID).
 		Return(LectureHall, nil)
 	return lectureHallMock
-}
-
-func GetTokenMock(t *testing.T) dao.TokenDao {
-	tokenMock := mock_dao.NewMockTokenDao(gomock.NewController(t))
-	tokenMock.
-		EXPECT().
-		GetToken(AdminToken.Token).
-		Return(AdminToken, nil)
-	tokenMock.
-		EXPECT().
-		TokenUsed(AdminToken).
-		Return(nil)
-	return tokenMock
 }
 
 func GetFileMock(t *testing.T) dao.FileDao {

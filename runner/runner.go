@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 
 	"github.com/tum-dev/gocast/runner/config"
@@ -214,7 +215,7 @@ func (r *Runner) InitApiGrpc() {
 		r.log.Error("failed to listen", "error", err)
 		os.Exit(1)
 	}
-	grpcServer := grpc.NewServer(
+	serverOpts := []grpc.ServerOption{
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			MaxConnectionIdle:     time.Minute,
 			MaxConnectionAge:      time.Minute,
@@ -227,7 +228,24 @@ func (r *Runner) InitApiGrpc() {
 		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithFilter(
 			filters.Not(filters.MethodName("GenerateLivePreview")),
 		))),
-	)
+	}
+	on, err := tlsFiles().Enabled()
+	if err != nil {
+		r.log.Error("invalid tls configuration", "error", err)
+		os.Exit(1)
+	}
+	if on {
+		creds, err := tlsFiles().ServerCredentials()
+		if err != nil {
+			r.log.Error("failed to load tls credentials", "error", err)
+			os.Exit(1)
+		}
+		// Only gocast hands out jobs. The runners' certificates come from the same CA.
+		serverOpts = append(serverOpts, grpc.Creds(creds), grpc.ChainUnaryInterceptor(mtls.RequirePeer(gocastName())))
+	} else {
+		r.log.Warn("mutual TLS is off: the gRPC link to gocast is unauthenticated and unencrypted")
+	}
+	grpcServer := grpc.NewServer(serverOpts...)
 	protobuf.RegisterRunnerServiceServer(grpcServer, r)
 
 	reflection.Register(grpcServer)
@@ -434,6 +452,9 @@ func isCritical(n *protobuf.Notification) bool {
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
 		*protobuf.Notification_SilenceDetected,
+		*protobuf.Notification_DurationProbed,
+		*protobuf.Notification_SpriteReady,
+		*protobuf.Notification_WaveformReady,
 		*protobuf.Notification_VodFailed:
 		return true
 	}
@@ -651,6 +672,12 @@ func (r *Runner) sendNotification(notification *protobuf.Notification) func(ctx2
 				"stream", notification.GetSectionImagesReady().GetStream().GetId(),
 				// strip the images from this notification log to avoid noise
 				"images", len(notification.GetSectionImagesReady().GetImages()))
+		case *protobuf.Notification_SpriteReady:
+			r.log.Debug("send notification", "type", "SpriteReady",
+				"stream", notification.GetSpriteReady().GetStream().GetId(),
+				"version", notification.GetSpriteReady().GetStreamVersion().String(),
+				// strip the sheet from this notification log to avoid noise
+				"bytes", len(notification.GetSpriteReady().GetSprite()))
 		default:
 			r.log.Debug("send notification", "notification", notification)
 		}

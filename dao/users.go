@@ -2,11 +2,14 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 	"uuid"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -32,6 +35,8 @@ type UsersDao interface {
 	HasPinnedCourse(model.User, uint) (bool, error)
 	PinCourse(user model.User, course model.Course, pin bool) error
 	UpsertUser(user *model.User) error
+	// TouchLastLogin records a sign-in of the user, now.
+	TouchLastLogin(ctx context.Context, uid uint) error
 	AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 }
 
@@ -48,7 +53,8 @@ func (d usersDao) AreUsersEmpty(ctx context.Context) (isEmpty bool, err error) {
 	if found {
 		return false, nil
 	}
-	res := DB.Find(&model.User{})
+	// Find on a struct has no LIMIT: MySQL streams the whole users table and the driver drains it on Close.
+	res := DB.Select("id").Limit(1).Find(&model.User{})
 	if res.RowsAffected != 0 {
 		Cache.Set("areUsersEmpty", false, 1)
 	}
@@ -179,6 +185,9 @@ func (d usersDao) UpsertUser(user *model.User) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// User not found, try create
+		if err = d.dropTakenEmail(user, 0); err != nil {
+			return err
+		}
 		if err = DB.Create(&user).Error; err != nil {
 			return fmt.Errorf("create user failed: %w", err)
 		}
@@ -191,12 +200,44 @@ func (d usersDao) UpsertUser(user *model.User) error {
 	user.Model = foundUser.Model
 	foundUser.LrzID = user.LrzID
 	foundUser.Name = user.Name
+	if err = d.dropTakenEmail(user, foundUser.ID); err != nil {
+		return err
+	}
+	if user.Email.Valid {
+		foundUser.Email = user.Email
+	}
 	if user.Role != 0 {
 		foundUser.Role = user.Role
 	}
 	err = DB.Save(foundUser).Error
 	if err != nil {
 		return fmt.Errorf("update user failed: %w", err)
+	}
+	return nil
+}
+
+var samlEmailConflicts = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "gocast_user_email_conflicts_total",
+	Help: "Logins whose IdP email was dropped because another account already owns it",
+})
+
+// dropTakenEmail clears user.Email when another account (e.g. an internal one) already owns it.
+// The column is unique, so keeping it would fail the whole login; the email is only a nice-to-have.
+// Unscoped because the unique index also covers soft-deleted rows.
+func (d usersDao) dropTakenEmail(user *model.User, selfID uint) error {
+	if !user.Email.Valid {
+		return nil
+	}
+	var count int64
+	err := DB.Model(&model.User{}).Unscoped().
+		Where("email = ? AND id <> ?", user.Email.String, selfID).
+		Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("lookup user by email failed: %w", err)
+	}
+	if count > 0 {
+		user.Email = sql.NullString{}
+		samlEmailConflicts.Inc()
 	}
 	return nil
 }
@@ -251,4 +292,10 @@ func (d usersDao) AddUsersToCourseByTUMIDs(matrNr []string, courseID uint) error
 type courseUsers struct {
 	CourseID uint
 	UserID   uint
+}
+
+// TouchLastLogin sets last_login without going through Save: that would rewrite the
+// whole row, and bump updated_at, for what is a single column.
+func (d usersDao) TouchLastLogin(ctx context.Context, uid uint) error {
+	return DB.WithContext(ctx).Model(&model.User{}).Where("id = ?", uid).UpdateColumn("last_login", time.Now()).Error
 }

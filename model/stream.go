@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
@@ -300,64 +299,6 @@ func (s *Stream) Color() string {
 		return "warn"
 	}
 	return "info"
-}
-
-func (s *Stream) GetJson(lhs []LectureHall, course *Course) gin.H {
-	var files []gin.H
-	for _, file := range s.Files {
-		files = append(files, gin.H{
-			"id":           file.ID,
-			"fileType":     file.Type,
-			"friendlyName": file.GetFriendlyFileName(),
-		})
-	}
-	lhName := "Selfstreaming"
-	for _, lh := range lhs {
-		if lh.ID == s.LectureHallID {
-			lhName = lh.Name
-			break
-		}
-	}
-
-	var videoSections []gin.H
-	for _, section := range s.VideoSections {
-		videoSections = append(videoSections, gin.H{
-			"id":           section.ID,
-			"description":  section.Description,
-			"startHours":   section.StartHours,
-			"startMinutes": section.StartMinutes,
-			"startSeconds": section.StartSeconds,
-			"fileID":       section.FileID,
-		})
-	}
-
-	return gin.H{
-		"lectureId":                s.Model.ID,
-		"courseId":                 s.CourseID,
-		"seriesIdentifier":         s.SeriesIdentifier,
-		"name":                     s.Name,
-		"description":              s.Description,
-		"lectureHallId":            s.LectureHallID,
-		"lectureHallName":          lhName,
-		"streamKey":                s.StreamKey,
-		"isLiveNow":                s.LiveNow,
-		"isRecording":              s.Recording,
-		"isConverting":             s.IsConverting(),
-		"transcodingProgresses":    s.TranscodingProgresses,
-		"isPast":                   s.IsPast(),
-		"hasStats":                 s.Stats != nil,
-		"files":                    files,
-		"color":                    s.Color(),
-		"start":                    s.Start,
-		"end":                      s.End,
-		"isChatEnabled":            s.ChatEnabled,
-		"isCustomThumbnailEnabled": s.CustomThumbnailEnabled,
-		"courseSlug":               course.Slug,
-		"private":                  s.Private,
-		"downloadableVods":         s.GetVodFiles(),
-		"isCopying":                false,
-		"videoSections":            videoSections,
-	}
 }
 
 func (s *Stream) Attachments() []File {

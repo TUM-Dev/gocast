@@ -28,6 +28,14 @@ type Runner struct {
 	JobCount uint64 `gorm:"column:job_count;not null;default:0"`
 	// Version is the version of the runner.
 	Version string `gorm:"column:version;not null;default:'dev'"`
+	// CertSerial, CertFingerprint, CertNotAfter and CertNames describe the client certificate
+	// the runner last connected with, for the administration page. They stay empty while mutual
+	// TLS is off. The fingerprint is the SHA-256 of the DER encoding, in hex.
+	CertSerial      string     `gorm:"column:cert_serial;not null;default:''"`
+	CertFingerprint string     `gorm:"column:cert_fingerprint;not null;default:''"`
+	CertNotAfter    *time.Time `gorm:"column:cert_not_after"`
+	// CertNames holds the DNS names, comma separated.
+	CertNames string `gorm:"column:cert_names;not null;default:''"`
 }
 
 // TableName returns the name of the table for the Runner model in the database.

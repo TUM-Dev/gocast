@@ -820,6 +820,61 @@ service CourseService {
       description: "The versions still transcoding, with their progress; a version that has finished is no longer listed. For polling while a lecture is converting. Requires administering the course."
     };
   }
+  rpc requestLectureWaveform(RequestLectureWaveformRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/waveform"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Have the audio level timeline of a lecture built."
+      description: "Asks a runner for the timeline the cut editor draws, and for the length of each version. Poll getLectureWaveform for the result. Answers 400 for a lecture with no recording and 503 when no runner is configured. Requires administering the course."
+    };
+  }
+
+  rpc getLectureWaveform(GetLectureWaveformRequest) returns (GetLectureWaveformResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/waveform"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the audio level timeline of a lecture."
+      description: "Not ready until a runner has delivered what requestLectureWaveform asked for. A new VOD of the lecture removes it. Requires administering the course."
+    };
+  }
+
+  rpc cutLecture(CutLectureRequest) returns (CutLectureResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/cut"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Cut parts out of a lecture's recording."
+      description: "Has runners re-encode every version of the recording without the given ranges, which are the same for all of them. Needs the waveform of the lecture: the cut is refused with 400 when its versions differ in length by more than 60 seconds. Progress is that of getLectureTranscodingProgress, of the lecture in the response. Answers 409 while the lecture is being converted or has a cut that is not finished, see getLectureCut. Requires administering the course."
+    };
+  }
+  rpc getLectureCut(GetLectureCutRequest) returns (GetLectureCutResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/cut"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get the cut of a lecture that is not finished."
+      description: "A cut stays open until every version is cut, so that a version that failed can be retried with the same ranges. Not open once it is done or abandoned. Requires administering the course."
+    };
+  }
+
+  rpc retryLectureCut(RetryLectureCutRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {post: "/courses/{course_id}/streams/{stream_id}/cut/retry"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Cut again the versions of an open cut that failed."
+      description: "Runs only the versions that failed, with the ranges of the cut, and leaves the ones that are done. Answers 404 without an open cut and 409 while a version is still being cut or when none failed. Requires administering the course."
+    };
+  }
+
+  rpc abandonLectureCut(AbandonLectureCutRequest) returns (AbandonLectureCutResponse) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/cut"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Give up an open cut."
+      description: "For a new lecture, removes it. For a replaced recording, the versions that are cut stay cut and the lecture's sections and trimming move with them if the combined version is among them. The versions that failed are left as they were, and are named in the answer. Answers 404 without an open cut and 409 while a version is still being cut. Requires administering the course."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -1387,7 +1442,7 @@ service AdminService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Tokens"
       summary: "Create an API token."
-      description: "Creates a token for self-streaming or admin API access and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission."
+      description: "Creates a token for self-streaming and returns its secret. The secret is returned only in this response and cannot be retrieved again. Requires the users.manage permission."
     };
   }
 
@@ -2241,6 +2296,13 @@ message Runner {
   bool draining = 6;
   google.protobuf.Timestamp last_seen = 7;
   google.protobuf.Timestamp time_of_register = 8;
+  // The client certificate the runner last connected with. All empty while mutual TLS is off.
+  // Updated by heartbeats, so a rotated certificate shows within seconds.
+  string cert_serial = 9;
+  // SHA-256 of the DER encoding, in hex.
+  string cert_fingerprint = 10;
+  google.protobuf.Timestamp cert_not_after = 11;
+  repeated string cert_names = 12;
 }
 
 ///////////////////////////////
@@ -2554,7 +2616,7 @@ message Token {
   string user_name = 2;
   string user_email = 3;
   string user_lrz_id = 4;
-  // "admin" or "lecturer" -- see model.TokenScope*.
+  // Always "lecturer" -- see model.TokenScope*.
   string scope = 5;
   // Unset means no expiration.
   google.protobuf.Timestamp expires = 6;
@@ -2567,8 +2629,7 @@ message Token {
 ///////////////////////////////
 
 message CreateTokenRequest {
-  // "admin" or "lecturer". An admin-scoped token additionally requires the caller
-  // to hold users.manage, which every caller of this RPC already does.
+  // Must be "lecturer", the only scope left; anything else is refused.
   string scope = 1;
   // Unset means no expiration.
   google.protobuf.Timestamp expires = 2;
@@ -3281,6 +3342,93 @@ message GetLectureTranscodingProgressResponse {
   // Versions still converting, and those whose conversion failed. Holds nothing
   // converting once every version has finished.
   repeated LectureTranscodingProgress progresses = 1;
+}
+
+message RequestLectureWaveformRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureWaveformRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureWaveformResponse {
+  // False while a runner has not delivered the timeline; all else is empty then.
+  bool ready = 1;
+  // One byte per bucket_seconds of the recording, the peak level in it: 0 is -60 dBFS or
+  // less, 255 is 0 dBFS.
+  bytes peaks = 2;
+  uint32 bucket_seconds = 3;
+  // The length in seconds of each version the runner could measure, by version (COMB,
+  // CAM, PRES).
+  map<string, double> version_durations = 4;
+  // The versions differ in length by more than the 60 seconds one cut can span, so
+  // cutLecture refuses the lecture.
+  bool versions_differ = 5;
+  // The lecture's detected silences, from which the editor suggests cuts.
+  repeated WatchSilence silences = 6;
+}
+
+enum LectureCutMode {
+  LECTURE_CUT_MODE_UNSPECIFIED = 0;
+  // Replace the recording.
+  LECTURE_CUT_MODE_OVERWRITE = 1;
+  // Make the cut recording a lecture of its own, with the visibility of the original, which
+  // becomes private.
+  LECTURE_CUT_MODE_DUPLICATE = 2;
+}
+
+// A stretch of the recording, in seconds from its start.
+message LectureCutRange {
+  double start = 1;
+  double end = 2;
+}
+
+message CutLectureRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  LectureCutMode mode = 3;
+  // The parts to remove: sorted, without overlap, within the recording.
+  repeated LectureCutRange discard = 4;
+}
+
+message CutLectureResponse {
+  // The lecture that gets the cut recording: the request's own when overwriting.
+  uint32 stream_id = 1;
+}
+
+message GetLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message GetLectureCutResponse {
+  bool open = 1;
+  // The lecture that gets the cut recording: the request's own when it is replaced.
+  uint32 target_stream_id = 2;
+  // A new lecture is made, and not the recording replaced.
+  bool duplicate = 3;
+  // The versions of the target that are being cut, or failed. Empty once every version is
+  // done, which is when the cut is being finished.
+  repeated LectureTranscodingProgress progresses = 4;
+}
+
+message RetryLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message AbandonLectureCutRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message AbandonLectureCutResponse {
+  // The versions of a replaced recording that were not cut and still hold what the cut
+  // would have removed (COMB, CAM, PRES).
+  repeated string left_uncut = 1;
 }
 
 // ----- end of lecture administration -----

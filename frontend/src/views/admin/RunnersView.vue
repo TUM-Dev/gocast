@@ -5,6 +5,8 @@ import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { ApiError } from "@/lib/api";
 import {
   REFRESH_INTERVAL_MS,
+  certDaysLeft,
+  certState,
   deleteRunner,
   fetchRunners,
   timeAgo,
@@ -37,8 +39,10 @@ async function load(): Promise<void> {
 
 function message(err: unknown): string {
   if (err instanceof ApiError) {
-    if (err.isUnauthenticated) return "Your session expired. Please sign in again.";
-    if (err.status === 403) return "You do not have permission to administer runners.";
+    if (err.isUnauthenticated)
+      return "Your session expired. Please sign in again.";
+    if (err.status === 403)
+      return "You do not have permission to administer runners.";
     return err.message;
   }
   return "Something went wrong. Please try again.";
@@ -86,12 +90,18 @@ async function remove(runner: Runner): Promise<void> {
       </div>
 
       <Transition name="fade" mode="out-in">
-        <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+        <p
+          v-if="error"
+          class="rounded-lg bg-danger/25 px-2 py-2 text-sm"
+          role="alert"
+        >
           {{ error }}
         </p>
       </Transition>
 
-      <div class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800">
+      <div
+        class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800"
+      >
         <p v-if="loading" class="text-5 text-sm">Loading runners…</p>
 
         <!--
@@ -111,6 +121,7 @@ async function remove(runner: Runner): Promise<void> {
                 <th scope="col" class="px-6 py-3">Status</th>
                 <th scope="col" class="px-6 py-3">Workload</th>
                 <th scope="col" class="px-6 py-3">Registered</th>
+                <th scope="col" class="px-6 py-3">Certificate</th>
                 <th scope="col" class="px-6 py-3">Actions</th>
               </tr>
             </thead>
@@ -121,8 +132,12 @@ async function remove(runner: Runner): Promise<void> {
                 class="border-t dark:border-gray-800"
               >
                 <td class="py-3 pr-6">
-                  <span class="text-1 font-semibold">{{ runner.hostname }}</span>
-                  <span class="text-4 font-normal"> @ {{ runner.version }}</span>
+                  <span class="text-1 font-semibold">{{
+                    runner.hostname
+                  }}</span>
+                  <span class="text-4 font-normal">
+                    @ {{ runner.version }}</span
+                  >
                 </td>
                 <td class="px-6 py-3">
                   <span
@@ -135,11 +150,49 @@ async function remove(runner: Runner): Promise<void> {
                     beside the status rather than hidden in the row detail the old page
                     never filled in.
                   -->
-                  <span v-if="runner.draining" class="text-4 ml-2 text-xs">draining</span>
+                  <span v-if="runner.draining" class="text-4 ml-2 text-xs"
+                    >draining</span
+                  >
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap">{{ runner.jobCount }} Jobs</td>
+                <td class="px-6 py-3 whitespace-nowrap">
+                  {{ runner.jobCount }} Jobs
+                </td>
                 <td class="px-6 py-3 whitespace-nowrap">
                   {{ timeAgo(runner.registeredAt, now) }} ago
+                </td>
+                <td class="px-6 py-3">
+                  <!-- Empty while mutual TLS is off, e.g. in development. -->
+                  <span v-if="!runner.cert" class="text-4">none</span>
+                  <!--
+                    A disclosure rather than a tooltip: the serial and fingerprint are what
+                    one compares against the node, and a title is out of reach of the
+                    keyboard and of touch.
+                  -->
+                  <details v-else>
+                    <summary
+                      class="cursor-pointer whitespace-nowrap"
+                      :class="{
+                        'font-bold text-red-500': ['alert', 'expired'].includes(
+                          certState(runner.cert, now),
+                        ),
+                        'font-bold text-amber-500': certState(runner.cert, now) === 'warn',
+                      }"
+                    >
+                      {{
+                        certState(runner.cert, now) === "expired"
+                          ? "expired"
+                          : `${certDaysLeft(runner.cert, now) ?? "?"} days left`
+                      }}
+                    </summary>
+                    <dl class="text-4 mt-1 grid grid-cols-[auto_1fr] gap-x-2 text-xs">
+                      <dt>Names</dt>
+                      <dd>{{ runner.cert.names.join(", ") }}</dd>
+                      <dt>Serial</dt>
+                      <dd class="font-mono break-all">{{ runner.cert.serial }}</dd>
+                      <dt>SHA-256</dt>
+                      <dd class="font-mono break-all">{{ runner.cert.fingerprint }}</dd>
+                    </dl>
+                  </details>
                 </td>
                 <td class="px-6 py-3">
                   <button

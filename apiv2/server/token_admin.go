@@ -59,14 +59,8 @@ func (a *API) CreateToken(ctx context.Context, req *protobuf.CreateTokenRequest)
 	}
 
 	scope := req.GetScope()
-	if scope != model.TokenScopeAdmin && scope != model.TokenScopeLecturer {
+	if scope != model.TokenScopeLecturer {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("invalid scope"))
-	}
-	// Every caller of this RPC already holds users.manage, so this can never refuse
-	// in practice; left in as the check v1 made, rather than assuming the policy
-	// above is the only place that will ever gate this.
-	if scope == model.TokenScopeAdmin && !caller.Can(model.PermManageUsers) {
-		return nil, e.WithStatus(http.StatusBadRequest, errors.New("not an admin"))
 	}
 
 	expires := sql.NullTime{}

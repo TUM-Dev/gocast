@@ -46,6 +46,8 @@ var services = []service{
 			"getIntegrationGrant":            integrationOnly,
 			"revokeIntegrationGrant":         integrationOnly,
 			"getIntegrationRecording":        integrationOnly,
+			"createIntegrationUpload":        integrationOnly,
+			"deleteIntegrationRecording":     integrationOnly,
 		},
 	},
 	{
@@ -163,6 +165,12 @@ var services = []service{
 			"deleteLectureThumbnail":        requiresCourseAdmin(),
 			"requestLectureSubtitles":       requiresCourseAdmin(),
 			"getLectureTranscodingProgress": requiresCourseAdmin(),
+			"requestLectureWaveform":        requiresCourseAdmin(),
+			"getLectureWaveform":            requiresCourseAdmin(),
+			"cutLecture":                    requiresCourseAdmin(),
+			"getLectureCut":                 requiresCourseAdmin(),
+			"retryLectureCut":               requiresCourseAdmin(),
+			"abandonLectureCut":             requiresCourseAdmin(),
 		},
 	},
 	{
@@ -278,8 +286,8 @@ var services = []service{
 			// server-wide, same as runners and info pages.
 			"searchCourseImportSchedule": requires(model.PermAdministerServer),
 			"importCourseImportCourses":  requires(model.PermAdministerServer),
-			// Tokens are the only way to reach the API as another account, so they
-			// stay behind the same permission as the accounts they authenticate as.
+			// A token makes rtmp-proxy start streams as the account that issued it, so
+			// issuing one stays behind the same permission as the accounts themselves.
 			"listTokens":  requires(model.PermManageUsers),
 			"createToken": requires(model.PermManageUsers),
 			"deleteToken": requires(model.PermManageUsers),

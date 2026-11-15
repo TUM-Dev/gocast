@@ -113,17 +113,3 @@ func (mr *MockTokenDaoMockRecorder) GetTokenByID(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenByID", reflect.TypeOf((*MockTokenDao)(nil).GetTokenByID), id)
 }
-
-// TokenUsed mocks base method.
-func (m *MockTokenDao) TokenUsed(token model.Token) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TokenUsed", token)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TokenUsed indicates an expected call of TokenUsed.
-func (mr *MockTokenDaoMockRecorder) TokenUsed(token any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TokenUsed", reflect.TypeOf((*MockTokenDao)(nil).TokenUsed), token)
-}
