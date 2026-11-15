@@ -10,12 +10,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
 
 	"github.com/TUM-Dev/gocast/model"
 )
+
+// errVersionBusy is a hand-off that waits for another import of the same version of the
+// lecture. Imports of a version share its progress row, so the end of one could be taken
+// for the end of the other, and the chunks of the one still converting removed.
+var errVersionBusy = errors.New("another video of this version is being converted")
 
 // handOffTimeout bounds one hand-off: a lecture's worth of chunks, sent over the
 // network between the server and the runners. A variable for the tests.
@@ -55,7 +61,9 @@ func (a *API) startHandOff(rec model.BrowserRecording) {
 			log.Warn("can't hand a browser recording to a runner", "err", err)
 			ctx, cancel := context.WithTimeout(context.Background(), bookkeepingTimeout)
 			defer cancel()
-			if err := a.dao.BrowserRecordingDao.MarkBrowserRecordingHandOffFailed(ctx, rec.ID, err.Error(), !errors.Is(err, errNoRunner)); err != nil {
+			// Neither a runner being away nor another import says anything about the file.
+			counts := !errors.Is(err, errNoRunner) && !errors.Is(err, errVersionBusy)
+			if err := a.dao.BrowserRecordingDao.MarkBrowserRecordingHandOffFailed(ctx, rec.ID, err.Error(), counts); err != nil {
 				log.Error("can't record a failed hand-off", "err", err)
 			}
 			return
@@ -89,14 +97,17 @@ func (a *API) handOff(ctx context.Context, rec model.BrowserRecording) error {
 	if len(segments) == 0 {
 		return errRecordingEmpty
 	}
-
-	slot, err := a.uploads.Reserve(ctx, rec.StreamID, rec.Version)
+	slot, dropProgress, err := a.claimVersion(ctx, rec)
 	if err != nil {
-		return fmt.Errorf("%w: %w", errNoRunner, err)
+		return err
 	}
-	dropProgress := a.markUploadConverting(rec.StreamID, rec.Version)
 
-	body, contentType := segmentsBody(store, rec.ID, segments, received)
+	all, err := store.segments(rec.ID)
+	if err != nil {
+		dropProgress()
+		return err
+	}
+	body, contentType := segmentsBody(store, rec.ID, all, received)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, slot.url().String(), body)
 	if err != nil {
 		_ = body.Close()
@@ -142,18 +153,33 @@ func (a *API) markHandedOff(id uint) {
 	a.log.Error("can't record a hand-off", "recording", id, "err", err)
 }
 
-// segmentsBody is the multipart body of the runner's upload endpoint, written as it is
+// segmentsBody is the multipart body of the runner's upload endpoint: the segments with
+// chunks, each as a file part after a gap_ms field when recording was interrupted before
+// it, and a gap_ms field after the last for the time missed at the end. Its body is, written as it is
 // read: a lecture's chunks are far too large to be put together first.
 func segmentsBody(store recordingStore, id uint, segments, received []uint32) (io.ReadCloser, string) {
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
 		err := func() error {
+			// The gap of a segment without chunks adds to the next one's, and what is left
+			// after the last file is the time missed at the end, sent last.
+			var gap int64
+			writeGap := func() error {
+				if gap <= 0 {
+					return nil
+				}
+				err := mw.WriteField("gap_ms", strconv.FormatInt(gap, 10))
+				gap = 0
+				return err
+			}
 			for _, seg := range segments {
-				if gap := store.gap(id, seg); gap > 0 {
-					if err := mw.WriteField("gap_ms", strconv.FormatInt(gap, 10)); err != nil {
-						return err
-					}
+				gap += store.gap(id, seg)
+				if int(seg) >= len(received) || received[seg] == 0 {
+					continue
+				}
+				if err := writeGap(); err != nil {
+					return err
 				}
 				part, err := mw.CreateFormFile("file", fmt.Sprintf("segment-%d", seg))
 				if err != nil {
@@ -165,6 +191,9 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 				if err != nil {
 					return err
 				}
+			}
+			if err := writeGap(); err != nil {
+				return err
 			}
 			return mw.Close()
 		}()
@@ -207,6 +236,11 @@ func (a *API) CheckBrowserRecordingConversions() {
 			}
 		case retry != "":
 			log.Warn("browser recording's conversion failed, handing it off again", "reason", retry)
+			// A conversion taken for lost still shows as under way, which would keep the
+			// next hand-off of this version waiting.
+			if err := a.dao.StreamsDao.RemoveTranscodingProgress(rec.Version, rec.StreamID); err != nil {
+				log.Warn("can't clear a lost conversion's progress", "err", err)
+			}
 			if err := a.dao.BrowserRecordingDao.RequeueBrowserRecordingHandOff(ctx, rec.ID, retry); err != nil {
 				log.Warn("can't take back a failed hand-off", "err", err)
 			}
@@ -239,6 +273,45 @@ func (a *API) conversionState(ctx context.Context, rec model.BrowserRecording) (
 		return false, "the conversion ended without a video", nil
 	}
 	return true, "", nil
+}
+
+// browserRecordingConverting tells whether a runner is converting a browser recording of
+// the lecture's version.
+func (a *API) browserRecordingConverting(ctx context.Context, streamID uint, version model.StreamVersion) (bool, error) {
+	// A browser records a presentation and a camera version, never a combined one.
+	if version != model.PRES && version != model.CAM {
+		return false, nil
+	}
+	recs, err := a.dao.BrowserRecordingDao.ListBrowserRecordings(ctx, streamID)
+	if err != nil {
+		return false, err
+	}
+	for _, rec := range recs {
+		if rec.Version == version && rec.HandedOffAt != nil {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// claimVersion reserves a runner and marks the version of the lecture as converting,
+// unless another import of it is under way. Under a lock per version, so that two
+// hand-offs of it can't both find it free.
+func (a *API) claimVersion(ctx context.Context, rec model.BrowserRecording) (slot UploadTarget, dropProgress func(), err error) {
+	key := fmt.Sprintf("%d/%s", rec.StreamID, rec.Version)
+	l, _ := a.versionLocks.LoadOrStore(key, &sync.Mutex{})
+	lock := l.(*sync.Mutex)
+	lock.Lock()
+	defer lock.Unlock()
+	progress, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(rec.Version, rec.StreamID)
+	if err == nil && !progress.Failed {
+		return UploadTarget{}, nil, errVersionBusy
+	}
+	slot, err = a.uploads.Reserve(ctx, rec.StreamID, rec.Version)
+	if err != nil {
+		return UploadTarget{}, nil, fmt.Errorf("%w: %w", errNoRunner, err)
+	}
+	return slot, a.markUploadConverting(rec.StreamID, rec.Version), nil
 }
 
 // ResumeBrowserRecordingHandOffs hands off the finalized recordings no runner has yet:

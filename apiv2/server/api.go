@@ -69,6 +69,9 @@ type API struct {
 	// recordingLocks, by ID, keep a chunk from being stored while its recording is
 	// finalized or thrown away; see recordingLock.
 	recordingLocks sync.Map
+	// versionLocks, by "stream/version", keep two hand-offs of a lecture's version from
+	// both finding it free; see claimVersion.
+	versionLocks sync.Map
 	// Where the runner's VOD directories are mounted, and the dry run kept for paging;
 	// see WithVODStorage and ReapDeletedMedia.
 	vodStorage string

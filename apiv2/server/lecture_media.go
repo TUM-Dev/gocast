@@ -67,6 +67,15 @@ func (a *API) proxyLectureMedia(w http.ResponseWriter, r *http.Request, stream m
 		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))
 		return
 	}
+	// Imports of a version share its progress row: a browser recording of it being
+	// converted would take this upload's end for its own, and remove its chunks early.
+	if converting, err := a.browserRecordingConverting(r.Context(), stream.ID, model.StreamVersion(videoType)); err != nil {
+		writeUploadError(w, e.WithStatus(http.StatusInternalServerError, err))
+		return
+	} else if converting {
+		writeUploadError(w, e.WithStatus(http.StatusConflict, errors.New("a browser recording of this version is being converted")))
+		return
+	}
 
 	slot, err := a.uploads.Reserve(r.Context(), stream.ID, model.StreamVersion(videoType))
 	if err != nil {

@@ -206,6 +206,27 @@ func (s recordingStore) received(id uint) ([]uint32, error) {
 	return counts, nil
 }
 
+// segments is the numbers of the segments that have anything, in order: chunks, or only
+// the gap before them, which a segment that never got a chunk has.
+func (s recordingStore) segments(id uint) ([]uint32, error) {
+	entries, err := os.ReadDir(s.recordingDir(id))
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var segments []uint32
+	for _, e := range entries {
+		n, err := strconv.ParseUint(e.Name(), 10, 32)
+		if err == nil && e.IsDir() && n < maxRecordingSegments {
+			segments = append(segments, uint32(n))
+		}
+	}
+	sort.Slice(segments, func(i, j int) bool { return segments[i] < segments[j] })
+	return segments, nil
+}
+
 func (s recordingStore) contiguousChunks(id uint, segment uint32) (uint32, error) {
 	entries, err := os.ReadDir(s.segmentDir(id, segment))
 	if err != nil {

@@ -6458,6 +6458,11 @@
             "format": "int64"
           },
           "description": "Per segment from 0, how many chunks the browser recorded. Empty to use what arrived."
+        },
+        "trailingGapMs": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How long this version was not recorded at the end while the other one was, in\nmilliseconds: its source stopped and was never shared again. The runner pads the\nvideo with as much black and silence, so both versions end together."
         }
       }
     },

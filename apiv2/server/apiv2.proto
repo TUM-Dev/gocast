@@ -3536,6 +3536,10 @@ message FinalizeBrowserRecordingRequest {
   uint32 recording_id = 3;
   // Per segment from 0, how many chunks the browser recorded. Empty to use what arrived.
   repeated uint32 expected = 4;
+  // How long this version was not recorded at the end while the other one was, in
+  // milliseconds: its source stopped and was never shared again. The runner pads the
+  // video with as much black and silence, so both versions end together.
+  uint32 trailing_gap_ms = 5;
 }
 
 message AbandonBrowserRecordingRequest {

@@ -14385,7 +14385,11 @@ type FinalizeBrowserRecordingRequest struct {
 	StreamId    uint32                 `protobuf:"varint,2,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
 	RecordingId uint32                 `protobuf:"varint,3,opt,name=recording_id,json=recordingId,proto3" json:"recording_id,omitempty"`
 	// Per segment from 0, how many chunks the browser recorded. Empty to use what arrived.
-	Expected      []uint32 `protobuf:"varint,4,rep,packed,name=expected,proto3" json:"expected,omitempty"`
+	Expected []uint32 `protobuf:"varint,4,rep,packed,name=expected,proto3" json:"expected,omitempty"`
+	// How long this version was not recorded at the end while the other one was, in
+	// milliseconds: its source stopped and was never shared again. The runner pads the
+	// video with as much black and silence, so both versions end together.
+	TrailingGapMs uint32 `protobuf:"varint,5,opt,name=trailing_gap_ms,json=trailingGapMs,proto3" json:"trailing_gap_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -14446,6 +14450,13 @@ func (x *FinalizeBrowserRecordingRequest) GetExpected() []uint32 {
 		return x.Expected
 	}
 	return nil
+}
+
+func (x *FinalizeBrowserRecordingRequest) GetTrailingGapMs() uint32 {
+	if x != nil {
+		return x.TrailingGapMs
+	}
+	return 0
 }
 
 type AbandonBrowserRecordingRequest struct {
@@ -22195,12 +22206,13 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x1dListBrowserRecordingsResponse\x12:\n" +
 	"\n" +
 	"recordings\x18\x01 \x03(\v2\x1a.protobuf.BrowserRecordingR\n" +
-	"recordings\"\x9a\x01\n" +
+	"recordings\"\xc2\x01\n" +
 	"\x1fFinalizeBrowserRecordingRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
 	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12!\n" +
 	"\frecording_id\x18\x03 \x01(\rR\vrecordingId\x12\x1a\n" +
-	"\bexpected\x18\x04 \x03(\rR\bexpected\"}\n" +
+	"\bexpected\x18\x04 \x03(\rR\bexpected\x12&\n" +
+	"\x0ftrailing_gap_ms\x18\x05 \x01(\rR\rtrailingGapMs\"}\n" +
 	"\x1eAbandonBrowserRecordingRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x1b\n" +
 	"\tstream_id\x18\x02 \x01(\rR\bstreamId\x12!\n" +

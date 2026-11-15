@@ -93,6 +93,13 @@ func (a *API) CreateBrowserRecording(ctx context.Context, req *protobuf.CreateBr
 	if err := a.dao.BrowserRecordingDao.CreateBrowserRecording(ctx, &rec); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
+	// Chunks are found by the recording's ID. A database restored from a backup hands
+	// out IDs again, and chunks left under one would be joined into this recording.
+	if store, err := a.recordingStore(); err == nil {
+		if err := store.remove(rec.ID); err != nil {
+			return nil, e.WithStatus(http.StatusInternalServerError, err)
+		}
+	}
 	a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: browser recording %d of %s started", stream.ID, rec.ID, version), forStream(stream))
 
 	pb, err := a.browserRecordingToProto(rec)
@@ -151,7 +158,7 @@ func (a *API) FinalizeBrowserRecording(ctx context.Context, req *protobuf.Finali
 	}
 
 	if rec.FinalizedAt == nil {
-		finalized, err := a.finalizeRecording(ctx, store, rec.ID, req.GetExpected())
+		finalized, err := a.finalizeRecording(ctx, store, rec.ID, req.GetExpected(), req.GetTrailingGapMs())
 		switch {
 		case errors.Is(err, errRecordingEmpty):
 			return nil, e.WithStatus(http.StatusBadRequest, err)
@@ -182,7 +189,7 @@ func (a *API) FinalizeBrowserRecording(ctx context.Context, req *protobuf.Finali
 // when empty) and anything at all. Under the recording's lock, so that no chunk lands
 // after this has seen what arrived. finalized is false when it was finalized already.
 // The errors are errRecordingEmpty, errRecordingIncomplete or the store's or database's.
-func (a *API) finalizeRecording(ctx context.Context, store recordingStore, id uint, expected []uint32) (finalized bool, err error) {
+func (a *API) finalizeRecording(ctx context.Context, store recordingStore, id uint, expected []uint32, trailingGapMs uint32) (finalized bool, err error) {
 	lock := a.recordingLock(id)
 	lock.Lock()
 	defer lock.Unlock()
@@ -196,6 +203,17 @@ func (a *API) finalizeRecording(ctx context.Context, store recordingStore, id ui
 	for i, want := range expected {
 		if i >= len(received) || received[i] < want {
 			return false, errRecordingIncomplete
+		}
+	}
+	// The time this version missed at the end, while the other went on: kept as the gap
+	// of a segment after the last, which the hand-off sends after the last file.
+	if trailingGapMs > 0 {
+		segments, err := store.segments(id)
+		if err != nil {
+			return false, err
+		}
+		if err := store.setGap(id, segments[len(segments)-1]+1, int64(trailingGapMs)); err != nil {
+			return false, err
 		}
 	}
 	return a.dao.BrowserRecordingDao.FinalizeBrowserRecording(ctx, id, time.Now())
@@ -221,6 +239,14 @@ func (a *API) AbandonBrowserRecording(ctx context.Context, req *protobuf.Abandon
 		return nil, e.WithStatus(http.StatusConflict, errRecordingHandingOff)
 	}
 	defer a.handingOff.Delete(rec.ID)
+	// Read again under the claim: a hand-off may have finished since the read above.
+	rec, err = a.dao.BrowserRecordingDao.GetBrowserRecording(ctx, rec.ID)
+	if err != nil {
+		return nil, e.FromGorm(err, "can't find recording")
+	}
+	if rec.HandedOffAt != nil {
+		return nil, e.WithStatus(http.StatusConflict, errRecordingHandedOff)
+	}
 	if err := a.dropRecording(ctx, store, rec.ID); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}

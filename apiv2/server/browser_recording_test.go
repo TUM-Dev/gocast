@@ -32,6 +32,9 @@ type fakeRecordings struct {
 	mu   sync.Mutex
 	next uint
 	recs map[uint]model.BrowserRecording
+	// onGet, when set, sees every GetBrowserRecording, as another request between two
+	// reads would.
+	onGet func(id uint)
 	// failHandedOff fails that many calls of MarkBrowserRecordingHandedOff.
 	failHandedOff int
 }
@@ -52,6 +55,9 @@ func (f *fakeRecordings) CreateBrowserRecording(_ context.Context, rec *model.Br
 }
 
 func (f *fakeRecordings) GetBrowserRecording(_ context.Context, id uint) (model.BrowserRecording, error) {
+	if f.onGet != nil {
+		f.onGet(id)
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	rec, ok := f.recs[id]
@@ -86,7 +92,7 @@ func (f *fakeRecordings) filter(keep func(model.BrowserRecording) bool) []model.
 }
 
 func (f *fakeRecordings) ListBrowserRecordings(_ context.Context, streamID uint) ([]model.BrowserRecording, error) {
-	return f.filter(func(r model.BrowserRecording) bool { return r.StreamID == streamID && r.HandedOffAt == nil }), nil
+	return f.filter(func(r model.BrowserRecording) bool { return r.StreamID == streamID && r.ConvertedAt == nil }), nil
 }
 
 func (f *fakeRecordings) update(id uint, change func(*model.BrowserRecording) bool) bool {
@@ -521,6 +527,27 @@ func TestBrowserRecording(t *testing.T) {
 		}
 	})
 
+	t.Run("chunks left under a reused ID are not joined into a new recording", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		store, _ := env.api.recordingStore()
+		// What a recording 1 left before the database was restored from a backup.
+		if err := store.put(1, 0, 1, strings.NewReader("stale")); err != nil {
+			t.Fatal(err)
+		}
+		created := env.create(t, "PRES")
+		if created.GetRecording().GetId() != 1 {
+			t.Fatalf("got recording %d, want the reused ID 1", created.GetRecording().GetId())
+		}
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(1); err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Equal(*parts, []string{"file=a"}) {
+			t.Errorf("runner got %v, want only the new chunk", *parts)
+		}
+	})
+
 	t.Run("create refuses COMB and a live lecture", func(t *testing.T) {
 		env := newRecordingAPI(t, &fakeUploads{}, courseOneLecture())
 		if _, err := env.api.CreateBrowserRecording(asCaller(lectureAdmin), &protobuf.CreateBrowserRecordingRequest{
@@ -636,6 +663,55 @@ func TestBrowserRecordingRaces(t *testing.T) {
 		}
 	})
 
+	t.Run("abandon is refused when a hand-off finished after its first look", func(t *testing.T) {
+		env := newRecordingAPI(t, &fakeUploads{}, courseOneLecture())
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		id := uint(created.GetRecording().GetId())
+		gets := 0
+		env.recs.onGet = func(uint) {
+			// The first read sees it waiting; by the second a hand-off is through.
+			if gets++; gets == 2 {
+				now := time.Now()
+				env.recs.update(id, func(r *model.BrowserRecording) bool { r.FinalizedAt, r.HandedOffAt = &now, &now; return true })
+			}
+		}
+		_, err := env.api.AbandonBrowserRecording(asCaller(lectureAdmin), &protobuf.AbandonBrowserRecordingRequest{
+			CourseId: 1, StreamId: 7, RecordingId: created.GetRecording().GetId(),
+		})
+		if statusOf(err) != http.StatusConflict {
+			t.Errorf("abandon: %v, want 409", err)
+		}
+		if _, err := env.recs.GetBrowserRecording(context.Background(), id); err != nil {
+			t.Errorf("the handed-off recording was deleted: %v", err)
+		}
+	})
+
+	t.Run("a hand-off waits while another video of the version converts", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		env.progress[model.PRES] = model.TranscodingProgress{Version: model.PRES, Progress: 40}
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		if uploads.called || len(*parts) != 0 {
+			t.Fatal("handed off while another video of the version converts")
+		}
+		rec, _ := env.recs.GetBrowserRecording(context.Background(), uint(created.GetRecording().GetId()))
+		if rec.HandOffAttempts != 0 {
+			t.Errorf("waiting counted as a failed attempt: %+v", rec)
+		}
+
+		env.converted(model.PRES)
+		env.api.ResumeBrowserRecordingHandOffs()
+		env.api.handOffs.Wait()
+		if len(*parts) != 1 {
+			t.Errorf("runner got %v once the version was free", *parts)
+		}
+	})
+
 	t.Run("abandon is refused while a hand-off runs", func(t *testing.T) {
 		env := newRecordingAPI(t, &fakeUploads{}, courseOneLecture())
 		created := env.create(t, "PRES")
@@ -697,6 +773,44 @@ func TestBrowserRecordingConversion(t *testing.T) {
 		env.mustPut(t, path, "0", "0", "a")
 		if rec := env.put(path+"", "1", "0?gap_ms=1500", "x"); rec.Code != http.StatusOK {
 			t.Fatalf("PUT with gap: %d %s", rec.Code, rec.Body)
+		}
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		if want := []string{"file=a", "gap_ms=1500", "file=x"}; !slices.Equal(*parts, want) {
+			t.Errorf("runner got %v, want %v", *parts, want)
+		}
+	})
+
+	t.Run("the time a version missed at the end goes after its last file", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.api.FinalizeBrowserRecording(asCaller(lectureAdmin), &protobuf.FinalizeBrowserRecordingRequest{
+			CourseId: 1, StreamId: 7, RecordingId: created.GetRecording().GetId(), Expected: []uint32{1}, TrailingGapMs: 4000,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		env.api.handOffs.Wait()
+		if want := []string{"file=a", "gap_ms=4000"}; !slices.Equal(*parts, want) {
+			t.Errorf("runner got %v, want %v", *parts, want)
+		}
+	})
+
+	t.Run("the gap of a segment without chunks goes to the next", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "PRES")
+		path := created.GetUploadPath()
+		env.mustPut(t, path, "0", "0", "a")
+		store, _ := env.api.recordingStore()
+		// Shared again, and stopped before the recorder handed out a chunk.
+		if err := store.setGap(uint(created.GetRecording().GetId()), 1, 1000); err != nil {
+			t.Fatal(err)
+		}
+		if rec := env.put(path, "2", "0?gap_ms=500", "x"); rec.Code != http.StatusOK {
+			t.Fatalf("PUT: %d %s", rec.Code, rec.Body)
 		}
 		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
 			t.Fatal(err)

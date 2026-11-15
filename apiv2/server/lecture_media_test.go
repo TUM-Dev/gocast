@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -48,7 +49,7 @@ func newMediaAPI(t *testing.T, uploads Uploads) (*API, mediaMocks) {
 		courses: mock_dao.NewMockCoursesDao(ctrl),
 	}
 	return &API{
-		dao:     dao.DaoWrapper{StreamsDao: m.streams, CoursesDao: m.courses},
+		dao:     dao.DaoWrapper{StreamsDao: m.streams, CoursesDao: m.courses, BrowserRecordingDao: newFakeRecordings()},
 		log:     slog.Default(),
 		uploads: uploads,
 	}, m
@@ -97,6 +98,20 @@ func TestLectureMediaRouteOf(t *testing.T) {
 	}
 	if _, ok := routed(pattern, http.MethodGet, "/api/v2/courses/1/streams/7/media", media); ok {
 		t.Error("GET matched")
+	}
+}
+
+func TestUploadLectureMediaWhileBrowserRecordingConverts(t *testing.T) {
+	api, m := newMediaAPI(t, &fakeUploads{})
+	m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
+	m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+	now := time.Now()
+	recs := api.dao.BrowserRecordingDao.(*fakeRecordings)
+	_ = recs.CreateBrowserRecording(context.Background(), &model.BrowserRecording{StreamID: 7, Version: model.PRES, HandedOffAt: &now})
+
+	rec := serveUpload(api, uploadRequest(t, "/api/v2/courses/1/streams/7/media?type=PRES", lectureAdmin, "lecture.mp4", "video/mp4"))
+	if rec.Code != http.StatusConflict {
+		t.Errorf("status = %d, want 409: %s", rec.Code, rec.Body)
 	}
 }
 
