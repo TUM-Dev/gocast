@@ -36,6 +36,19 @@ func (r *FFProbeResult) PixelFormat() string {
 	return ""
 }
 
+// Dimensions returns the width and height of the first video stream in an
+// FFProbeResult, or zeros
+func (r *FFProbeResult) Dimensions() (width, height int) {
+	nStreams := gjson.Get(r.raw, "streams.#").Int()
+	for i := 0; i < int(nStreams); i++ {
+		if gjson.Get(r.raw, fmt.Sprintf("streams.%d.codec_type", i)).String() == "video" {
+			return int(gjson.Get(r.raw, fmt.Sprintf("streams.%d.width", i)).Int()),
+				int(gjson.Get(r.raw, fmt.Sprintf("streams.%d.height", i)).Int())
+		}
+	}
+	return 0, 0
+}
+
 // Level returns the level of a FFProbeResult if in h264 or ""
 func (r *FFProbeResult) Level() string {
 	return gjson.Get(r.raw, "streams.0.level").String()

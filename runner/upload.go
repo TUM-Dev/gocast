@@ -147,36 +147,44 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var file string
+	// Usually one file. A recording made in the browser comes as several, one per
+	// segment, in order: the import joins them. Every part is joined, whoever sent it;
+	// only the server's browser-recording hand-off sends more than one. Should another
+	// upload ever do, PrepareUpload has to say which uploads are segments.
+	var files []string
+	fail := func(msg string, status int) {
+		for _, f := range files {
+			_ = os.Remove(f)
+		}
+		http.Error(w, msg, status)
+	}
 	for {
 		part, err := mr.NextPart()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			fail(err.Error(), http.StatusBadRequest)
 			return
 		}
 		if part.FormName() != "file" {
 			continue
 		}
-		var size int64
-		file, size, err = r.storeUpload(part)
+		file, size, err := r.storeUpload(part)
 		if err != nil {
 			log.Error("storing upload failed", "error", err)
-			http.Error(w, "couldn't store the upload", http.StatusInternalServerError)
+			fail("couldn't store the upload", http.StatusInternalServerError)
 			return
 		}
+		files = append(files, file)
 		if size == 0 {
 			// Answering 200 would send the uploader off to wait for a video that
 			// the import can only fail to make.
-			_ = os.Remove(file)
-			http.Error(w, "the file is empty", http.StatusBadRequest)
+			fail("the file is empty", http.StatusBadRequest)
 			return
 		}
-		break
 	}
-	if file == "" {
+	if len(files) == 0 {
 		http.Error(w, "no file in request", http.StatusBadRequest)
 		return
 	}
@@ -184,7 +192,10 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	data := map[string]any{
 		"streamID":      slot.streamID,
 		"streamVersion": slot.version,
-		"uploadPath":    file,
+		"uploadPath":    files[0],
+	}
+	if len(files) > 1 {
+		data["uploadPaths"] = files
 	}
 	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)

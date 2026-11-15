@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ffmpeg"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -162,6 +163,73 @@ func TestImportVOD(t *testing.T) {
 				t.Errorf("unexpected stream in %v", ready)
 			}
 		})
+	}
+}
+
+// TestImportVODJoinsSegments joins what a browser makes when a screen is shared anew:
+// WebM segments of different sizes, each starting at zero, without a duration.
+func TestImportVODJoinsSegments(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	segment := func(name, size string) string {
+		path := filepath.Join(t.TempDir(), name)
+		out, err := exec.Command("ffmpeg", "-y",
+			"-f", "lavfi", "-i", "testsrc=duration=2:size="+size+":rate=5",
+			"-f", "lavfi", "-i", "sine=duration=2",
+			"-c:v", "libvpx", "-c:a", "libopus", path).CombinedOutput()
+		if err != nil {
+			t.Skipf("could not create test segment: %v (%s)", err, out)
+		}
+		return path
+	}
+	first, second := segment("0.webm", "320x240"), segment("1.webm", "240x320")
+	storage := t.TempDir()
+	config.Config.StoragePath = storage
+	config.Config.EdgeServer = "http://edge"
+
+	notify := make(chan *protobuf.Notification, 64)
+	data := map[string]any{
+		"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
+		"uploadPath": first, "uploadPaths": []string{first, second},
+	}
+	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
+		t.Fatalf("ImportVOD = %v", err)
+	}
+
+	playlist := filepath.Join(storage, "7", "STREAM_VERSION_PRESENTATION", "playlist.m3u8")
+	probe, err := ffmpeg.Probe(context.Background(), playlist)
+	if err != nil {
+		t.Fatalf("probe the VOD: %v", err)
+	}
+	if d := probe.Duration(); d < 3.5 || d > 4.5 {
+		t.Errorf("duration = %.1fs, want both segments' 4s", d)
+	}
+	if w, h := probe.Dimensions(); w != 320 || h != 240 {
+		t.Errorf("size = %dx%d, want the first segment's 320x240", w, h)
+	}
+	if probe.Codec("audio") != "aac" {
+		t.Errorf("audio = %q, want aac", probe.Codec("audio"))
+	}
+	for _, f := range []string{first, second} {
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			t.Errorf("segment %s still there: %v", f, err)
+		}
+	}
+	if ns := drain(notify); len(ns) == 0 || ns[len(ns)-1].GetVodReady() == nil {
+		t.Errorf("last notification is not VodReady: %v", ns)
+	}
+}
+
+func TestConcatArgs(t *testing.T) {
+	args := strings.Join(concatArgs([]string{"a", "b"}, "/vod", 1281, 721, false), " ")
+	for _, want := range []string{"-i a -i b", "scale=1280:720", "concat=n=2:v=1:a=0[v]", "-map [v]"} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args lack %q:\n%s", want, args)
+		}
+	}
+	if strings.Contains(args, "[a]") {
+		t.Errorf("audio mapped without audio:\n%s", args)
 	}
 }
 

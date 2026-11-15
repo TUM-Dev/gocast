@@ -100,23 +100,33 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	if !ok || uploadPath == "" {
 		return AbortingError(fmt.Errorf("no upload path in context"))
 	}
+	// A browser recording's segments, of which uploadPath is the first.
+	inputs := []string{uploadPath}
+	if paths, ok := d["uploadPaths"].([]string); ok && len(paths) > 1 {
+		inputs = paths
+	}
 	defer func() {
-		if err := os.Remove(uploadPath); err != nil && !os.IsNotExist(err) {
-			logger.Warn("couldn't remove uploaded file", "file", uploadPath, "err", err)
+		for _, file := range inputs {
+			if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
+				logger.Warn("couldn't remove uploaded file", "file", file, "err", err)
+			}
 		}
 	}()
 
 	metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Inc()
 	defer metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Dec()
 
-	probe, err := ffmpeg.Probe(ctx, uploadPath)
-	if err != nil {
-		return failImport(reasonUnreadable, fmt.Errorf("probe upload: %w", err))
+	probes := make([]*ffmpeg.FFProbeResult, 0, len(inputs))
+	for _, file := range inputs {
+		probe, err := ffmpeg.Probe(ctx, file)
+		if err != nil {
+			return failImport(reasonUnreadable, fmt.Errorf("probe upload: %w", err))
+		}
+		if probe.Codec("video") == "" {
+			return failImport(reasonNoVideo, fmt.Errorf("upload has no video stream"))
+		}
+		probes = append(probes, probe)
 	}
-	if probe.Codec("video") == "" {
-		return failImport(reasonNoVideo, fmt.Errorf("upload has no video stream"))
-	}
-	transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level(), probe.PixelFormat())
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
 	// Written next to the final directory and swapped in at the end: a failed re-upload
@@ -132,9 +142,26 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	}
 	defer func() { _ = os.RemoveAll(workDir) }() // no-op once renamed
 
-	logger.Info("importing upload", "transcode", transcode, "file", uploadPath)
+	var args []string
+	if len(inputs) == 1 {
+		probe := probes[0]
+		transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level(), probe.PixelFormat())
+		logger.Info("importing upload", "transcode", transcode, "file", uploadPath)
+		args = importArgs(uploadPath, workDir, transcode)
+	} else {
+		width, height := probes[0].Dimensions()
+		audio := true
+		for _, p := range probes {
+			audio = audio && p.Codec("audio") != ""
+		}
+		if !audio && probes[0].Codec("audio") != "" {
+			logger.Warn("joining segments of which some have no audio, dropping it", "segments", len(inputs))
+		}
+		logger.Info("joining uploaded segments", "segments", len(inputs), "width", width, "height", height, "audio", audio)
+		args = concatArgs(inputs, workDir, width, height, audio)
+	}
 	// An argument slice, not a split string: the file name comes from the uploader.
-	command := exec.CommandContext(ctx, "ffmpeg", importArgs(uploadPath, workDir, transcode)...)
+	command := exec.CommandContext(ctx, "ffmpeg", args...)
 	command.WaitDelay = 10 * time.Second
 	// Not StderrPipe: Wait closes the pipe, so reading it concurrently can lose the end
 	// of the output, which is where ffmpeg says why it failed.
@@ -142,7 +169,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	command.Stderr = &stderr
 	// ffmpeg reports how far it is on stdout. A writer rather than a pipe for the reason
 	// above: Wait returns only once it has been handed everything.
-	command.Stdout = newProgressWriter(probe.Duration(), progressReporter(notify, streamID, streamVersion))
+	command.Stdout = newProgressWriter(totalDuration(probes), progressReporter(notify, streamID, streamVersion))
 	if err := command.Run(); err != nil {
 		return failImport(reasonConversion, fmt.Errorf("ffmpeg failed: %w: %s", err, stderr.String()))
 	}
@@ -207,6 +234,68 @@ func importArgs(input, vodDir string, transcode bool) []string {
 		args = append(args, "-c", "copy")
 	}
 	return append(args, hlsOutputArgs(vodDir)...)
+}
+
+// concatArgs builds the ffmpeg arguments that join the segments of a browser recording,
+// in order, into one VOD playlist in vodDir. Always transcoded: the timestamps of each
+// segment start at zero, and segments can differ in size, as a screen shared anew does.
+// Each is fitted into the first one's size, which the concat filter requires. So does
+// having the same streams in each: audio is kept only if every segment has it.
+func concatArgs(inputs []string, vodDir string, width, height int, audio bool) []string {
+	if width <= 0 || height <= 0 {
+		width, height = 1920, 1080
+	}
+	// Even dimensions, as yuv420p requires them.
+	width, height = width/2*2, height/2*2
+
+	args := []string{"-nostdin", "-y", "-nostats", "-progress", "pipe:1"}
+	for _, in := range inputs {
+		args = append(args, "-i", in)
+	}
+	var filter, joined strings.Builder
+	for i := range inputs {
+		fmt.Fprintf(&filter, "[%d:v]scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p[v%d];",
+			i, width, height, width, height, i)
+		fmt.Fprintf(&joined, "[v%d]", i)
+		if audio {
+			fmt.Fprintf(&filter, "[%d:a]aresample=48000,aformat=channel_layouts=stereo[a%d];", i, i)
+			fmt.Fprintf(&joined, "[a%d]", i)
+		}
+	}
+	a := 0
+	if audio {
+		a = 1
+	}
+	fmt.Fprintf(&filter, "%sconcat=n=%d:v=1:a=%d[v]", joined.String(), len(inputs), a)
+	if audio {
+		filter.WriteString("[a]")
+	}
+
+	args = append(args, "-filter_complex", filter.String(), "-map", "[v]")
+	if audio {
+		args = append(args, "-map", "[a]", "-c:a", "aac")
+	}
+	args = append(args,
+		"-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+		// Keyframes on the segment boundaries keep the segments close to hls_time.
+		"-force_key_frames", "expr:gte(t,n_forced*20)",
+	)
+	return append(args, hlsOutputArgs(vodDir)...)
+}
+
+// totalDuration is the length of the inputs together, or 0 when one has none: a
+// MediaRecorder's WebM has no duration in its header, and progress measured against
+// part of the length would be wrong.
+func totalDuration(probes []*ffmpeg.FFProbeResult) float64 {
+	var total float64
+	for _, p := range probes {
+		d := p.Duration()
+		if d <= 0 {
+			return 0
+		}
+		total += d
+	}
+	return total
 }
 
 // hlsOutputArgs are the arguments that write the encoded streams as a VOD playlist into vodDir.
