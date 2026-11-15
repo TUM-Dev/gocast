@@ -177,7 +177,7 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 			}
 			for _, seg := range segments {
 				gap += store.gap(id, seg)
-				if int(seg) >= len(received) || received[seg] == 0 {
+				if uint64(seg) >= uint64(len(received)) || received[seg] == 0 {
 					continue
 				}
 				if err := writeGap(); err != nil {
