@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

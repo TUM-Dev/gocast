@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
+import BrowserRecordingsPanel from "@/components/admin/lectures/content/BrowserRecordingsPanel.vue";
 import type { CourseLecture } from "@/lib/course-lectures";
 import { isMp4, type MediaType } from "@/lib/create-lecture";
 import {
@@ -136,6 +137,8 @@ async function upload(type: MediaType, label: string, event: Event): Promise<voi
       <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-1" role="alert">{{ error }}</p>
       <p v-else-if="status" class="text-5" role="status">{{ status }}</p>
     </template>
+
+    <BrowserRecordingsPanel :course-id="courseId" :lecture-id="lecture.id" @changed="emit('changed')" />
 
     <p v-if="lecture.liveNow" class="text-5 text-xs">A recording can be uploaded once the lecture has ended.</p>
     <div v-else class="flex flex-col gap-1">
