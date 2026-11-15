@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -35,6 +36,8 @@ type fakeRecordings struct {
 	// onGet, when set, sees every GetBrowserRecording, as another request between two
 	// reads would.
 	onGet func(id uint)
+	// failFinalize fails that many calls of FinalizeBrowserRecording.
+	failFinalize int
 	// failHandedOff fails that many calls of MarkBrowserRecordingHandedOff.
 	failHandedOff int
 }
@@ -107,6 +110,15 @@ func (f *fakeRecordings) update(id uint, change func(*model.BrowserRecording) bo
 }
 
 func (f *fakeRecordings) FinalizeBrowserRecording(_ context.Context, id uint, now time.Time) (bool, error) {
+	f.mu.Lock()
+	fail := f.failFinalize > 0
+	if fail {
+		f.failFinalize--
+	}
+	f.mu.Unlock()
+	if fail {
+		return false, errors.New("database blinked")
+	}
 	return f.update(id, func(r *model.BrowserRecording) bool {
 		if r.FinalizedAt != nil {
 			return false
@@ -167,14 +179,35 @@ func (f *fakeRecordings) ListConvertingBrowserRecordings(context.Context) ([]mod
 	return f.filter(func(r model.BrowserRecording) bool { return r.HandedOffAt != nil && r.ConvertedAt == nil }), nil
 }
 
-func (f *fakeRecordings) MarkBrowserRecordingConverted(_ context.Context, id uint, now time.Time) error {
-	f.update(id, func(r *model.BrowserRecording) bool { r.ConvertedAt = &now; return true })
+func (f *fakeRecordings) SetBrowserRecordingImport(_ context.Context, id uint, importID string) error {
+	f.update(id, func(r *model.BrowserRecording) bool { r.ImportID = importID; return true })
+	return nil
+}
+
+func (f *fakeRecordings) byImport(importID string) (uint, bool) {
+	for _, r := range f.filter(func(r model.BrowserRecording) bool { return r.ImportID == importID && r.ConvertedAt == nil }) {
+		return r.ID, true
+	}
+	return 0, false
+}
+
+func (f *fakeRecordings) ConvertBrowserRecordingImport(_ context.Context, importID string, now time.Time) error {
+	if id, ok := f.byImport(importID); ok {
+		f.update(id, func(r *model.BrowserRecording) bool { r.ConvertedAt, r.HandOffError = &now, ""; return true })
+	}
+	return nil
+}
+
+func (f *fakeRecordings) FailBrowserRecordingImport(ctx context.Context, importID, reason string) error {
+	if id, ok := f.byImport(importID); ok {
+		return f.RequeueBrowserRecordingHandOff(ctx, id, reason)
+	}
 	return nil
 }
 
 func (f *fakeRecordings) RequeueBrowserRecordingHandOff(_ context.Context, id uint, reason string) error {
 	f.update(id, func(r *model.BrowserRecording) bool {
-		r.HandedOffAt, r.HandOffError = nil, reason
+		r.HandedOffAt, r.ImportID, r.HandOffError = nil, "", reason
 		r.HandOffAttempts++
 		return true
 	})
@@ -204,31 +237,47 @@ type recordingEnv struct {
 	mu       *sync.Mutex
 	lecture  *model.Stream
 	progress map[model.StreamVersion]model.TranscodingProgress
+	// gone is a lecture that was deleted. A pointer, as env is passed by value.
+	gone *atomic.Bool
 }
 
-// converted is what the runner's VODReady leaves: the playlist, and no progress row.
+// converted is what the manager makes of the runner's VODReady for the version: the
+// playlist, no progress row, and the browser recording of the import converted.
 func (env recordingEnv) converted(v model.StreamVersion) {
 	env.mu.Lock()
-	defer env.mu.Unlock()
 	delete(env.progress, v)
 	*playlistOf(env.lecture, v) = "https://edge/" + string(v) + ".m3u8"
+	env.mu.Unlock()
+	for _, r := range env.importing(v) {
+		_ = env.recs.ConvertBrowserRecordingImport(context.Background(), r.ImportID, time.Now())
+	}
 }
 
-// failed is what the runner's VODFailed leaves.
+// failed is what the manager makes of the runner's VODFailed for the version.
 func (env recordingEnv) failed(v model.StreamVersion, reason string) {
 	env.mu.Lock()
-	defer env.mu.Unlock()
 	env.progress[v] = model.TranscodingProgress{Version: v, Failed: true, Error: reason}
+	env.mu.Unlock()
+	for _, r := range env.importing(v) {
+		_ = env.recs.FailBrowserRecordingImport(context.Background(), r.ImportID, reason)
+	}
+}
+
+func (env recordingEnv) importing(v model.StreamVersion) []model.BrowserRecording {
+	return env.recs.filter(func(r model.BrowserRecording) bool { return r.Version == v && r.ImportID != "" })
 }
 
 func newRecordingAPI(t *testing.T, uploads Uploads, lecture model.Stream) recordingEnv {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	streams := mock_dao.NewMockStreamsDao(ctrl)
-	env := recordingEnv{mu: &sync.Mutex{}, lecture: &lecture, progress: map[model.StreamVersion]model.TranscodingProgress{}}
+	env := recordingEnv{mu: &sync.Mutex{}, lecture: &lecture, progress: map[model.StreamVersion]model.TranscodingProgress{}, gone: &atomic.Bool{}}
 	streams.EXPECT().GetStreamByID(gomock.Any(), gomock.Any()).DoAndReturn(func(context.Context, string) (model.Stream, error) {
 		env.mu.Lock()
 		defer env.mu.Unlock()
+		if env.gone.Load() {
+			return model.Stream{}, gorm.ErrRecordNotFound
+		}
 		return *env.lecture, nil
 	}).AnyTimes()
 	streams.EXPECT().GetTranscodingProgressByVersion(gomock.Any(), gomock.Any()).DoAndReturn(func(v model.StreamVersion, _ uint) (model.TranscodingProgress, error) {
@@ -726,6 +775,108 @@ func TestBrowserRecordingRaces(t *testing.T) {
 }
 
 func TestBrowserRecordingConversion(t *testing.T) {
+	t.Run("the hand-off names its import, and a late report of an earlier one matches nothing", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "CAM")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		id := uint(created.GetRecording().GetId())
+		first, _ := env.recs.GetBrowserRecording(context.Background(), id)
+		if first.ImportID == "" || uploads.importID != first.ImportID {
+			t.Fatalf("import id %q, runner was given %q", first.ImportID, uploads.importID)
+		}
+
+		env.failed(model.CAM, "The video could not be converted.")
+		env.api.ResumeBrowserRecordingHandOffs()
+		env.api.handOffs.Wait()
+		second, _ := env.recs.GetBrowserRecording(context.Background(), id)
+		if len(*parts) != 2 || second.ImportID == "" || second.ImportID == first.ImportID {
+			t.Fatalf("after a failure: runner got %v, import %q then %q", *parts, first.ImportID, second.ImportID)
+		}
+
+		_ = env.recs.ConvertBrowserRecordingImport(context.Background(), first.ImportID, time.Now())
+		if rec, _ := env.recs.GetBrowserRecording(context.Background(), id); rec.ConvertedAt != nil {
+			t.Error("a report of the first import marked the second converted")
+		}
+	})
+
+	t.Run("a failed cut's progress is not taken for the recording's", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		// A cut of the version writes its own row and marks it failed: no VODFailed of
+		// this import, so nothing is handed off again.
+		env.mu.Lock()
+		env.progress[model.PRES] = model.TranscodingProgress{Version: model.PRES, Failed: true, Error: "cut failed"}
+		env.mu.Unlock()
+		env.api.CheckBrowserRecordingConversions()
+		env.api.handOffs.Wait()
+		if len(*parts) != 1 {
+			t.Errorf("runner got %v, want the recording once", *parts)
+		}
+	})
+
+	t.Run("a recording of a deleted lecture is removed", func(t *testing.T) {
+		uploads, _ := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		if _, err := env.finalize(created.GetRecording().GetId()); err != nil {
+			t.Fatal(err)
+		}
+		// Deleted while converting: its VODReady is dropped with it.
+		env.gone.Store(true)
+		env.api.CheckBrowserRecordingConversions()
+		id := uint(created.GetRecording().GetId())
+		if _, err := env.recs.GetBrowserRecording(context.Background(), id); err == nil {
+			t.Error("the recording of a deleted lecture is kept")
+		}
+		store, _ := env.api.recordingStore()
+		if _, err := os.Stat(store.recordingDir(id)); !os.IsNotExist(err) {
+			t.Errorf("its chunks are kept: %v", err)
+		}
+	})
+
+	t.Run("chunks left by a recording that is gone are removed", func(t *testing.T) {
+		env := newRecordingAPI(t, &fakeUploads{}, courseOneLecture())
+		store, _ := env.api.recordingStore()
+		if err := store.put(99, 0, 0, strings.NewReader("a")); err != nil {
+			t.Fatal(err)
+		}
+		env.api.CheckBrowserRecordingConversions()
+		if _, err := os.Stat(store.recordingDir(99)); !os.IsNotExist(err) {
+			t.Errorf("chunks of a deleted recording kept: %v", err)
+		}
+	})
+
+	t.Run("a finalize retried after the database failed doesn't double the trailing gap", func(t *testing.T) {
+		uploads, parts := recordingRunner(t, http.StatusOK)
+		env := newRecordingAPI(t, uploads, courseOneLecture())
+		env.recs.failFinalize = 1
+		created := env.create(t, "PRES")
+		env.mustPut(t, created.GetUploadPath(), "0", "0", "a")
+		req := &protobuf.FinalizeBrowserRecordingRequest{
+			CourseId: 1, StreamId: 7, RecordingId: created.GetRecording().GetId(), Expected: []uint32{1}, TrailingGapMs: 4000,
+		}
+		if _, err := env.api.FinalizeBrowserRecording(asCaller(lectureAdmin), req); err == nil {
+			t.Fatal("the first finalize went through despite the database")
+		}
+		if _, err := env.api.FinalizeBrowserRecording(asCaller(lectureAdmin), req); err != nil {
+			t.Fatal(err)
+		}
+		env.api.handOffs.Wait()
+		if want := []string{"file=a", "gap_ms=4000"}; !slices.Equal(*parts, want) {
+			t.Errorf("runner got %v, want %v", *parts, want)
+		}
+	})
+
 	t.Run("a failed conversion is handed off again", func(t *testing.T) {
 		uploads, parts := recordingRunner(t, http.StatusOK)
 		env := newRecordingAPI(t, uploads, courseOneLecture())

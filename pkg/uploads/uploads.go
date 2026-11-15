@@ -17,11 +17,11 @@ type Uploads struct {
 }
 
 // Reserve picks a runner for one version of a stream's uploaded recording.
-func (u Uploads) Reserve(ctx context.Context, streamID uint, version model.StreamVersion) (apiv2.UploadTarget, error) {
+func (u Uploads) Reserve(ctx context.Context, streamID uint, version model.StreamVersion, importID string) (apiv2.UploadTarget, error) {
 	if u.Manager == nil {
 		return apiv2.UploadTarget{}, errors.New("no runner configured")
 	}
-	slot, err := u.Manager.RequestUpload(ctx, streamID, version)
+	slot, err := u.Manager.RequestUpload(ctx, streamID, version, importID)
 	if err != nil {
 		return apiv2.UploadTarget{}, err
 	}

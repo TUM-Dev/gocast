@@ -61,5 +61,11 @@ func (m *Manager) handleVODFailed(ctx context.Context, n *protobuf.VODFailedNoti
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "can't save the failure: %v", err)
 	}
+	// A browser recording is handed off again: it still has its chunks.
+	if id := n.GetImportId(); id != "" {
+		if err := m.dao.BrowserRecordingDao.FailBrowserRecordingImport(ctx, id, reason); err != nil {
+			return nil, status.Errorf(codes.Internal, "can't take back the browser recording: %v", err)
+		}
+	}
 	return &protobuf.NotificationResponse{}, nil
 }

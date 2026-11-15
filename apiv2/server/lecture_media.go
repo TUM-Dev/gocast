@@ -35,8 +35,9 @@ type UploadTarget struct {
 // uploads, so without one (see WithUploads) uploading answers 503.
 type Uploads interface {
 	// Reserve picks a runner and returns where to send the file for the given version of
-	// the stream. The runner learns which stream and version through the token.
-	Reserve(ctx context.Context, streamID uint, version model.StreamVersion) (UploadTarget, error)
+	// the stream. The runner learns which stream and version through the token. importID,
+	// if set, comes back with the conversion's VODReady or VODFailed.
+	Reserve(ctx context.Context, streamID uint, version model.StreamVersion, importID string) (UploadTarget, error)
 }
 
 // WithUploads lets uploading a lecture's recording reach a runner. Without it the
@@ -77,7 +78,7 @@ func (a *API) proxyLectureMedia(w http.ResponseWriter, r *http.Request, stream m
 		return
 	}
 
-	slot, err := a.uploads.Reserve(r.Context(), stream.ID, model.StreamVersion(videoType))
+	slot, err := a.uploads.Reserve(r.Context(), stream.ID, model.StreamVersion(videoType), "")
 	if err != nil {
 		a.log.Warn("can't reserve a runner for an upload", "stream", stream.ID, "err", err)
 		writeUploadError(w, e.WithStatus(http.StatusServiceUnavailable, errNoRunner))

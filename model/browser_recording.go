@@ -21,6 +21,10 @@ type BrowserRecording struct {
 	TicketHash []byte `gorm:"type:binary(32);not null;uniqueIndex"`
 	// FinalizedAt is set once the recording takes no more chunks.
 	FinalizedAt *time.Time
+	// ImportID names the current hand-off to the runner, which reports the conversion
+	// with it, so that a report can't be taken for another import of the same version.
+	// A new one with every hand-off: a report of an earlier one no longer matches.
+	ImportID string `gorm:"type:varchar(64);not null;default:'';index"`
 	// HandedOffAt is set once a runner has taken the recording to convert.
 	HandedOffAt *time.Time
 	// ConvertedAt is set once the VOD is there; its chunks are gone then.

@@ -25,12 +25,20 @@ type BrowserRecordingDao interface {
 	// ListUnfinalizedBrowserRecordings is the recordings created before `before` that still take chunks.
 	ListUnfinalizedBrowserRecordings(ctx context.Context, before time.Time) ([]model.BrowserRecording, error)
 	MarkBrowserRecordingHandedOff(ctx context.Context, id uint, now time.Time) error
+	// SetBrowserRecordingImport names the hand-off about to start; see ImportID.
+	SetBrowserRecordingImport(ctx context.Context, id uint, importID string) error
 	// ListConvertingBrowserRecordings is the recordings a runner took and has not
-	// turned into a VOD yet, as far as is known here.
+	// reported on yet.
 	ListConvertingBrowserRecordings(ctx context.Context) ([]model.BrowserRecording, error)
-	MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error
-	// RequeueBrowserRecordingHandOff takes back a hand-off whose conversion failed or
-	// was lost, to be handed off again; it counts as a failed attempt.
+	// ConvertBrowserRecordingImport marks the recording of the import as converted.
+	// Nothing for an import that is no longer the recording's current one.
+	ConvertBrowserRecordingImport(ctx context.Context, importID string, now time.Time) error
+	// FailBrowserRecordingImport takes back the hand-off of the import, to be handed off
+	// again, as RequeueBrowserRecordingHandOff does. Nothing for an import that is no
+	// longer the recording's current one.
+	FailBrowserRecordingImport(ctx context.Context, importID, reason string) error
+	// RequeueBrowserRecordingHandOff takes back a hand-off whose conversion was lost, to
+	// be handed off again; it counts as a failed attempt.
 	RequeueBrowserRecordingHandOff(ctx context.Context, id uint, reason string) error
 	// MarkBrowserRecordingHandOffFailed records why a hand-off failed. counts says whether
 	// it counts towards the attempt limit: a runner being away says nothing about the file.
@@ -94,16 +102,33 @@ func (d browserRecordingDao) ListConvertingBrowserRecordings(ctx context.Context
 	return recs, err
 }
 
-func (d browserRecordingDao) MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error {
-	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).Update("converted_at", now).Error
+func (d browserRecordingDao) SetBrowserRecordingImport(ctx context.Context, id uint, importID string) error {
+	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).Update("import_id", importID).Error
+}
+
+func (d browserRecordingDao) ConvertBrowserRecordingImport(ctx context.Context, importID string, now time.Time) error {
+	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).
+		Where("import_id = ? AND converted_at IS NULL", importID).
+		Updates(map[string]any{"converted_at": now, "hand_off_error": ""}).Error
+}
+
+func (d browserRecordingDao) FailBrowserRecordingImport(ctx context.Context, importID, reason string) error {
+	return d.requeue(ctx, d.db.WithContext(ctx).Where("import_id = ? AND converted_at IS NULL", importID), reason)
 }
 
 func (d browserRecordingDao) RequeueBrowserRecordingHandOff(ctx context.Context, id uint, reason string) error {
+	return d.requeue(ctx, d.db.WithContext(ctx).Where("id = ?", id), reason)
+}
+
+// requeue takes back the hand-offs where selects. The import ID goes with it, so that a
+// late report of the import taken back matches nothing.
+func (d browserRecordingDao) requeue(_ context.Context, where *gorm.DB, reason string) error {
 	if len(reason) > 512 {
 		reason = reason[:512]
 	}
-	return d.db.WithContext(ctx).Model(&model.BrowserRecording{}).Where("id = ?", id).Updates(map[string]any{
+	return where.Model(&model.BrowserRecording{}).Updates(map[string]any{
 		"handed_off_at":     nil,
+		"import_id":         "",
 		"hand_off_attempts": gorm.Expr("hand_off_attempts + 1"),
 		"hand_off_error":    reason,
 	}).Error

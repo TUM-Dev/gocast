@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -114,37 +115,60 @@ func (s recordingStore) sweepStaging(before time.Time) {
 }
 
 // gapName holds how long, in milliseconds, the recording was interrupted before a
-// segment. Not a number, so received() doesn't take it for a chunk.
-const gapName = "gap-ms"
+// segment; trailingGapName, in the recording's directory, how long at its end. Not
+// numbers, so they are taken for neither a chunk nor a segment.
+const (
+	gapName         = "gap-ms"
+	trailingGapName = "trailing-gap-ms"
+)
 
 // setGap records the interruption before a segment, synced like a chunk.
 func (s recordingStore) setGap(id uint, segment uint32, ms int64) error {
 	if segment >= maxRecordingSegments {
 		return errRecordingLayout
 	}
-	dir := s.segmentDir(id, segment)
+	return s.writeNumber(s.segmentDir(id, segment), gapName, ms)
+}
+
+// gap is the interruption before a segment in milliseconds, 0 when none was recorded.
+func (s recordingStore) gap(id uint, segment uint32) int64 {
+	return readNumber(filepath.Join(s.segmentDir(id, segment), gapName))
+}
+
+// setTrailingGap records the interruption at the recording's end. Set again, it replaces
+// itself, so a finalize sent twice does not count it twice.
+func (s recordingStore) setTrailingGap(id uint, ms int64) error {
+	return s.writeNumber(s.recordingDir(id), trailingGapName, ms)
+}
+
+func (s recordingStore) trailingGap(id uint) int64 {
+	return readNumber(filepath.Join(s.recordingDir(id), trailingGapName))
+}
+
+// writeNumber puts n into dir/name, through staging and synced, as a chunk is stored.
+func (s recordingStore) writeNumber(dir, name string, n int64) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	staged, err := s.stage(strings.NewReader(strconv.FormatInt(ms, 10)))
+	staged, err := s.stage(strings.NewReader(strconv.FormatInt(n, 10)))
 	if err != nil {
 		return err
 	}
-	if err := os.Rename(staged, filepath.Join(dir, gapName)); err != nil {
+	if err := os.Rename(staged, filepath.Join(dir, name)); err != nil {
 		_ = os.Remove(staged)
 		return err
 	}
 	return syncDir(dir)
 }
 
-// gap is the interruption before a segment in milliseconds, 0 when none was recorded.
-func (s recordingStore) gap(id uint, segment uint32) int64 {
-	b, err := os.ReadFile(filepath.Join(s.segmentDir(id, segment), gapName))
+// readNumber is what writeNumber put into a file, 0 for none.
+func readNumber(file string) int64 {
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return 0
 	}
-	ms, _ := strconv.ParseInt(string(b), 10, 64)
-	return max(ms, 0)
+	n, _ := strconv.ParseInt(string(b), 10, 64)
+	return max(n, 0)
 }
 
 // put stages and commits a chunk in one go.
@@ -172,26 +196,10 @@ func syncDir(dir string) error {
 // gap. Only those make a playable file: a chunk after a gap is held back until the
 // gap is filled. A segment with nothing is 0, and trailing ones are left out.
 func (s recordingStore) received(id uint) ([]uint32, error) {
-	entries, err := os.ReadDir(s.recordingDir(id))
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-	if err != nil {
+	segments, err := s.segments(id)
+	if err != nil || len(segments) == 0 {
 		return nil, err
 	}
-	var segments []uint32
-	for _, e := range entries {
-		n, err := strconv.ParseUint(e.Name(), 10, 32)
-		if err != nil || !e.IsDir() || n >= maxRecordingSegments {
-			continue
-		}
-		segments = append(segments, uint32(n))
-	}
-	if len(segments) == 0 {
-		return nil, nil
-	}
-	sort.Slice(segments, func(i, j int) bool { return segments[i] < segments[j] })
-
 	counts := make([]uint32, segments[len(segments)-1]+1)
 	for _, seg := range segments {
 		n, err := s.contiguousChunks(id, seg)
@@ -209,22 +217,38 @@ func (s recordingStore) received(id uint) ([]uint32, error) {
 // segments is the numbers of the segments that have anything, in order: chunks, or only
 // the gap before them, which a segment that never got a chunk has.
 func (s recordingStore) segments(id uint) ([]uint32, error) {
-	entries, err := os.ReadDir(s.recordingDir(id))
+	return numberedDirs(s.recordingDir(id), maxRecordingSegments)
+}
+
+// recordings is the IDs of the recordings that have anything on disk.
+func (s recordingStore) recordings() ([]uint, error) {
+	ns, err := numberedDirs(s.root, math.MaxUint32)
+	ids := make([]uint, len(ns))
+	for i, n := range ns {
+		ids[i] = uint(n)
+	}
+	return ids, err
+}
+
+// numberedDirs is the directories in dir named by a number below limit, in order. The
+// staging directory and the files beside them are no numbers.
+func numberedDirs(dir string, limit uint64) ([]uint32, error) {
+	entries, err := os.ReadDir(dir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var segments []uint32
+	var ns []uint32
 	for _, e := range entries {
 		n, err := strconv.ParseUint(e.Name(), 10, 32)
-		if err == nil && e.IsDir() && n < maxRecordingSegments {
-			segments = append(segments, uint32(n))
+		if err == nil && e.IsDir() && n < limit {
+			ns = append(ns, uint32(n))
 		}
 	}
-	sort.Slice(segments, func(i, j int) bool { return segments[i] < segments[j] })
-	return segments, nil
+	sort.Slice(ns, func(i, j int) bool { return ns[i] < ns[j] })
+	return ns, nil
 }
 
 func (s recordingStore) contiguousChunks(id uint, segment uint32) (uint32, error) {

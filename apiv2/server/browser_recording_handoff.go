@@ -2,6 +2,8 @@ package apiv2
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -192,6 +194,7 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 					return err
 				}
 			}
+			gap += store.trailingGap(id)
 			if err := writeGap(); err != nil {
 				return err
 			}
@@ -202,81 +205,83 @@ func segmentsBody(store recordingStore, id uint, segments, received []uint32) (i
 	return pr, mw.FormDataContentType()
 }
 
-// lostConversionAfter is how long a conversion may show as under way before it is taken
-// to be lost with a runner that restarted. Far above what a lecture takes to transcode.
+// lostConversionAfter is how long a hand-off may go without the runner reporting on its
+// conversion before it is taken to be lost with a runner that restarted, which keeps
+// nothing of an import. Far above what a lecture takes to transcode.
 const lostConversionAfter = 6 * time.Hour
 
 // CheckBrowserRecordingConversions removes the chunks of the recordings whose VOD is
-// there, and hands off again the ones whose conversion failed or was lost. Then it
-// resumes the hand-offs that are due. Run on boot and by a cron.
+// there, which the runner's VODReady marks, and of recordings that are gone, with their
+// lecture too. It hands off again the ones whose conversion the runner never reported
+// on, and then the hand-offs that are due. A failed conversion is handed back by its
+// VODFailed. Run on boot and by a cron.
 func (a *API) CheckBrowserRecordingConversions() {
 	ctx := context.Background()
 	store, err := a.recordingStore()
 	if err != nil {
 		return
 	}
+	ids, err := store.recordings()
+	if err != nil {
+		a.log.Error("can't list browser recordings on disk", "err", err)
+	}
+	for _, id := range ids {
+		rec, err := a.dao.BrowserRecordingDao.GetBrowserRecording(ctx, id)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			a.log.Warn("can't look up a browser recording", "recording", id, "err", err)
+			continue
+		}
+		if err == nil && rec.ConvertedAt == nil {
+			a.dropIfLectureGone(ctx, store, rec)
+			continue
+		}
+		if err := store.remove(id); err != nil {
+			a.log.Warn("can't remove a browser recording's chunks", "recording", id, "err", err)
+		}
+	}
+
 	recs, err := a.dao.BrowserRecordingDao.ListConvertingBrowserRecordings(ctx)
 	if err != nil {
 		a.log.Error("can't list browser recordings being converted", "err", err)
 		return
 	}
 	for _, rec := range recs {
+		if time.Since(*rec.HandedOffAt) < lostConversionAfter {
+			continue
+		}
 		log := a.log.With("recording", rec.ID, "stream", rec.StreamID, "version", rec.Version)
-		done, retry, err := a.conversionState(ctx, rec)
-		switch {
-		case err != nil:
-			log.Warn("can't tell how a browser recording's conversion went", "err", err)
-		case done:
-			if err := a.dao.BrowserRecordingDao.MarkBrowserRecordingConverted(ctx, rec.ID, time.Now()); err != nil {
-				log.Warn("can't record a converted browser recording", "err", err)
-				continue
-			}
-			if err := store.remove(rec.ID); err != nil {
-				log.Warn("can't remove a converted browser recording's chunks", "err", err)
-			}
-		case retry != "":
-			log.Warn("browser recording's conversion failed, handing it off again", "reason", retry)
-			// A conversion taken for lost still shows as under way, which would keep the
-			// next hand-off of this version waiting.
-			if err := a.dao.StreamsDao.RemoveTranscodingProgress(rec.Version, rec.StreamID); err != nil {
-				log.Warn("can't clear a lost conversion's progress", "err", err)
-			}
-			if err := a.dao.BrowserRecordingDao.RequeueBrowserRecordingHandOff(ctx, rec.ID, retry); err != nil {
-				log.Warn("can't take back a failed hand-off", "err", err)
-			}
+		log.Warn("no word of a browser recording's conversion, handing it off again")
+		// Still shown as converting, which would keep the next hand-off waiting.
+		if err := a.dao.StreamsDao.RemoveTranscodingProgress(rec.Version, rec.StreamID); err != nil {
+			log.Warn("can't clear a lost conversion's progress", "err", err)
+		}
+		if err := a.dao.BrowserRecordingDao.RequeueBrowserRecordingHandOff(ctx, rec.ID, "the conversion did not finish"); err != nil {
+			log.Warn("can't take back a lost hand-off", "err", err)
 		}
 	}
 	a.ResumeBrowserRecordingHandOffs()
 }
 
-// conversionState tells whether a handed-off recording's VOD is done, or why it has to be
-// handed off again; neither while it is being converted. The progress row the hand-off
-// made goes away with VODReady and stays, marked failed, with VODFailed.
-func (a *API) conversionState(ctx context.Context, rec model.BrowserRecording) (done bool, retry string, err error) {
-	progress, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(rec.Version, rec.StreamID)
-	switch {
-	case err == nil && progress.Failed:
-		return false, "the conversion failed: " + progress.Error, nil
-	case err == nil:
-		if time.Since(*rec.HandedOffAt) > lostConversionAfter {
-			return false, "the conversion did not finish", nil
-		}
-		return false, "", nil
-	case !errors.Is(err, gorm.ErrRecordNotFound):
-		return false, "", err
+// dropIfLectureGone deletes a recording whose lecture was deleted: its VODReady would be
+// dropped with the lecture, so it would never be marked converted, and its chunks would
+// stay. Claimed like a hand-off, which it must not cut short.
+func (a *API) dropIfLectureGone(ctx context.Context, store recordingStore, rec model.BrowserRecording) {
+	_, err := a.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(rec.StreamID), 10))
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return
 	}
-	stream, err := a.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(uint64(rec.StreamID), 10))
-	if err != nil {
-		return false, "", err
+	if _, busy := a.handingOff.LoadOrStore(rec.ID, struct{}{}); busy {
+		return
 	}
-	if *playlistOf(&stream, rec.Version) == "" {
-		return false, "the conversion ended without a video", nil
+	defer a.handingOff.Delete(rec.ID)
+	a.log.Info("removing a browser recording of a deleted lecture", "recording", rec.ID, "stream", rec.StreamID)
+	if err := a.dropRecording(ctx, store, rec.ID); err != nil {
+		a.log.Warn("can't remove a browser recording of a deleted lecture", "recording", rec.ID, "err", err)
 	}
-	return true, "", nil
 }
 
-// browserRecordingConverting tells whether a runner is converting a browser recording of
-// the lecture's version.
+// browserRecordingConverting tells whether a browser recording of the lecture's version
+// is finalized and its VOD not there yet: waiting for a runner, or being converted.
 func (a *API) browserRecordingConverting(ctx context.Context, streamID uint, version model.StreamVersion) (bool, error) {
 	// A browser records a presentation and a camera version, never a combined one.
 	if version != model.PRES && version != model.CAM {
@@ -287,15 +292,16 @@ func (a *API) browserRecordingConverting(ctx context.Context, streamID uint, ver
 		return false, err
 	}
 	for _, rec := range recs {
-		if rec.Version == version && rec.HandedOffAt != nil {
+		if rec.Version == version && rec.FinalizedAt != nil {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-// claimVersion reserves a runner and marks the version of the lecture as converting,
-// unless another import of it is under way. Under a lock per version, so that two
+// claimVersion names the hand-off, reserves a runner for it and has the card show the
+// version converting, unless another import of the version is under way: the one to
+// finish last would make the VOD, whichever it is. Under a lock per version, so that two
 // hand-offs of it can't both find it free.
 func (a *API) claimVersion(ctx context.Context, rec model.BrowserRecording) (slot UploadTarget, dropProgress func(), err error) {
 	key := fmt.Sprintf("%d/%s", rec.StreamID, rec.Version)
@@ -307,7 +313,15 @@ func (a *API) claimVersion(ctx context.Context, rec model.BrowserRecording) (slo
 	if err == nil && !progress.Failed {
 		return UploadTarget{}, nil, errVersionBusy
 	}
-	slot, err = a.uploads.Reserve(ctx, rec.StreamID, rec.Version)
+	suffix := make([]byte, 8)
+	if _, err := rand.Read(suffix); err != nil {
+		return UploadTarget{}, nil, err
+	}
+	importID := fmt.Sprintf("browser-%d-%s", rec.ID, hex.EncodeToString(suffix))
+	if err := a.dao.BrowserRecordingDao.SetBrowserRecordingImport(ctx, rec.ID, importID); err != nil {
+		return UploadTarget{}, nil, fmt.Errorf("name the hand-off: %w", err)
+	}
+	slot, err = a.uploads.Reserve(ctx, rec.StreamID, rec.Version, importID)
 	if err != nil {
 		return UploadTarget{}, nil, fmt.Errorf("%w: %w", errNoRunner, err)
 	}

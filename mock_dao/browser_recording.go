@@ -42,6 +42,20 @@ func (m *MockBrowserRecordingDao) EXPECT() *MockBrowserRecordingDaoMockRecorder 
 	return m.recorder
 }
 
+// ConvertBrowserRecordingImport mocks base method.
+func (m *MockBrowserRecordingDao) ConvertBrowserRecordingImport(ctx context.Context, importID string, now time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertBrowserRecordingImport", ctx, importID, now)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConvertBrowserRecordingImport indicates an expected call of ConvertBrowserRecordingImport.
+func (mr *MockBrowserRecordingDaoMockRecorder) ConvertBrowserRecordingImport(ctx, importID, now any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertBrowserRecordingImport", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ConvertBrowserRecordingImport), ctx, importID, now)
+}
+
 // CreateBrowserRecording mocks base method.
 func (m *MockBrowserRecordingDao) CreateBrowserRecording(ctx context.Context, rec *model.BrowserRecording) error {
 	m.ctrl.T.Helper()
@@ -68,6 +82,20 @@ func (m *MockBrowserRecordingDao) DeleteBrowserRecording(ctx context.Context, id
 func (mr *MockBrowserRecordingDaoMockRecorder) DeleteBrowserRecording(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBrowserRecording", reflect.TypeOf((*MockBrowserRecordingDao)(nil).DeleteBrowserRecording), ctx, id)
+}
+
+// FailBrowserRecordingImport mocks base method.
+func (m *MockBrowserRecordingDao) FailBrowserRecordingImport(ctx context.Context, importID, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FailBrowserRecordingImport", ctx, importID, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FailBrowserRecordingImport indicates an expected call of FailBrowserRecordingImport.
+func (mr *MockBrowserRecordingDaoMockRecorder) FailBrowserRecordingImport(ctx, importID, reason any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FailBrowserRecordingImport", reflect.TypeOf((*MockBrowserRecordingDao)(nil).FailBrowserRecordingImport), ctx, importID, reason)
 }
 
 // FinalizeBrowserRecording mocks base method.
@@ -175,20 +203,6 @@ func (mr *MockBrowserRecordingDaoMockRecorder) ListUnfinalizedBrowserRecordings(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListUnfinalizedBrowserRecordings", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ListUnfinalizedBrowserRecordings), ctx, before)
 }
 
-// MarkBrowserRecordingConverted mocks base method.
-func (m *MockBrowserRecordingDao) MarkBrowserRecordingConverted(ctx context.Context, id uint, now time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkBrowserRecordingConverted", ctx, id, now)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkBrowserRecordingConverted indicates an expected call of MarkBrowserRecordingConverted.
-func (mr *MockBrowserRecordingDaoMockRecorder) MarkBrowserRecordingConverted(ctx, id, now any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkBrowserRecordingConverted", reflect.TypeOf((*MockBrowserRecordingDao)(nil).MarkBrowserRecordingConverted), ctx, id, now)
-}
-
 // MarkBrowserRecordingHandOffFailed mocks base method.
 func (m *MockBrowserRecordingDao) MarkBrowserRecordingHandOffFailed(ctx context.Context, id uint, reason string, counts bool) error {
 	m.ctrl.T.Helper()
@@ -243,4 +257,18 @@ func (m *MockBrowserRecordingDao) ResetBrowserRecordingHandOff(ctx context.Conte
 func (mr *MockBrowserRecordingDaoMockRecorder) ResetBrowserRecordingHandOff(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetBrowserRecordingHandOff", reflect.TypeOf((*MockBrowserRecordingDao)(nil).ResetBrowserRecordingHandOff), ctx, id)
+}
+
+// SetBrowserRecordingImport mocks base method.
+func (m *MockBrowserRecordingDao) SetBrowserRecordingImport(ctx context.Context, id uint, importID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetBrowserRecordingImport", ctx, id, importID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetBrowserRecordingImport indicates an expected call of SetBrowserRecordingImport.
+func (mr *MockBrowserRecordingDaoMockRecorder) SetBrowserRecordingImport(ctx, id, importID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBrowserRecordingImport", reflect.TypeOf((*MockBrowserRecordingDao)(nil).SetBrowserRecordingImport), ctx, id, importID)
 }

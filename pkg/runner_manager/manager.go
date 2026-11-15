@@ -750,6 +750,12 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	if err := m.dao.StreamsDao.RemoveTranscodingProgress(modelVersion, stream.ID); err != nil {
 		return nil, status.Errorf(codes.Internal, "can't clear the transcoding progress: %v", err)
 	}
+	// A browser recording's chunks may go now: its VOD is there.
+	if id := notification.GetImportId(); id != "" {
+		if err := m.dao.BrowserRecordingDao.ConvertBrowserRecordingImport(ctx, id, time.Now()); err != nil {
+			return nil, status.Errorf(codes.Internal, "can't mark the browser recording converted: %v", err)
+		}
+	}
 
 	if err := m.afterVODReady(ctx, stream.ID); err != nil {
 		return nil, err

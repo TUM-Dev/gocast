@@ -205,14 +205,10 @@ func (a *API) finalizeRecording(ctx context.Context, store recordingStore, id ui
 			return false, errRecordingIncomplete
 		}
 	}
-	// The time this version missed at the end, while the other went on: kept as the gap
-	// of a segment after the last, which the hand-off sends after the last file.
+	// The time this version missed at the end, while the other went on, which the
+	// hand-off sends after the last file.
 	if trailingGapMs > 0 {
-		segments, err := store.segments(id)
-		if err != nil {
-			return false, err
-		}
-		if err := store.setGap(id, segments[len(segments)-1]+1, int64(trailingGapMs)); err != nil {
+		if err := store.setTrailingGap(id, int64(trailingGapMs)); err != nil {
 			return false, err
 		}
 	}

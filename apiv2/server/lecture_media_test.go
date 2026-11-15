@@ -35,10 +35,11 @@ type fakeUploads struct {
 	called   bool
 	streamID uint
 	version  model.StreamVersion
+	importID string
 }
 
-func (f *fakeUploads) Reserve(_ context.Context, streamID uint, version model.StreamVersion) (UploadTarget, error) {
-	f.called, f.streamID, f.version = true, streamID, version
+func (f *fakeUploads) Reserve(_ context.Context, streamID uint, version model.StreamVersion, importID string) (UploadTarget, error) {
+	f.called, f.streamID, f.version, f.importID = true, streamID, version, importID
 	return f.target, f.err
 }
 
@@ -105,9 +106,10 @@ func TestUploadLectureMediaWhileBrowserRecordingConverts(t *testing.T) {
 	api, m := newMediaAPI(t, &fakeUploads{})
 	m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(courseOne, nil)
 	m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+	// Finalized and waiting for a runner: an upload now would be replaced by it.
 	now := time.Now()
 	recs := api.dao.BrowserRecordingDao.(*fakeRecordings)
-	_ = recs.CreateBrowserRecording(context.Background(), &model.BrowserRecording{StreamID: 7, Version: model.PRES, HandedOffAt: &now})
+	_ = recs.CreateBrowserRecording(context.Background(), &model.BrowserRecording{StreamID: 7, Version: model.PRES, FinalizedAt: &now})
 
 	rec := serveUpload(api, uploadRequest(t, "/api/v2/courses/1/streams/7/media?type=PRES", lectureAdmin, "lecture.mp4", "video/mp4"))
 	if rec.Code != http.StatusConflict {
