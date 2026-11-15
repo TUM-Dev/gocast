@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -119,6 +120,78 @@ func TestHandleUpload(t *testing.T) {
 		b, err := os.ReadFile(got["uploadPath"].(string))
 		if err != nil || string(b) != "video-bytes" {
 			t.Errorf("stored file = %q, %v", b, err)
+		}
+	})
+
+	t.Run("keeps several files in order for the import to join", func(t *testing.T) {
+		r := newUploadTestRunner(t)
+		token, _ := r.uploads.create(9, "STREAM_VERSION_PRESENTATION", false)
+		r.uploads.attachImport(token, "browser-7-abc")
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		for i, content := range []string{"first", "second"} {
+			if i == 1 {
+				_ = mw.WriteField("gap_ms", "1500")
+			}
+			fw, _ := mw.CreateFormFile("file", "segment")
+			_, _ = fw.Write([]byte(content))
+		}
+		_ = mw.WriteField("gap_ms", "2000")
+		_ = mw.Close()
+
+		var got map[string]any
+		started := make(chan struct{})
+		prev := importActions
+		importActions = []actions.Action{func(_ context.Context, _ *slog.Logger, _ chan *protobuf.Notification, d map[string]any, _ *metrics.Broker) error {
+			got = d
+			close(started)
+			return nil
+		}}
+		t.Cleanup(func() { importActions = prev })
+
+		if rec := post(r, token, body, mw.FormDataContentType()); rec.Code != http.StatusOK {
+			t.Fatalf("status = %d (%s), want 200", rec.Code, rec.Body)
+		}
+		select {
+		case <-started:
+		case <-time.After(5 * time.Second):
+			t.Fatal("import not started")
+		}
+		paths, _ := got["uploadPaths"].([]string)
+		if len(paths) != 2 || got["uploadPath"] != paths[0] {
+			t.Fatalf("job data = %v", got)
+		}
+		if gaps, _ := got["uploadGaps"].([]float64); !slices.Equal(gaps, []float64{0, 1.5}) {
+			t.Errorf("gaps = %v, want [0 1.5]", got["uploadGaps"])
+		}
+		if got["importID"] != "browser-7-abc" {
+			t.Errorf("import id = %v, want the one PrepareUpload was given", got["importID"])
+		}
+		if got["uploadTrailingGap"] != 2.0 {
+			t.Errorf("trailing gap = %v, want 2", got["uploadTrailingGap"])
+		}
+		for i, want := range []string{"first", "second"} {
+			if b, err := os.ReadFile(paths[i]); err != nil || string(b) != want {
+				t.Errorf("file %d = %q, %v; want %q", i, b, err, want)
+			}
+		}
+	})
+
+	t.Run("an empty file among several removes all of them", func(t *testing.T) {
+		r := newUploadTestRunner(t)
+		token, _ := r.uploads.create(9, "STREAM_VERSION_PRESENTATION", false)
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		for _, content := range []string{"first", ""} {
+			fw, _ := mw.CreateFormFile("file", "segment")
+			_, _ = fw.Write([]byte(content))
+		}
+		_ = mw.Close()
+		if rec := post(r, token, body, mw.FormDataContentType()); rec.Code != http.StatusBadRequest {
+			t.Errorf("status = %d, want 400", rec.Code)
+		}
+		if entries, _ := os.ReadDir(config.Config.UploadPath); len(entries) != 0 {
+			t.Errorf("%d files left in the upload dir", len(entries))
 		}
 	})
 

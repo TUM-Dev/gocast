@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,7 +44,9 @@ type uploadSlot struct {
 	// traceparent is the trace of the PrepareUpload call, which the import job joins. The
 	// upload itself arrives on a plain HTTP request that carries none.
 	traceparent string
-	expires     time.Time
+	// importID goes back to the server with the import's VODReady or VODFailed.
+	importID string
+	expires  time.Time
 }
 
 // uploadSlots hands out the single-use tokens the upload endpoint accepts. The endpoint
@@ -83,6 +87,16 @@ func (u *uploadSlots) attachTrace(token, traceparent string) {
 	defer u.mu.Unlock()
 	if s, ok := u.slots[token]; ok {
 		s.traceparent = traceparent
+		u.slots[token] = s
+	}
+}
+
+// attachImport has the import of the upload that redeems token report importID.
+func (u *uploadSlots) attachImport(token, importID string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if s, ok := u.slots[token]; ok {
+		s.importID = importID
 		u.slots[token] = s
 	}
 }
@@ -147,36 +161,61 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var file string
+	// Usually one file. A recording made in the browser comes as several, one per
+	// segment, in order: the import joins them. Every part is joined, whoever sent it;
+	// only the server's browser-recording hand-off sends more than one. Should another
+	// upload ever do, PrepareUpload has to say which uploads are segments.
+	var files []string
+	// How long the recording was interrupted before each file, in seconds: a
+	// "gap_ms" field before the file part it belongs to. Left out, there is none. One
+	// after the last file is the time missed at the end.
+	var gaps []float64
+	var gap float64
+	fail := func(msg string, status int) {
+		for _, f := range files {
+			_ = os.Remove(f)
+		}
+		http.Error(w, msg, status)
+	}
 	for {
 		part, err := mr.NextPart()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			fail(err.Error(), http.StatusBadRequest)
 			return
+		}
+		if part.FormName() == "gap_ms" {
+			b, _ := io.ReadAll(io.LimitReader(part, 32))
+			ms, err := strconv.ParseInt(strings.TrimSpace(string(b)), 10, 64)
+			if err != nil || ms < 0 {
+				fail("gap_ms must be milliseconds", http.StatusBadRequest)
+				return
+			}
+			gap = float64(ms) / 1000
+			continue
 		}
 		if part.FormName() != "file" {
 			continue
 		}
-		var size int64
-		file, size, err = r.storeUpload(part)
+		file, size, err := r.storeUpload(part)
 		if err != nil {
 			log.Error("storing upload failed", "error", err)
-			http.Error(w, "couldn't store the upload", http.StatusInternalServerError)
+			fail("couldn't store the upload", http.StatusInternalServerError)
 			return
 		}
+		files = append(files, file)
+		gaps = append(gaps, gap)
+		gap = 0
 		if size == 0 {
 			// Answering 200 would send the uploader off to wait for a video that
 			// the import can only fail to make.
-			_ = os.Remove(file)
-			http.Error(w, "the file is empty", http.StatusBadRequest)
+			fail("the file is empty", http.StatusBadRequest)
 			return
 		}
-		break
 	}
-	if file == "" {
+	if len(files) == 0 {
 		http.Error(w, "no file in request", http.StatusBadRequest)
 		return
 	}
@@ -184,7 +223,22 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	data := map[string]any{
 		"streamID":      slot.streamID,
 		"streamVersion": slot.version,
-		"uploadPath":    file,
+		"uploadPath":    files[0],
+	}
+	if len(files) > 1 {
+		data["uploadPaths"] = files
+	}
+	for _, g := range gaps {
+		if g > 0 {
+			data["uploadGaps"] = gaps
+			break
+		}
+	}
+	if gap > 0 {
+		data["uploadTrailingGap"] = gap
+	}
+	if slot.importID != "" {
+		data["importID"] = slot.importID
 	}
 	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)

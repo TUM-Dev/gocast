@@ -827,6 +827,11 @@ const (
 	CourseService_GetLectureCut_FullMethodName                   = "/protobuf.CourseService/getLectureCut"
 	CourseService_RetryLectureCut_FullMethodName                 = "/protobuf.CourseService/retryLectureCut"
 	CourseService_AbandonLectureCut_FullMethodName               = "/protobuf.CourseService/abandonLectureCut"
+	CourseService_CreateBrowserRecording_FullMethodName          = "/protobuf.CourseService/createBrowserRecording"
+	CourseService_GetBrowserRecording_FullMethodName             = "/protobuf.CourseService/getBrowserRecording"
+	CourseService_ListBrowserRecordings_FullMethodName           = "/protobuf.CourseService/listBrowserRecordings"
+	CourseService_FinalizeBrowserRecording_FullMethodName        = "/protobuf.CourseService/finalizeBrowserRecording"
+	CourseService_AbandonBrowserRecording_FullMethodName         = "/protobuf.CourseService/abandonBrowserRecording"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -912,6 +917,16 @@ type CourseServiceClient interface {
 	GetLectureCut(ctx context.Context, in *GetLectureCutRequest, opts ...grpc.CallOption) (*GetLectureCutResponse, error)
 	RetryLectureCut(ctx context.Context, in *RetryLectureCutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AbandonLectureCut(ctx context.Context, in *AbandonLectureCutRequest, opts ...grpc.CallOption) (*AbandonLectureCutResponse, error)
+	// Recording in the browser. The browser uploads each version in chunks while it records,
+	// PUT {upload_path}/segments/{segment}/chunks/{seq} with the chunk as the body, outside
+	// the gateway. A segment is what one MediaRecorder made; a new one starts when recording
+	// resumes. Each answers {} once the chunk is stored, 404 for an unknown ticket, 409 once
+	// the recording is finalized, 400 for a segment or chunk out of range or a chunk over 16 MB.
+	CreateBrowserRecording(ctx context.Context, in *CreateBrowserRecordingRequest, opts ...grpc.CallOption) (*CreateBrowserRecordingResponse, error)
+	GetBrowserRecording(ctx context.Context, in *GetBrowserRecordingRequest, opts ...grpc.CallOption) (*BrowserRecording, error)
+	ListBrowserRecordings(ctx context.Context, in *ListBrowserRecordingsRequest, opts ...grpc.CallOption) (*ListBrowserRecordingsResponse, error)
+	FinalizeBrowserRecording(ctx context.Context, in *FinalizeBrowserRecordingRequest, opts ...grpc.CallOption) (*BrowserRecording, error)
+	AbandonBrowserRecording(ctx context.Context, in *AbandonBrowserRecordingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type courseServiceClient struct {
@@ -1522,6 +1537,56 @@ func (c *courseServiceClient) AbandonLectureCut(ctx context.Context, in *Abandon
 	return out, nil
 }
 
+func (c *courseServiceClient) CreateBrowserRecording(ctx context.Context, in *CreateBrowserRecordingRequest, opts ...grpc.CallOption) (*CreateBrowserRecordingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateBrowserRecordingResponse)
+	err := c.cc.Invoke(ctx, CourseService_CreateBrowserRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetBrowserRecording(ctx context.Context, in *GetBrowserRecordingRequest, opts ...grpc.CallOption) (*BrowserRecording, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BrowserRecording)
+	err := c.cc.Invoke(ctx, CourseService_GetBrowserRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) ListBrowserRecordings(ctx context.Context, in *ListBrowserRecordingsRequest, opts ...grpc.CallOption) (*ListBrowserRecordingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBrowserRecordingsResponse)
+	err := c.cc.Invoke(ctx, CourseService_ListBrowserRecordings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) FinalizeBrowserRecording(ctx context.Context, in *FinalizeBrowserRecordingRequest, opts ...grpc.CallOption) (*BrowserRecording, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BrowserRecording)
+	err := c.cc.Invoke(ctx, CourseService_FinalizeBrowserRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) AbandonBrowserRecording(ctx context.Context, in *AbandonBrowserRecordingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_AbandonBrowserRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -1605,6 +1670,16 @@ type CourseServiceServer interface {
 	GetLectureCut(context.Context, *GetLectureCutRequest) (*GetLectureCutResponse, error)
 	RetryLectureCut(context.Context, *RetryLectureCutRequest) (*emptypb.Empty, error)
 	AbandonLectureCut(context.Context, *AbandonLectureCutRequest) (*AbandonLectureCutResponse, error)
+	// Recording in the browser. The browser uploads each version in chunks while it records,
+	// PUT {upload_path}/segments/{segment}/chunks/{seq} with the chunk as the body, outside
+	// the gateway. A segment is what one MediaRecorder made; a new one starts when recording
+	// resumes. Each answers {} once the chunk is stored, 404 for an unknown ticket, 409 once
+	// the recording is finalized, 400 for a segment or chunk out of range or a chunk over 16 MB.
+	CreateBrowserRecording(context.Context, *CreateBrowserRecordingRequest) (*CreateBrowserRecordingResponse, error)
+	GetBrowserRecording(context.Context, *GetBrowserRecordingRequest) (*BrowserRecording, error)
+	ListBrowserRecordings(context.Context, *ListBrowserRecordingsRequest) (*ListBrowserRecordingsResponse, error)
+	FinalizeBrowserRecording(context.Context, *FinalizeBrowserRecordingRequest) (*BrowserRecording, error)
+	AbandonBrowserRecording(context.Context, *AbandonBrowserRecordingRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -1794,6 +1869,21 @@ func (UnimplementedCourseServiceServer) RetryLectureCut(context.Context, *RetryL
 }
 func (UnimplementedCourseServiceServer) AbandonLectureCut(context.Context, *AbandonLectureCutRequest) (*AbandonLectureCutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AbandonLectureCut not implemented")
+}
+func (UnimplementedCourseServiceServer) CreateBrowserRecording(context.Context, *CreateBrowserRecordingRequest) (*CreateBrowserRecordingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateBrowserRecording not implemented")
+}
+func (UnimplementedCourseServiceServer) GetBrowserRecording(context.Context, *GetBrowserRecordingRequest) (*BrowserRecording, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBrowserRecording not implemented")
+}
+func (UnimplementedCourseServiceServer) ListBrowserRecordings(context.Context, *ListBrowserRecordingsRequest) (*ListBrowserRecordingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBrowserRecordings not implemented")
+}
+func (UnimplementedCourseServiceServer) FinalizeBrowserRecording(context.Context, *FinalizeBrowserRecordingRequest) (*BrowserRecording, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FinalizeBrowserRecording not implemented")
+}
+func (UnimplementedCourseServiceServer) AbandonBrowserRecording(context.Context, *AbandonBrowserRecordingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbandonBrowserRecording not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -2896,6 +2986,96 @@ func _CourseService_AbandonLectureCut_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_CreateBrowserRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBrowserRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CreateBrowserRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CreateBrowserRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CreateBrowserRecording(ctx, req.(*CreateBrowserRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetBrowserRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBrowserRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetBrowserRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetBrowserRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetBrowserRecording(ctx, req.(*GetBrowserRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_ListBrowserRecordings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBrowserRecordingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ListBrowserRecordings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ListBrowserRecordings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ListBrowserRecordings(ctx, req.(*ListBrowserRecordingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_FinalizeBrowserRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FinalizeBrowserRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).FinalizeBrowserRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_FinalizeBrowserRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).FinalizeBrowserRecording(ctx, req.(*FinalizeBrowserRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_AbandonBrowserRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbandonBrowserRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).AbandonBrowserRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_AbandonBrowserRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).AbandonBrowserRecording(ctx, req.(*AbandonBrowserRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CourseService_ServiceDesc is the grpc.ServiceDesc for CourseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -3142,6 +3322,26 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "abandonLectureCut",
 			Handler:    _CourseService_AbandonLectureCut_Handler,
+		},
+		{
+			MethodName: "createBrowserRecording",
+			Handler:    _CourseService_CreateBrowserRecording_Handler,
+		},
+		{
+			MethodName: "getBrowserRecording",
+			Handler:    _CourseService_GetBrowserRecording_Handler,
+		},
+		{
+			MethodName: "listBrowserRecordings",
+			Handler:    _CourseService_ListBrowserRecordings_Handler,
+		},
+		{
+			MethodName: "finalizeBrowserRecording",
+			Handler:    _CourseService_FinalizeBrowserRecording_Handler,
+		},
+		{
+			MethodName: "abandonBrowserRecording",
+			Handler:    _CourseService_AbandonBrowserRecording_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

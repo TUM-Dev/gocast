@@ -495,6 +495,8 @@ type VODReadyNotification struct {
 	Stream        *StreamInfo            `protobuf:"bytes,1,opt,name=stream" json:"stream,omitempty"`
 	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
 	Url           *string                `protobuf:"bytes,3,opt,name=url" json:"url,omitempty"`
+	// The PrepareUploadRequest's import_id, for the VOD of an upload.
+	ImportId      *string `protobuf:"bytes,4,opt,name=import_id,json=importId" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -546,6 +548,13 @@ func (x *VODReadyNotification) GetStreamVersion() StreamVersion {
 func (x *VODReadyNotification) GetUrl() string {
 	if x != nil && x.Url != nil {
 		return *x.Url
+	}
+	return ""
+}
+
+func (x *VODReadyNotification) GetImportId() string {
+	if x != nil && x.ImportId != nil {
+		return *x.ImportId
 	}
 	return ""
 }
@@ -829,7 +838,9 @@ type VODFailedNotification struct {
 	StreamVersion *StreamVersion         `protobuf:"varint,2,opt,name=stream_version,json=streamVersion,enum=protobuf.StreamVersion" json:"stream_version,omitempty"`
 	// reason is meant for the person who uploaded the video: it names no paths and
 	// none of the runner's internals. Those are in the runner's log.
-	Reason        *string `protobuf:"bytes,3,opt,name=reason" json:"reason,omitempty"`
+	Reason *string `protobuf:"bytes,3,opt,name=reason" json:"reason,omitempty"`
+	// The PrepareUploadRequest's import_id.
+	ImportId      *string `protobuf:"bytes,4,opt,name=import_id,json=importId" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -881,6 +892,13 @@ func (x *VODFailedNotification) GetStreamVersion() StreamVersion {
 func (x *VODFailedNotification) GetReason() string {
 	if x != nil && x.Reason != nil {
 		return *x.Reason
+	}
+	return ""
+}
+
+func (x *VODFailedNotification) GetImportId() string {
+	if x != nil && x.ImportId != nil {
+		return *x.ImportId
 	}
 	return ""
 }
@@ -1247,11 +1265,12 @@ const file_notifications_proto_rawDesc = "" +
 	"\x15HeartbeatNotification\x12\x1a\n" +
 	"\bhostname\x18\x01 \x01(\tR\bhostname\x12\x1a\n" +
 	"\bdraining\x18\x02 \x01(\bR\bdraining\x12\x1b\n" +
-	"\tjob_count\x18\x03 \x01(\x04R\bjobCount\"\x96\x01\n" +
+	"\tjob_count\x18\x03 \x01(\x04R\bjobCount\"\xb3\x01\n" +
 	"\x14VODReadyNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\"\xab\x01\n" +
+	"\x03url\x18\x03 \x01(\tR\x03url\x12\x1b\n" +
+	"\timport_id\x18\x04 \x01(\tR\bimportId\"\xab\x01\n" +
 	"\x1fTranscodingProgressNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1a\n" +
@@ -1272,11 +1291,12 @@ const file_notifications_proto_rawDesc = "" +
 	"\tdurations\x18\x04 \x03(\v23.protobuf.WaveformReadyNotification.VersionDurationR\tdurations\x1ak\n" +
 	"\x0fVersionDuration\x12>\n" +
 	"\x0estream_version\x18\x01 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x18\n" +
-	"\aseconds\x18\x02 \x01(\x01R\aseconds\"\x9d\x01\n" +
+	"\aseconds\x18\x02 \x01(\x01R\aseconds\"\xba\x01\n" +
 	"\x15VODFailedNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xa8\x01\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x1b\n" +
+	"\timport_id\x18\x04 \x01(\tR\bimportId\"\xa8\x01\n" +
 	"\x1aThumbnailReadyNotification\x12,\n" +
 	"\x06stream\x18\x01 \x01(\v2\x14.protobuf.StreamInfoR\x06stream\x12>\n" +
 	"\x0estream_version\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\rstreamVersion\x12\x1c\n" +

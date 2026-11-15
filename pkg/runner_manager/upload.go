@@ -23,8 +23,9 @@ type UploadSlot struct {
 // RequestUpload reserves a runner for an upload of one version of a stream's VOD.
 // The caller sends the file to the returned slot; the runner then converts it and
 // reports the result in a VODReadyNotification and a ThumbnailReadyNotification, which
-// the manager stores like those of a recorded stream.
-func (m *Manager) RequestUpload(ctx context.Context, streamID uint, version model.StreamVersion) (slot UploadSlot, err error) {
+// the manager stores like those of a recorded stream. importID, if set, comes back with
+// the VODReady or VODFailed of this upload; see handleVODReady.
+func (m *Manager) RequestUpload(ctx context.Context, streamID uint, version model.StreamVersion, importID string) (slot UploadSlot, err error) {
 	ctx, span := startSpan(withStreamTrace(ctx, uint64(streamID), protobufStreamVersion(version)), "manager.request_upload",
 		streamAttrs(uint64(streamID), protobufStreamVersion(version))...)
 	defer endSpan(span, &err)
@@ -43,6 +44,7 @@ func (m *Manager) RequestUpload(ctx context.Context, streamID uint, version mode
 		StreamId:      ptr.Take(uint64(streamID)),
 		Version:       ptr.Take(protobufStreamVersion(version)),
 		DetectSilence: ptr.Take(m.detectSilenceOnUpload(ctx, streamID, version)),
+		ImportId:      ptr.Take(importID),
 	})
 	if err != nil {
 		return UploadSlot{}, fmt.Errorf("PrepareUpload: %w", err)

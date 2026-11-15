@@ -875,6 +875,62 @@ service CourseService {
       description: "For a new lecture, removes it. For a replaced recording, the versions that are cut stay cut and the lecture's sections and trimming move with them if the combined version is among them. The versions that failed are left as they were, and are named in the answer. Answers 404 without an open cut and 409 while a version is still being cut. Requires administering the course."
     };
   }
+
+  // Recording in the browser. The browser uploads each version in chunks while it records,
+  // PUT {upload_path}/segments/{segment}/chunks/{seq} with the chunk as the body, outside
+  // the gateway. A segment is what one MediaRecorder made; a new one starts when recording
+  // resumes. Each answers {} once the chunk is stored, 404 for an unknown ticket, 409 once
+  // the recording is finalized, 400 for a segment or chunk out of range or a chunk over 16 MB.
+  rpc createBrowserRecording(CreateBrowserRecordingRequest) returns (CreateBrowserRecordingResponse) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/browser-recordings"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Start recording a version of a lecture in the browser."
+      description: "Answers where the chunks go. The path holds a ticket that is not bound to the session, so uploads go on when it expires; it works until the recording is finalized. Version is PRES or CAM, else 400; 409 while the lecture is live. Requires administering the course."
+    };
+  }
+
+  rpc getBrowserRecording(GetBrowserRecordingRequest) returns (BrowserRecording) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Get what the server has of a browser recording."
+      description: "A browser resumes its upload from received. Requires administering the course."
+    };
+  }
+
+  rpc listBrowserRecordings(ListBrowserRecordingsRequest) returns (ListBrowserRecordingsResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/streams/{stream_id}/browser-recordings"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "List a lecture's browser recordings that are not converted yet."
+      description: "Unfinished ones can be finalized with what arrived, from any device. Requires administering the course."
+    };
+  }
+
+  rpc finalizeBrowserRecording(FinalizeBrowserRecordingRequest) returns (BrowserRecording) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}/finalize"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "End a browser recording and convert it."
+      description: "With expected, refuses with 409 until the server has that many chunks of each segment, so the browser can send the rest first; without it, uses what arrived. Then hands the recording to a runner, as an upload of its version, and retries that on its own. Calling it again is harmless, and retries a hand-off that gave up. 400 when nothing arrived. Requires administering the course."
+    };
+  }
+
+  rpc abandonBrowserRecording(AbandonBrowserRecordingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/courses/{course_id}/streams/{stream_id}/browser-recordings/{recording_id}"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Courses"
+      summary: "Throw a browser recording away."
+      description: "Deletes what arrived. 409 once a runner has it. Requires administering the course."
+    };
+  }
 }
 
 // Individual streams and everything scoped to one: sections, subtitles,
@@ -3423,6 +3479,73 @@ message RetryLectureCutRequest {
 message AbandonLectureCutRequest {
   uint32 course_id = 1;
   uint32 stream_id = 2;
+}
+
+message CreateBrowserRecordingRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  // PRES or CAM.
+  string version = 3;
+  // The MediaRecorder's mimeType, for the record.
+  string mime_type = 4;
+}
+
+message CreateBrowserRecordingResponse {
+  BrowserRecording recording = 1;
+  // Where the chunks go, /api/v2/browser-recordings/{ticket}.
+  string upload_path = 2;
+}
+
+message BrowserRecording {
+  uint32 id = 1;
+  uint32 stream_id = 2;
+  string version = 3;
+  string mime_type = 4;
+  // Per segment from 0, how many chunks from 0 on the server has without a gap.
+  repeated uint32 received = 5;
+  bool finalized = 6;
+  // A runner has it; its conversion shows in getLectureTranscodingProgress.
+  bool handed_off = 7;
+  // The VOD is there and the chunks are gone. Not listed by listBrowserRecordings then.
+  bool converted = 11;
+  // Why the last hand-off failed, if it did.
+  string hand_off_error = 8;
+  // The hand-off failed too often and waits for finalizeBrowserRecording.
+  bool hand_off_gave_up = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+message GetBrowserRecordingRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 recording_id = 3;
+}
+
+message ListBrowserRecordingsRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+}
+
+message ListBrowserRecordingsResponse {
+  repeated BrowserRecording recordings = 1;
+}
+
+message FinalizeBrowserRecordingRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 recording_id = 3;
+  // Per segment from 0, how many chunks the browser recorded. Empty to use what arrived.
+  repeated uint32 expected = 4;
+  // How long this version was not recorded at the end while the other one was, in
+  // milliseconds: its source stopped and was never shared again. The runner pads the
+  // video with as much black and silence, so both versions end together.
+  uint32 trailing_gap_ms = 5;
+}
+
+message AbandonBrowserRecordingRequest {
+  uint32 course_id = 1;
+  uint32 stream_id = 2;
+  uint32 recording_id = 3;
 }
 
 message AbandonLectureCutResponse {

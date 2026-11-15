@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from "vue";
 
 import CreateLectureDetailsStep from "@/components/admin/lectures/create/CreateLectureDetailsStep.vue";
 import CreateLectureFilesStep from "@/components/admin/lectures/create/CreateLectureFilesStep.vue";
+import CreateLectureRecordStep from "@/components/admin/lectures/create/CreateLectureRecordStep.vue";
 import CreateLectureTypeStep from "@/components/admin/lectures/create/CreateLectureTypeStep.vue";
 import { updateLecture, type CourseLecture } from "@/lib/course-lectures";
 import {
@@ -20,10 +21,12 @@ import {
 } from "@/lib/create-lecture";
 import { fromDateTimeLocal, toDateTimeLocal } from "@/lib/datetime-local";
 import type { ScheduleLectureHall } from "@/lib/schedule";
+import { useBrowserRecordingStore } from "@/stores/browser-recording";
 
 /**
  * The old edit-course page's "create lecture" wizard: the type, then the details,
- * then for a video upload the files. Creates the lectures with one createLectures
+ * then for a video upload the files, or for a recording the recorder, which creates the
+ * lecture itself when it starts. Creates the lectures with one createLectures
  * call, gives the lectures of a series that have one their own title, and uploads a
  * video upload's files to the new lecture one after another.
  *
@@ -45,9 +48,13 @@ const emit = defineEmits<{
 
 const form = reactive(emptyForm(props.courseChatEnabled));
 
-type Step = "type" | "details" | "files";
-const STEP_TITLES: Record<Step, string> = { type: "Type", details: "Details", files: "Video files" };
-const steps = computed<Step[]>(() => (form.mode === "vod" ? ["type", "details", "files"] : ["type", "details"]));
+type Step = "type" | "details" | "files" | "record";
+const STEP_TITLES: Record<Step, string> = { type: "Type", details: "Details", files: "Video files", record: "Record" };
+const steps = computed<Step[]>(() => {
+  if (form.mode === "vod") return ["type", "details", "files"];
+  if (form.mode === "record") return ["type", "details", "record"];
+  return ["type", "details"];
+});
 const stepIndex = ref(0);
 const step = computed(() => steps.value[stepIndex.value]);
 const onLastStep = computed(() => stepIndex.value === steps.value.length - 1);
@@ -80,6 +87,22 @@ watch(
 
 const busy = ref("");
 const error = ref("");
+
+/** A recording in progress, or one still uploading, which closing would hide. */
+const recording = useBrowserRecordingStore();
+// Opened again while one is under way, as after leaving the page during its upload:
+// straight to its controls.
+if (recording.session) {
+  form.mode = "record";
+  stepIndex.value = steps.value.indexOf("record");
+}
+const locked = computed(() => !!busy.value || recording.busy);
+
+function close(): void {
+  // A recording that is over, refused or thrown away, would otherwise greet the next wizard.
+  recording.clear();
+  emit("close");
+}
 
 const submitLabel = computed(() => {
   if (!onLastStep.value) return "Continue";
@@ -161,8 +184,8 @@ async function submit(): Promise<void> {
         type="button"
         class="text-5 hover:text-1 px-1"
         aria-label="Close"
-        :disabled="!!busy"
-        @click="emit('close')"
+        :disabled="locked"
+        @click="close"
       >
         <i class="fas fa-xmark"></i>
       </button>
@@ -196,7 +219,13 @@ async function submit(): Promise<void> {
           :can-choose-hall="canChooseHall"
           :course-chat-enabled="courseChatEnabled"
         />
-        <CreateLectureFilesStep v-else :form="form" />
+        <CreateLectureFilesStep v-else-if="step === 'files'" :form="form" />
+        <CreateLectureRecordStep
+          v-else
+          :course-id="courseId"
+          :form="form"
+          @created="(lectures, problem) => emit('created', lectures, problem)"
+        />
       </fieldset>
 
       <ul v-if="attempted && problems.length" class="text-sm text-red-600 dark:text-red-400" aria-label="Problems">
@@ -211,8 +240,8 @@ async function submit(): Promise<void> {
         <button
           type="button"
           class="tum-live-button-secondary tum-live-button mr-auto px-3 py-1 text-sm"
-          :disabled="!!busy"
-          @click="emit('close')"
+          :disabled="locked"
+          @click="close"
         >
           Cancel
         </button>
@@ -220,12 +249,13 @@ async function submit(): Promise<void> {
           v-if="stepIndex > 0"
           type="button"
           class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-          :disabled="!!busy"
+          :disabled="locked"
           @click="back"
         >
           Back
         </button>
-        <button type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="!!busy">
+        <!-- The recorder has its own buttons. -->
+        <button v-if="step !== 'record'" type="submit" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="!!busy">
           {{ submitLabel }}
         </button>
       </div>

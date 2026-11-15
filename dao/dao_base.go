@@ -39,6 +39,7 @@ type DaoWrapper struct {
 	IntegrationGrantDao
 	MediaReapDao MediaReapDao
 	LectureCutDao
+	BrowserRecordingDao
 }
 
 func NewDaoWrapper() DaoWrapper {
@@ -69,5 +70,6 @@ func NewDaoWrapper() DaoWrapper {
 		IntegrationGrantDao:   NewIntegrationGrantDao(),
 		MediaReapDao:          NewMediaReapDao(),
 		LectureCutDao:         NewLectureCutDao(),
+		BrowserRecordingDao:   NewBrowserRecordingDao(),
 	}
 }

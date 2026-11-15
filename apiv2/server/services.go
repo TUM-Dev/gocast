@@ -171,6 +171,13 @@ var services = []service{
 			"getLectureCut":                 requiresCourseAdmin(),
 			"retryLectureCut":               requiresCourseAdmin(),
 			"abandonLectureCut":             requiresCourseAdmin(),
+			// Its chunks go beside the gateway (browser_recording.go), authorized by
+			// the ticket this hands out.
+			"createBrowserRecording":   requiresCourseAdmin(),
+			"getBrowserRecording":      requiresCourseAdmin(),
+			"listBrowserRecordings":    requiresCourseAdmin(),
+			"finalizeBrowserRecording": requiresCourseAdmin(),
+			"abandonBrowserRecording":  requiresCourseAdmin(),
 		},
 	},
 	{

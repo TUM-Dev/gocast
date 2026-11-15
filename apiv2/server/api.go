@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -60,6 +61,17 @@ type API struct {
 	subtitles     pb.SubtitleGeneratorClient
 	subtitlesAuth string
 	massStorage   string
+	// The browser recordings being handed to a runner, by ID, so that a finalize, the
+	// boot and the cron don't hand off one twice; handOffs is for tests to wait on them.
+	// In memory, which is enough with one server: see recordingStore.
+	handingOff sync.Map
+	handOffs   sync.WaitGroup
+	// recordingLocks, by ID, keep a chunk from being stored while its recording is
+	// finalized or thrown away; see recordingLock.
+	recordingLocks sync.Map
+	// versionLocks, by "stream/version", keep two hand-offs of a lecture's version from
+	// both finding it free; see claimVersion.
+	versionLocks sync.Map
 	// Where the runner's VOD directories are mounted, and the dry run kept for paging;
 	// see WithVODStorage and ReapDeletedMedia.
 	vodStorage string
@@ -199,6 +211,8 @@ func (a *API) Handler() http.Handler {
 			a.handleLectureUpload(w, r, route)
 		})
 	}
+	// Its body is a chunk of a recording.
+	mux.HandleFunc(browserRecordingChunkPath, a.handleBrowserRecordingChunk)
 	// A multipart body, and a browser's CORS preflight.
 	mux.HandleFunc(integrationUploadPath, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost && r.Method != http.MethodOptions {

@@ -500,6 +500,10 @@ type PrepareUploadRequest struct {
 	Version  *StreamVersion         `protobuf:"varint,2,opt,name=version,enum=protobuf.StreamVersion" json:"version,omitempty"`
 	// Scan the imported VoD for silences, see StreamRequest.detect_silence.
 	DetectSilence *bool `protobuf:"varint,3,opt,name=detect_silence,json=detectSilence" json:"detect_silence,omitempty"`
+	// import_id, if set, comes back in the import's VODReadyNotification or
+	// VODFailedNotification, so that the server can tell which of several imports of the
+	// same version a report is about.
+	ImportId      *string `protobuf:"bytes,4,opt,name=import_id,json=importId" json:"import_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -553,6 +557,13 @@ func (x *PrepareUploadRequest) GetDetectSilence() bool {
 		return *x.DetectSilence
 	}
 	return false
+}
+
+func (x *PrepareUploadRequest) GetImportId() string {
+	if x != nil && x.ImportId != nil {
+		return *x.ImportId
+	}
+	return ""
 }
 
 type PrepareUploadResponse struct {
@@ -1219,11 +1230,12 @@ const file_runner_proto_rawDesc = "" +
 	"\x0edetect_silence\x18\x04 \x01(\bR\rdetectSilence\x12'\n" +
 	"\x0fgenerate_sprite\x18\x05 \x01(\bR\x0egenerateSprite\"4\n" +
 	"\x1bRegenerateThumbnailResponse\x12\x15\n" +
-	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\x8d\x01\n" +
+	"\x06job_id\x18\x01 \x01(\tR\x05jobId\"\xaa\x01\n" +
 	"\x14PrepareUploadRequest\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\x04R\bstreamId\x121\n" +
 	"\aversion\x18\x02 \x01(\x0e2\x17.protobuf.StreamVersionR\aversion\x12%\n" +
-	"\x0edetect_silence\x18\x03 \x01(\bR\rdetectSilence\"N\n" +
+	"\x0edetect_silence\x18\x03 \x01(\bR\rdetectSilence\x12\x1b\n" +
+	"\timport_id\x18\x04 \x01(\tR\bimportId\"N\n" +
 	"\x15PrepareUploadResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1f\n" +
 	"\vupload_port\x18\x02 \x01(\x05R\n" +

@@ -20,10 +20,10 @@ import { toLecture, type CourseLecture } from "./course-lectures";
 import { fromDateTimeLocal } from "./datetime-local";
 
 /**
- * What is being created. v1's form also had in-browser recording, dropped on purpose
- * (it was experimental).
+ * What is being created. A recording is a VOD upload recorded in the browser: v1's
+ * recorder kept it all in memory until the end, this one uploads it while it records.
  */
-export type CreateMode = "scheduled" | "adhoc" | "vod";
+export type CreateMode = "scheduled" | "adhoc" | "vod" | "record";
 
 export type RecurringInterval = "daily" | "weekly" | "monthly";
 
@@ -180,6 +180,7 @@ export function adHocEnd(endTime: string, now: Date): Date | null {
 export function durationMinutes(form: CreateLectureForm, now: Date): number | null {
   switch (form.mode) {
     case "vod":
+    case "record":
       return 0;
     case "scheduled": {
       const start = fromDateTimeLocal(form.start);
@@ -208,7 +209,7 @@ export function formatMinutes(minutes: number): string {
 
 /** The starts the form creates lectures at, in the order the server answers them. */
 export function lectureStarts(form: CreateLectureForm): Date[] {
-  if (form.mode === "adhoc") return [];
+  if (form.mode === "adhoc" || form.mode === "record") return [];
   const start = fromDateTimeLocal(form.start);
   if (!start) return [];
   if (form.mode !== "scheduled" || !form.recurring) return [start];
@@ -218,7 +219,7 @@ export function lectureStarts(form: CreateLectureForm): Date[] {
 
 /** How many lectures the form creates. */
 export function lectureCount(form: CreateLectureForm): number {
-  return form.mode === "adhoc" ? 1 : Math.max(1, lectureStarts(form).length);
+  return form.mode === "adhoc" || form.mode === "record" ? 1 : Math.max(1, lectureStarts(form).length);
 }
 
 /** True for what the media upload takes: an mp4. */
@@ -233,6 +234,8 @@ export function isMp4(file: File): boolean {
 export function detailsProblems(form: CreateLectureForm, now: Date): string[] {
   const problems: string[] = [];
   if (!form.title.trim()) problems.push("Enter a title.");
+  // It starts when the recording does.
+  if (form.mode === "record") return problems;
 
   if (form.mode === "adhoc") {
     const minutes = durationMinutes(form, now);
@@ -290,7 +293,7 @@ export interface CreatePlan {
  */
 export function buildCreatePlan(courseId: number, form: CreateLectureForm, now: Date): CreatePlan {
   const title = form.title.trim();
-  const livestream = form.mode !== "vod";
+  const livestream = form.mode !== "vod" && form.mode !== "record";
   const request = create(CreateLecturesRequestSchema, {
     courseId,
     title,
@@ -303,6 +306,10 @@ export function buildCreatePlan(courseId: number, form: CreateLectureForm, now: 
   });
 
   if (form.mode === "adhoc") return { request, titles: [""] };
+  if (form.mode === "record") {
+    request.start = timestampFromDate(now);
+    return { request, titles: [""] };
+  }
 
   const [first, ...further] = lectureStarts(form);
   if (first) request.start = timestampFromDate(first);

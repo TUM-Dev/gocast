@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from "vue";
 
+import BrowserRecordingRecovery from "@/components/admin/lectures/BrowserRecordingRecovery.vue";
 import LectureCard from "@/components/admin/lectures/LectureCard.vue";
 import CreateLectureWizard from "@/components/admin/lectures/create/CreateLectureWizard.vue";
 import {
@@ -20,6 +21,7 @@ import {
 import { SELF_STREAMED, fetchScheduleLectureHalls, type ScheduleLectureHall } from "@/lib/schedule";
 import { can } from "@/lib/settings";
 import { useAuthStore } from "@/stores/auth";
+import { useBrowserRecordingStore } from "@/stores/browser-recording";
 import { useCourseAdminStore } from "@/stores/course-admin";
 
 /**
@@ -54,6 +56,9 @@ const courseChatEnabled = computed(() =>
   courseStore.course?.id === props.courseId ? courseStore.course.chatEnabled : false,
 );
 const creating = ref(false);
+/** A recording made in the wizard keeps it open: it holds the recording's controls. */
+const recording = useBrowserRecordingStore();
+const wizardOpen = computed(() => creating.value || recording.busy);
 
 /** Shows what the wizard created without reloading, and opens the first of it. */
 async function onCreated(created: CourseLecture[], problem: string): Promise<void> {
@@ -244,7 +249,8 @@ watch(
         <button
           type="button"
           class="tum-live-button tum-live-button-primary px-3 py-1 text-sm"
-          :aria-expanded="creating"
+          :aria-expanded="wizardOpen"
+          :disabled="recording.busy"
           @click="creating = !creating"
         >
           <i class="fas fa-plus mr-1"></i>Create lecture
@@ -252,8 +258,10 @@ watch(
       </div>
     </div>
 
+    <BrowserRecordingRecovery :key="courseId" :course-id="courseId" @finished="reload" />
+
     <CreateLectureWizard
-      v-if="creating"
+      v-if="wizardOpen"
       :course-id="courseId"
       :halls="halls"
       :can-choose-hall="canChangeHall"

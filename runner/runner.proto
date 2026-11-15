@@ -101,6 +101,10 @@ message PrepareUploadRequest {
   StreamVersion version = 2;
   // Scan the imported VoD for silences, see StreamRequest.detect_silence.
   bool detect_silence = 3;
+  // import_id, if set, comes back in the import's VODReadyNotification or
+  // VODFailedNotification, so that the server can tell which of several imports of the
+  // same version a report is about.
+  string import_id = 4;
 }
 
 message PrepareUploadResponse {

@@ -31,6 +31,8 @@ const props = defineProps<{
 const duration = computed(() => formatMinutes(durationMinutes(props.form, new Date()) ?? 0));
 
 const field = (name: string) => `create-lecture-${name}`;
+
+const isLivestream = computed(() => props.form.mode === "scheduled" || props.form.mode === "adhoc");
 </script>
 
 <template>
@@ -57,6 +59,10 @@ const field = (name: string) => `create-lecture-${name}`;
       <p class="text-5 text-xs">The livestream starts in two minutes. A time that has passed today means tomorrow.</p>
     </div>
 
+    <p v-else-if="form.mode === 'record'" class="text-5 text-xs">
+      The lecture is dated when the recording starts.
+    </p>
+
     <div v-else class="grid gap-3 sm:grid-cols-2">
       <div class="flex min-w-0 flex-col gap-1">
         <label :for="field('start')" class="text-2">
@@ -73,14 +79,14 @@ const field = (name: string) => `create-lecture-${name}`;
       </div>
     </div>
 
-    <div v-if="form.mode !== 'vod' && canChooseHall" class="flex flex-col gap-1">
+    <div v-if="isLivestream && canChooseHall" class="flex flex-col gap-1">
       <label :for="field('hall')" class="text-2">Lecture hall</label>
       <select :id="field('hall')" v-model.number="form.lectureHallId" class="tum-live-input">
         <option :value="SELF_STREAMED">None (self-streamed)</option>
         <option v-for="hall in halls" :key="hall.id" :value="hall.id">{{ hall.name }}</option>
       </select>
     </div>
-    <p v-else-if="form.mode !== 'vod'" class="text-5 text-xs">
+    <p v-else-if="isLivestream" class="text-5 text-xs">
       Self-streamed: the stream key is on the lecture's card once it is created. To stream from a lecture hall,
       please contact the RBG.
     </p>

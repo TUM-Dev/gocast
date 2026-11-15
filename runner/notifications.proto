@@ -51,6 +51,8 @@ message VODReadyNotification {
   StreamInfo stream = 1;
   StreamVersion stream_version = 2;
   string url = 3;
+  // The PrepareUploadRequest's import_id, for the VOD of an upload.
+  string import_id = 4;
 }
 
 // TranscodingProgressNotification reports how far the conversion of one version of an
@@ -108,6 +110,8 @@ message VODFailedNotification {
   // reason is meant for the person who uploaded the video: it names no paths and
   // none of the runner's internals. Those are in the runner's log.
   string reason = 3;
+  // The PrepareUploadRequest's import_id.
+  string import_id = 4;
 }
 
 message ThumbnailReadyNotification {

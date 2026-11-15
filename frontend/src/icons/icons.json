@@ -29,6 +29,7 @@
     "cloud-arrow-down": "cloud-arrow-down",
     "cloud-download-alt": "cloud-arrow-down",
     "columns": "table-columns",
+    "display": "display",
     "download": "download",
     "edit": "pen-to-square",
     "ellipsis-vertical": "ellipsis-vertical",
@@ -56,7 +57,9 @@
     "magnifying-glass-minus": "magnifying-glass-minus",
     "magnifying-glass-plus": "magnifying-glass-plus",
     "paperclip": "paperclip",
+    "pause": "pause",
     "pen": "pen",
+    "play": "play",
     "plus": "plus",
     "power-off": "power-off",
     "satellite-dish": "satellite-dish",
@@ -67,6 +70,7 @@
     "sign-out": "arrow-right-from-bracket",
     "spinner": "spinner",
     "square-up-right": "square-up-right",
+    "stop": "stop",
     "sync": "arrows-rotate",
     "table-columns": "table-columns",
     "thumbtack": "thumbtack",
@@ -76,6 +80,7 @@
     "undo": "arrow-rotate-left",
     "upload": "upload",
     "user": "user",
+    "video": "video",
     "xmark": "xmark"
   },
   "regular": {

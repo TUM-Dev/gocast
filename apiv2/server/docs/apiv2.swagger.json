@@ -2995,6 +2995,240 @@
         ]
       }
     },
+    "/courses/{courseId}/streams/{streamId}/browser-recordings": {
+      "get": {
+        "summary": "List a lecture's browser recordings that are not converted yet.",
+        "description": "Unfinished ones can be finalized with what arrived, from any device. Requires administering the course.",
+        "operationId": "CourseService_listBrowserRecordings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufListBrowserRecordingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "post": {
+        "summary": "Start recording a version of a lecture in the browser.",
+        "description": "Answers where the chunks go. The path holds a ticket that is not bound to the session, so uploads go on when it expires; it works until the recording is finalized. Version is PRES or CAM, else 400; 409 while the lecture is live. Requires administering the course.",
+        "operationId": "CourseService_createBrowserRecording",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufCreateBrowserRecordingResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicecreateBrowserRecordingBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/browser-recordings/{recordingId}": {
+      "get": {
+        "summary": "Get what the server has of a browser recording.",
+        "description": "A browser resumes its upload from received. Requires administering the course.",
+        "operationId": "CourseService_getBrowserRecording",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufBrowserRecording"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      },
+      "delete": {
+        "summary": "Throw a browser recording away.",
+        "description": "Deletes what arrived. 409 once a runner has it. Requires administering the course.",
+        "operationId": "CourseService_abandonBrowserRecording",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
+    "/courses/{courseId}/streams/{streamId}/browser-recordings/{recordingId}/finalize": {
+      "post": {
+        "summary": "End a browser recording and convert it.",
+        "description": "With expected, refuses with 409 until the server has that many chunks of each segment, so the browser can send the rest first; without it, uses what arrived. Then hands the recording to a runner, as an upload of its version, and retries that on its own. Calling it again is harmless, and retries a hand-off that gave up. 400 when nothing arrived. Requires administering the course.",
+        "operationId": "CourseService_finalizeBrowserRecording",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufBrowserRecording"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "streamId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServicefinalizeBrowserRecordingBody"
+            }
+          }
+        ],
+        "tags": [
+          "Courses"
+        ]
+      }
+    },
     "/courses/{courseId}/streams/{streamId}/copy": {
       "post": {
         "summary": "Copy or move a lecture to another course.",
@@ -6102,6 +6336,19 @@
         }
       }
     },
+    "CourseServicecreateBrowserRecordingBody": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "PRES or CAM."
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "The MediaRecorder's mimeType, for the record."
+        }
+      }
+    },
     "CourseServicecreateLectureSectionsBody": {
       "type": "object",
       "properties": {
@@ -6198,6 +6445,24 @@
             "type": "integer",
             "format": "int64"
           }
+        }
+      }
+    },
+    "CourseServicefinalizeBrowserRecordingBody": {
+      "type": "object",
+      "properties": {
+        "expected": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": "Per segment from 0, how many chunks the browser recorded. Empty to use what arrived."
+        },
+        "trailingGapMs": {
+          "type": "integer",
+          "format": "int64",
+          "description": "How long this version was not recorded at the end while the other one was, in\nmilliseconds: its source stopped and was never shared again. The runner pads the\nvideo with as much black and silence, so both versions end together."
         }
       }
     },
@@ -6688,6 +6953,56 @@
         }
       },
       "description": "Branding is the deployment's own name for itself, configured in branding.yaml."
+    },
+    "protobufBrowserRecording": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "streamId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "version": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "received": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "description": "Per segment from 0, how many chunks from 0 on the server has without a gap."
+        },
+        "finalized": {
+          "type": "boolean"
+        },
+        "handedOff": {
+          "type": "boolean",
+          "description": "A runner has it; its conversion shows in getLectureTranscodingProgress."
+        },
+        "converted": {
+          "type": "boolean",
+          "description": "The VOD is there and the chunks are gone. Not listed by listBrowserRecordings then."
+        },
+        "handOffError": {
+          "type": "string",
+          "description": "Why the last hand-off failed, if it did."
+        },
+        "handOffGaveUp": {
+          "type": "boolean",
+          "description": "The hand-off failed too often and waits for finalizeBrowserRecording."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "protobufCameraPreset": {
       "type": "object",
@@ -7654,6 +7969,18 @@
         "url": {
           "type": "string",
           "description": "A signed link to the edge's download endpoint."
+        }
+      }
+    },
+    "protobufCreateBrowserRecordingResponse": {
+      "type": "object",
+      "properties": {
+        "recording": {
+          "$ref": "#/definitions/protobufBrowserRecording"
+        },
+        "uploadPath": {
+          "type": "string",
+          "description": "Where the chunks go, /api/v2/browser-recordings/{ticket}."
         }
       }
     },
@@ -8728,6 +9055,18 @@
           "type": "integer",
           "format": "int64",
           "description": "How many entries match the request's filter, ignoring limit and offset."
+        }
+      }
+    },
+    "protobufListBrowserRecordingsResponse": {
+      "type": "object",
+      "properties": {
+        "recordings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufBrowserRecording"
+          }
         }
       }
     },

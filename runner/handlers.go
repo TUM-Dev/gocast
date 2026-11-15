@@ -226,6 +226,7 @@ func (r *Runner) PrepareUpload(ctx context.Context, req *protobuf.PrepareUploadR
 		return nil, status.Errorf(codes.Internal, "couldn't create upload token")
 	}
 	r.uploads.attachTrace(token, tracing.Traceparent(ctx))
+	r.uploads.attachImport(token, req.GetImportId())
 	return &protobuf.PrepareUploadResponse{
 		Token:      ptr.Take(token),
 		UploadPort: ptr.Take(int32(config.Config.UploadPort)),

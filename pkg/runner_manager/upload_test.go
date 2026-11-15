@@ -56,7 +56,7 @@ func TestRequestUpload(t *testing.T) {
 	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "12").Return(model.Stream{PlaylistUrl: "http://edge/comb.m3u8"}, nil)
 	m := New(dao.DaoWrapper{RunnerDao: runnerDao, StreamsDao: streamsDao})
 
-	slot, err := m.RequestUpload(context.Background(), 12, model.PRES)
+	slot, err := m.RequestUpload(context.Background(), 12, model.PRES, "browser-3-abc")
 	if err != nil {
 		t.Fatalf("RequestUpload: %v", err)
 	}
@@ -69,6 +69,9 @@ func TestRequestUpload(t *testing.T) {
 	}
 	if fake.got.GetDetectSilence() {
 		t.Error("a presentation upload next to a combined VoD must not be scanned")
+	}
+	if fake.got.GetImportId() != "browser-3-abc" {
+		t.Errorf("import id = %q, want it passed on", fake.got.GetImportId())
 	}
 }
 
@@ -113,7 +116,7 @@ func TestRequestUpload_NoRunner(t *testing.T) {
 	runnerDao.EXPECT().ReserveRunner(gomock.Any()).Return(model.Runner{}, nil)
 	m := New(dao.DaoWrapper{RunnerDao: runnerDao})
 
-	if _, err := m.RequestUpload(context.Background(), 12, model.COMB); !errors.Is(err, ErrNoRunner) {
+	if _, err := m.RequestUpload(context.Background(), 12, model.COMB, ""); !errors.Is(err, ErrNoRunner) {
 		t.Errorf("RequestUpload = %v, want ErrNoRunner", err)
 	}
 }
@@ -215,6 +218,29 @@ func TestHandleVODReadyEndsTheConversion(t *testing.T) {
 	}
 }
 
+// TestHandleVODReadyConvertsTheBrowserRecording checks that the VOD of a browser
+// recording's hand-off marks that recording converted, by the hand-off's import ID.
+func TestHandleVODReadyConvertsTheBrowserRecording(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}, Recording: true}, nil)
+	streamsDao.EXPECT().SaveStream(gomock.Any()).Return(nil)
+	streamsDao.EXPECT().RemoveTranscodingProgress(model.PRES, uint(5)).Return(nil)
+	recordings := mock_dao.NewMockBrowserRecordingDao(ctrl)
+	recordings.EXPECT().ConvertBrowserRecordingImport(gomock.Any(), "browser-3-abc", gomock.Any()).Return(nil)
+
+	m := New(withoutCut(ctrl, dao.DaoWrapper{StreamsDao: streamsDao, BrowserRecordingDao: recordings}))
+	_, err := m.handleVODReady(context.Background(), &protobuf.VODReadyNotification{
+		Stream:        &protobuf.StreamInfo{Id: ptr.Take(uint64(5))},
+		StreamVersion: ptr.Take(protobuf.StreamVersion_STREAM_VERSION_PRESENTATION),
+		Url:           ptr.Take("http://edge/vod/5/x/playlist.m3u8"),
+		ImportId:      ptr.Take("browser-3-abc"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestHandleTranscodingProgress(t *testing.T) {
 	report := func(progress int32) *protobuf.TranscodingProgressNotification {
 		return &protobuf.TranscodingProgressNotification{
@@ -278,6 +304,22 @@ func TestHandleVODFailed(t *testing.T) {
 		want := model.TranscodingProgress{StreamID: 5, Version: model.PRES, Failed: true, Error: "The file contains no video."}
 		if saved != want {
 			t.Errorf("saved %+v, want %+v", saved, want)
+		}
+	})
+
+	t.Run("a browser recording is handed off again", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+		streamsDao.EXPECT().GetStreamByID(gomock.Any(), "5").Return(model.Stream{Model: gorm.Model{ID: 5}}, nil)
+		streamsDao.EXPECT().SaveTranscodingProgress(gomock.Any()).Return(nil)
+		recordings := mock_dao.NewMockBrowserRecordingDao(ctrl)
+		recordings.EXPECT().FailBrowserRecordingImport(gomock.Any(), "browser-3-abc", "The video could not be converted.").Return(nil)
+
+		m := New(dao.DaoWrapper{StreamsDao: streamsDao, BrowserRecordingDao: recordings})
+		n := failure("The video could not be converted.")
+		n.ImportId = ptr.Take("browser-3-abc")
+		if _, err := m.handleVODFailed(context.Background(), n); err != nil {
+			t.Fatal(err)
 		}
 	})
 

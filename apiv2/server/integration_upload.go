@@ -2,9 +2,6 @@ package apiv2
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -57,14 +54,13 @@ func (a *API) CreateIntegrationUpload(ctx context.Context, req *protobuf.CreateI
 	if err != nil {
 		return nil, err
 	}
-	ticket := make([]byte, 32)
-	if _, err := rand.Read(ticket); err != nil {
+	ticket, hash, err := newUploadTicket()
+	if err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not create upload"))
 	}
-	hash := sha256.Sum256(ticket)
 	now := time.Now()
 	lecture := model.Stream{Name: title, Start: now, End: now.Add(placeholderDuration)}
-	stream, created, err := a.dao.IntegrationGrantDao.CreateIntegrationUpload(ctx, integration.ID, uint(req.GetGrantId()), req.GetExternalRef(), lecture, hash[:], now.Add(integrationUploadTicketTTL))
+	stream, created, err := a.dao.IntegrationGrantDao.CreateIntegrationUpload(ctx, integration.ID, uint(req.GetGrantId()), req.GetExternalRef(), lecture, hash, now.Add(integrationUploadTicketTTL))
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return nil, e.WithStatus(http.StatusNotFound, errors.New("grant not found"))
@@ -85,7 +81,7 @@ func (a *API) CreateIntegrationUpload(ctx context.Context, req *protobuf.CreateI
 	}
 	return &protobuf.CreateIntegrationUploadResponse{
 		StreamId:   uint32(stream.ID),
-		UploadPath: integrationUploadPrefix + base64.RawURLEncoding.EncodeToString(ticket),
+		UploadPath: integrationUploadPrefix + ticket,
 	}, nil
 }
 
@@ -133,17 +129,16 @@ func (a *API) DeleteIntegrationRecording(ctx context.Context, req *protobuf.Dele
 // version.
 func (a *API) handleIntegrationUpload(w http.ResponseWriter, r *http.Request, rawTicket string) {
 	notFound := e.WithStatus(http.StatusNotFound, errors.New("upload not found"))
-	ticket, err := base64.RawURLEncoding.DecodeString(rawTicket)
-	if err != nil || len(ticket) != 32 || base64.RawURLEncoding.EncodeToString(ticket) != rawTicket {
+	hash, ok := uploadTicketHash(rawTicket)
+	if !ok {
 		writeUploadError(w, notFound)
 		return
 	}
-	hash := sha256.Sum256(ticket)
 	ctx, now := r.Context(), time.Now()
 
 	origin := r.Header.Get("Origin")
 	if r.Method == http.MethodOptions || origin != "" {
-		returnURL, err := a.dao.IntegrationGrantDao.GetIntegrationUploadReturnURL(ctx, hash[:], now)
+		returnURL, err := a.dao.IntegrationGrantDao.GetIntegrationUploadReturnURL(ctx, hash, now)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				a.log.Error("integration upload lookup failed", "err", err)
@@ -167,7 +162,7 @@ func (a *API) handleIntegrationUpload(w http.ResponseWriter, r *http.Request, ra
 		}
 	}
 
-	stream, err := a.dao.IntegrationGrantDao.ConsumeIntegrationUploadTicket(ctx, hash[:], now)
+	stream, err := a.dao.IntegrationGrantDao.ConsumeIntegrationUploadTicket(ctx, hash, now)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			a.log.Error("integration upload ticket failed", "err", err)

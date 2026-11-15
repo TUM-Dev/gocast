@@ -2,7 +2,7 @@
 import type { CreateLectureForm, CreateMode } from "@/lib/create-lecture";
 
 /**
- * The wizard's first step: a livestream or a video upload, and for a livestream
+ * The wizard's first step: a livestream, a video upload or a recording made here, and for a livestream
  * whether it is scheduled or starts now. v1 had a template for the second choice but
  * never included it in the form, so its ad-hoc path was unreachable; here it is a
  * choice like the first.
@@ -18,7 +18,11 @@ interface Choice {
 const KINDS: Choice[] = [
   { value: "livestream", title: "Livestream", detail: "From a lecture hall or self-streamed" },
   { value: "vod", title: "Video upload", detail: "Upload a recording as a video on demand" },
+  { value: "record", title: "Record here", detail: "Record your screen and camera in this browser" },
 ];
+
+/** A livestream's mode is its "when"; the other kinds are their own mode. */
+const kindOf = (mode: CreateMode) => (mode === "vod" || mode === "record" ? mode : "livestream");
 
 const WHEN: Choice[] = [
   { value: "scheduled", title: "Schedule", detail: "One livestream or a series of them in the future" },
@@ -27,7 +31,7 @@ const WHEN: Choice[] = [
 
 function chooseKind(value: string): void {
   // A livestream starts out scheduled, the common case.
-  props.form.mode = value === "vod" ? "vod" : "scheduled";
+  props.form.mode = value === "livestream" ? "scheduled" : (value as CreateMode);
 }
 
 function chooseWhen(value: string): void {
@@ -44,14 +48,14 @@ const card =
   <div class="flex flex-col gap-5">
     <fieldset class="flex flex-col gap-2">
       <legend class="text-2 mb-2 text-sm font-semibold">What are you creating?</legend>
-      <div class="grid gap-2 sm:grid-cols-2">
+      <div class="grid gap-2 sm:grid-cols-3">
         <label v-for="kind in KINDS" :key="kind.value" :class="card">
           <input
             type="radio"
             name="create-lecture-kind"
             class="sr-only"
             :value="kind.value"
-            :checked="(form.mode === 'vod') === (kind.value === 'vod')"
+            :checked="kindOf(form.mode) === kind.value"
             @change="chooseKind(kind.value)"
           />
           <span class="text-1 font-semibold">{{ kind.title }}</span>
@@ -60,7 +64,7 @@ const card =
       </div>
     </fieldset>
 
-    <fieldset v-if="form.mode !== 'vod'" class="flex flex-col gap-2">
+    <fieldset v-if="kindOf(form.mode) === 'livestream'" class="flex flex-col gap-2">
       <legend class="text-2 mb-2 text-sm font-semibold">When does it start?</legend>
       <div class="grid gap-2 sm:grid-cols-2">
         <label v-for="when in WHEN" :key="when.value" :class="card">

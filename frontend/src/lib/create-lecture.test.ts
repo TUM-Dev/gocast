@@ -174,6 +174,17 @@ describe("detailsProblems", () => {
   });
 });
 
+describe("a recording's details", () => {
+  it("need only a title", () => {
+    expect(detailsProblems(form({ mode: "record", start: "" }), NOW)).toEqual([]);
+    expect(detailsProblems(form({ mode: "record", title: " " }), NOW)).toEqual(["Enter a title."]);
+  });
+
+  it("make one lecture", () => {
+    expect(lectureCount(form({ mode: "record", recurring: true, count: 5 }))).toBe(1);
+  });
+});
+
 describe("filesProblems", () => {
   const mp4 = new File(["x"], "lecture.mp4", { type: "video/mp4" });
   const mov = new File(["x"], "lecture.mov", { type: "video/quicktime" });
@@ -254,6 +265,20 @@ describe("buildCreatePlan", () => {
     expect(request.lectureHallId).toBe(0);
     expect(request.durationMinutes).toBe(0);
     expect(request.dateSeries).toEqual([]);
+  });
+
+  it("sends a recording as a VOD upload starting now, whatever the form's dates say", () => {
+    const { request, titles } = buildCreatePlan(
+      1,
+      form({ mode: "record", start: "2026-10-06T10:00", lectureHallId: 3, recurring: true }),
+      NOW,
+    );
+    expect(request.kind).toBe(LectureCreationKind.VOD_UPLOAD);
+    expect(request.lectureHallId).toBe(0);
+    expect(request.durationMinutes).toBe(0);
+    expect(request.start && timestampDate(request.start)).toEqual(NOW);
+    expect(request.dateSeries).toEqual([]);
+    expect(titles).toEqual([""]);
   });
 
   it("trims the title", () => {

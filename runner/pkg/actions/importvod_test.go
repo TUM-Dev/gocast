@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tum-dev/gocast/runner/config"
+	"github.com/tum-dev/gocast/runner/pkg/ffmpeg"
 	"github.com/tum-dev/gocast/runner/pkg/metrics"
 	"github.com/tum-dev/gocast/runner/protobuf"
 )
@@ -162,6 +163,108 @@ func TestImportVOD(t *testing.T) {
 				t.Errorf("unexpected stream in %v", ready)
 			}
 		})
+	}
+}
+
+// TestImportVODJoinsSegments joins what a browser makes when a screen is shared anew:
+// WebM segments of different sizes, each starting at zero, without a duration, one
+// after a gap and one without audio.
+func TestImportVODJoinsSegments(t *testing.T) {
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not available")
+	}
+	segment := func(name, size string) string {
+		path := filepath.Join(t.TempDir(), name)
+		out, err := exec.Command("ffmpeg", "-y",
+			"-f", "lavfi", "-i", "testsrc=duration=2:size="+size+":rate=5",
+			"-f", "lavfi", "-i", "sine=duration=2",
+			"-c:v", "libvpx", "-c:a", "libopus", path).CombinedOutput()
+		if err != nil {
+			t.Skipf("could not create test segment: %v (%s)", err, out)
+		}
+		return path
+	}
+	first, second := segment("0.webm", "320x240"), segment("1.webm", "240x320")
+	// The camera's microphone ended with it: the last segment has no audio.
+	silent := filepath.Join(t.TempDir(), "2.webm")
+	if out, err := exec.Command("ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=320x240:rate=5",
+		"-c:v", "libvpx", silent).CombinedOutput(); err != nil {
+		t.Skipf("could not create test segment: %v (%s)", err, out)
+	}
+	storage := t.TempDir()
+	config.Config.StoragePath = storage
+	config.Config.EdgeServer = "http://edge"
+
+	notify := make(chan *protobuf.Notification, 64)
+	data := map[string]any{
+		"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
+		"uploadPath": first, "uploadPaths": []string{first, second, silent},
+		// Sharing stopped for a second and a half before the second segment, and for
+		// good a second before the end.
+		"uploadGaps":        []float64{0, 1.5, 0},
+		"uploadTrailingGap": 1.0,
+		"importID":          "browser-7-abc",
+	}
+	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
+		t.Fatalf("ImportVOD = %v", err)
+	}
+
+	playlist := filepath.Join(storage, "7", "STREAM_VERSION_PRESENTATION", "playlist.m3u8")
+	probe, err := ffmpeg.Probe(context.Background(), playlist)
+	if err != nil {
+		t.Fatalf("probe the VOD: %v", err)
+	}
+	if d := probe.Duration(); d < 8 || d > 9 {
+		t.Errorf("duration = %.1fs, want the segments' 6s and the gaps' 2.5s", d)
+	}
+	if w, h := probe.Dimensions(); w != 320 || h != 240 {
+		t.Errorf("size = %dx%d, want the first segment's 320x240", w, h)
+	}
+	if probe.Codec("audio") != "aac" {
+		t.Errorf("audio = %q, want aac", probe.Codec("audio"))
+	}
+	for _, f := range []string{first, second, silent} {
+		if _, err := os.Stat(f); !os.IsNotExist(err) {
+			t.Errorf("segment %s still there: %v", f, err)
+		}
+	}
+	ns := drain(notify)
+	if len(ns) == 0 || ns[len(ns)-1].GetVodReady() == nil {
+		t.Fatalf("last notification is not VodReady: %v", ns)
+	}
+	if got := ns[len(ns)-1].GetVodReady().GetImportId(); got != "browser-7-abc" {
+		t.Errorf("VodReady import id = %q, want the upload's", got)
+	}
+}
+
+func TestConcatArgs(t *testing.T) {
+	args := strings.Join(concatArgs([]segment{
+		{path: "a", audio: true, duration: 10},
+		{path: "b", audio: false, duration: 5, gapBefore: 2.5},
+	}, 3, "/vod", 1281, 721), " ")
+	for _, want := range []string{
+		"-i a",
+		// The gap: black of the first segment's size and silence, before b.
+		"-t 2.500 -i color=c=black:s=1280x720",
+		"-t 2.500 -i anullsrc",
+		"-i b",
+		// b has no audio: silence of its length.
+		"-t 5.000 -i anullsrc",
+		// Sharing stopped for good: black and silence at the end.
+		"-t 3.000 -i color=c=black",
+		"-t 3.000 -i anullsrc",
+		"concat=n=4:v=1:a=1[v][a]",
+		"-map [v] -map [a]",
+	} {
+		if !strings.Contains(args, want) {
+			t.Errorf("args lack %q:\n%s", want, args)
+		}
+	}
+}
+
+func TestHasGap(t *testing.T) {
+	if hasGap(nil) || hasGap([]float64{0, 0}) || !hasGap([]float64{0, 1}) {
+		t.Error("hasGap is wrong")
 	}
 }
 
@@ -408,6 +511,24 @@ func TestImportVODReasons(t *testing.T) {
 		}
 		return notify
 	}
+
+	t.Run("the failure names the import", func(t *testing.T) {
+		notify := make(chan *protobuf.Notification, 64)
+		data := map[string]any{
+			"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
+			"uploadPath": filepath.Join(t.TempDir(), "missing.webm"), "importID": "browser-7-abc",
+		}
+		_ = ImportVOD(context.Background(), testLogger(), notify, data, testBroker())
+		var failed *protobuf.VODFailedNotification
+		for _, n := range drain(notify) {
+			if f := n.GetVodFailed(); f != nil {
+				failed = f
+			}
+		}
+		if failed.GetImportId() != "browser-7-abc" {
+			t.Errorf("VodFailed = %v, want the upload's import id", failed)
+		}
+	})
 
 	t.Run("no video", func(t *testing.T) {
 		audio := filepath.Join(t.TempDir(), "audio.m4a")
