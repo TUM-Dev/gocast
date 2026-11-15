@@ -39,6 +39,7 @@ function arrived(r: BrowserRecording): string {
 function describe(r: BrowserRecording): string {
   if (!r.finalized) return `Recording or waiting for its browser; ${arrived(r)} arrived.`;
   if (r.handOffGaveUp) return `Could not be handed to a runner: ${r.handOffError}`;
+  if (r.handedOff) return "Being converted.";
   if (r.handOffError) return `Being handed to a runner, which failed last time: ${r.handOffError}`;
   return "Being handed to a runner.";
 }

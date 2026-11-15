@@ -62,8 +62,15 @@ export function abandonBrowserRecording(courseId: number, streamId: number, id: 
  * so the upload goes on when the session expires, and the caller needs the raw
  * response to tell an outage from a refusal.
  */
-export function putChunk(uploadPath: string, segment: number, seq: number, data: Blob): Promise<Response> {
-  return fetch(`${uploadPath}/segments/${segment}/chunks/${seq}`, {
+export function putChunk(
+  uploadPath: string,
+  segment: number,
+  seq: number,
+  data: Blob,
+  gapMs?: number,
+): Promise<Response> {
+  const gap = gapMs ? `?gap_ms=${Math.round(gapMs)}` : "";
+  return fetch(`${uploadPath}/segments/${segment}/chunks/${seq}${gap}`, {
     method: "PUT",
     body: data,
     credentials: "omit",

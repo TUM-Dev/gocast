@@ -48,8 +48,13 @@ async function discard(meta: RecordingMeta): Promise<void> {
   if (!window.confirm(`Throw away the ${LABEL[meta.version]} recording of “${meta.lectureTitle}”? This cannot be undone.`)) {
     return;
   }
-  await discardRecording(rec.chunks, meta);
+  const result = await discardRecording(rec.chunks, meta);
   found.value = found.value.filter((m) => m.key !== meta.key);
+  if (result === "pending") {
+    error.value = "The server could not be reached. The recording is thrown away once it is back, the next time this page is opened.";
+  } else if (result === "refused") {
+    error.value = "The recording could not be thrown away: it is being converted already.";
+  }
 }
 
 function describe(meta: RecordingMeta): string {

@@ -1,3 +1,8 @@
+import { execFileSync } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
 import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 import { apiAs, login } from "./helpers";
@@ -15,6 +20,12 @@ import { users } from "./seed";
  */
 
 const PREFIX = "E2E-Recording";
+
+/**
+ * Where the server keeps the chunks: its paths.mass, plus browser-recordings. The tests
+ * that look at what arrived skip without it, as on a server that is not local.
+ */
+const chunkRoot = resolve(process.env.E2E_MASS_STORAGE ?? "../runner/storage", "browser-recordings");
 const COURSE = 3;
 const lecturesPage = `/admin/courses/${COURSE}/lectures`;
 
@@ -65,7 +76,41 @@ const wizard = (page: Page) => page.getByRole("region", { name: "Create a lectur
 const recordingStatus = (w: Locator) => w.getByRole("status").filter({ hasText: /Recording \d+:\d\d:\d\d/ });
 
 /** Opens the wizard on the recorder for a lecture of that title, both sources on. */
-async function prepare(page: Page, title: string): Promise<void> {
+async function recordingsOf(api: APIRequestContext, lectureId: number): Promise<Array<{ id: number; version: string }>> {
+  const response = await api.get(`/api/v2/courses/${COURSE}/streams/${lectureId}/browser-recordings`);
+  return (await response.json()).recordings ?? [];
+}
+
+/** A segment's chunks as the server has them, joined into a file. */
+function segmentFile(recordingId: number, segment: number): string {
+  const dir = join(chunkRoot, String(recordingId), String(segment).padStart(6, "0"));
+  const chunks = readdirSync(dir)
+    .filter((n) => /^\d+$/.test(n))
+    .sort();
+  const file = join(tmpdir(), `e2e-recording-${recordingId}-${segment}.webm`);
+  writeFileSync(file, Buffer.concat(chunks.map((n) => readFileSync(join(dir, n)))));
+  return file;
+}
+
+function streamTypes(file: string): string[] {
+  return execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", file])
+    .toString()
+    .trim()
+    .split("\n");
+}
+
+/** What the browser's "Stop sharing" does to the screen: the shared track ends. */
+async function stopSharing(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const video = [...document.querySelectorAll("video")].find((v) => v.srcObject instanceof MediaStream);
+    const track = (video?.srcObject as MediaStream | undefined)?.getVideoTracks()[0];
+    // stop() alone fires no ended event; the browser's own button does.
+    track?.stop();
+    track?.dispatchEvent(new Event("ended"));
+  });
+}
+
+async function prepare(page: Page, title: string, camera = true): Promise<void> {
   await login(page, users.prof1, lecturesPage);
   await page.getByRole("button", { name: "Create lecture" }).click();
   const w = wizard(page);
@@ -74,9 +119,10 @@ async function prepare(page: Page, title: string): Promise<void> {
   await w.getByLabel("Title").fill(title);
   await w.getByRole("button", { name: "Continue" }).click();
   await w.getByRole("button", { name: "Share screen" }).click();
-  await w.getByRole("button", { name: "Turn on camera" }).click();
   // The fake devices are slow to start the first time.
   await expect(w.getByRole("button", { name: "Share another screen" })).toBeVisible({ timeout: 20_000 });
+  if (!camera) return;
+  await w.getByRole("button", { name: "Turn on camera" }).click();
   await expect(w.getByRole("button", { name: "Choose another camera" })).toBeVisible({ timeout: 20_000 });
 }
 
@@ -149,6 +195,63 @@ test.describe("recording a lecture in the browser", () => {
       await expect(wizard(page)).toBeHidden();
 
       await waitForVersions(prof1, title);
+    } finally {
+      await cleanUp(prof1, title);
+    }
+  });
+
+  test("records sound with only the screen shared", async ({ page, playwright }) => {
+    test.skip(!existsSync(chunkRoot), "the server's chunks are not reachable from here");
+    const prof1 = await apiAs(playwright, users.prof1);
+    const title = `${PREFIX} Nur Bildschirm`;
+    try {
+      await prepare(page, title, false);
+      const w = wizard(page);
+      await w.getByRole("button", { name: "Start recording" }).click();
+      await expect(recordingStatus(w)).toBeVisible({ timeout: 15_000 });
+      const lecture = await lectureNamed(prof1, title);
+      await moveToTestYear(prof1, lecture.id);
+      await page.waitForTimeout(5000);
+      await w.getByRole("button", { name: "Stop and upload" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "Created 1 lecture." })).toBeVisible({ timeout: 60_000 });
+
+      const [recording] = await recordingsOf(prof1, lecture.id);
+      expect(recording.version).toBe("PRES");
+      expect(streamTypes(segmentFile(recording.id, 0))).toEqual(expect.arrayContaining(["video", "audio"]));
+    } finally {
+      await cleanUp(prof1, title);
+    }
+  });
+
+  test("keeps both versions on one timeline when sharing stops for a while", async ({ page, playwright }) => {
+    test.skip(!existsSync(chunkRoot), "the server's chunks are not reachable from here");
+    const prof1 = await apiAs(playwright, users.prof1);
+    const title = `${PREFIX} Unterbrochen`;
+    try {
+      await prepare(page, title);
+      const w = wizard(page);
+      await w.getByRole("button", { name: "Start recording" }).click();
+      await expect(recordingStatus(w)).toBeVisible({ timeout: 15_000 });
+      const lecture = await lectureNamed(prof1, title);
+      await moveToTestYear(prof1, lecture.id);
+      await page.waitForTimeout(3000);
+
+      await stopSharing(page);
+      await expect(w.getByRole("button", { name: "Share screen again" })).toBeVisible();
+      // Still recording the camera, and still offering to stop.
+      await expect(w.getByRole("button", { name: "Stop and upload" })).toBeVisible();
+      await page.waitForTimeout(4000);
+      await w.getByRole("button", { name: "Share screen again" }).click();
+      await expect(w.getByRole("button", { name: "Share screen again" })).toBeHidden({ timeout: 20_000 });
+      await page.waitForTimeout(3000);
+      await w.getByRole("button", { name: "Stop and upload" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "Created 1 lecture." })).toBeVisible({ timeout: 60_000 });
+
+      const pres = (await recordingsOf(prof1, lecture.id)).find((r) => r.version === "PRES")!;
+      const gap = Number(readFileSync(join(chunkRoot, String(pres.id), "000001", "gap-ms"), "utf8"));
+      // About the four seconds waited, give or take the time to share again.
+      expect(gap).toBeGreaterThan(3500);
+      expect(gap).toBeLessThan(10_000);
     } finally {
       await cleanUp(prof1, title);
     }

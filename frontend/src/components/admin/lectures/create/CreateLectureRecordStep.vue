@@ -56,6 +56,16 @@ async function shareScreen(): Promise<MediaStream | null> {
   }
 }
 
+async function turnOnMicrophone(): Promise<MediaStreamTrack | null> {
+  error.value = "";
+  try {
+    return (await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks()[0] ?? null;
+  } catch {
+    error.value = "The microphone could not be turned on. Check the browser's permissions.";
+    return null;
+  }
+}
+
 async function turnOnCamera(): Promise<MediaStream | null> {
   error.value = "";
   try {
@@ -80,6 +90,19 @@ const canStart = computed(() => !!screen.value || !!camera.value);
 
 async function start(): Promise<void> {
   error.value = "";
+  // Before anything is awaited: the audio has to start on the click.
+  const session = rec.begin(props.courseId);
+  session.prepareAudio();
+  const giveUp = async () => {
+    await session.discard();
+    rec.clear();
+    busy.value = "";
+  };
+
+  // The camera's microphone, or one of its own: a screen alone records no sound.
+  const mic = camera.value?.getAudioTracks()[0] ?? (await turnOnMicrophone());
+  if (!mic && !window.confirm("Record without sound?")) return giveUp();
+
   busy.value = "Creating the lecture…";
   let lecture: CourseLecture | undefined;
   try {
@@ -87,27 +110,23 @@ async function start(): Promise<void> {
     lecture = (await createLectures(props.courseId, plan.request))[0];
   } catch (err) {
     error.value = createErrorMessage(err);
-    busy.value = "";
-    return;
+    return giveUp();
   }
-  if (!lecture) {
-    busy.value = "";
-    return;
-  }
+  if (!lecture) return giveUp();
+  rec.setLecture(lecture);
+
   busy.value = "Starting the recording…";
-  const session = rec.begin(props.courseId, lecture);
   try {
     await session.start(props.courseId, lecture.id, props.form.title.trim(), {
       screen: screen.value,
       camera: camera.value,
+      mic,
     });
   } catch (err) {
     error.value = `The recording could not be started: ${err instanceof Error ? err.message : err}. The lecture was created; upload a video to it from its card.`;
-    await session.discard();
-    rec.clear();
-  } finally {
-    busy.value = "";
+    return giveUp();
   }
+  busy.value = "";
 }
 
 /* Recording. */
@@ -127,6 +146,8 @@ const elapsed = computed(() => {
 const LABEL: Record<RecordingVersion, string> = { PRES: "Screen", CAM: "Camera" };
 
 const paused = computed(() => rec.versions.some((v) => v.state === "paused"));
+/** Something is being recorded or paused, which Pause and Resume act on. */
+const pausable = computed(() => rec.versions.some((v) => v.state === "recording" || v.state === "paused"));
 const pendingBytes = computed(() => rec.versions.reduce((n, v) => n + v.upload.pendingBytes, 0));
 const unreachable = computed(() => rec.versions.some((v) => v.upload.state === "retrying"));
 const allDone = computed(() => rec.versions.length > 0 && rec.versions.every((v) => v.upload.state === "done"));
@@ -143,7 +164,16 @@ async function shareAgain(version: RecordingVersion): Promise<void> {
   if (!stream || !video) return;
   if (version === "PRES") screen.value = stream;
   else camera.value = stream;
+  // A camera turned on again brings a microphone, which takes over if the one recording went.
+  const audio = stream.getAudioTracks()[0];
+  if (audio && rec.micState !== "on") rec.session?.replaceMic(audio);
+  else audio?.stop();
   rec.session?.resumeWith(version, video);
+}
+
+async function micAgain(): Promise<void> {
+  const track = await turnOnMicrophone();
+  if (track) rec.session?.replaceMic(track);
 }
 
 async function stop(): Promise<void> {
@@ -176,10 +206,16 @@ async function discard(): Promise<void> {
   if (!window.confirm("Throw the recording away? This cannot be undone. The lecture itself stays.")) return;
   const lecture = rec.lecture;
   const ownCourse = rec.courseId === props.courseId;
-  await rec.session.discard();
+  const result = await rec.session.discard();
   rec.clear();
   screen.value = camera.value = null;
-  if (lecture && ownCourse) emit("created", [lecture], "The recording was thrown away.");
+  const message = {
+    gone: "The recording was thrown away.",
+    pending:
+      "The server could not be reached to throw the recording away. It is kept in this browser and thrown away once the server is back, the next time this course's lectures are opened.",
+    refused: "The recording could not be thrown away: it is being converted already. Delete the version from the lecture's card.",
+  }[result];
+  if (lecture && ownCourse) emit("created", [lecture], message);
 }
 
 async function saveCopy(version: RecordingVersion): Promise<void> {
@@ -212,7 +248,8 @@ onBeforeUnmount(() => {
       This browser cannot record here. Use a recent Chrome, Edge, Firefox or Safari on a computer.
     </p>
 
-    <template v-else-if="!rec.session">
+    <template v-else>
+      <template v-if="!rec.session">
       <p class="text-5 text-sm">
         Share the screen for the presentation video and turn on the camera for the camera video; either is enough. The
         microphone goes into both. What is recorded is kept in this browser and uploaded while you record.
@@ -222,6 +259,9 @@ onBeforeUnmount(() => {
         fit.
       </p>
 
+      </template>
+
+      <!-- Shown while recording too, so the lecturer sees what is recorded. -->
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="flex flex-col gap-2">
           <video
@@ -232,7 +272,12 @@ onBeforeUnmount(() => {
             muted
             playsinline
           ></video>
-          <button type="button" class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm" @click="chooseScreen">
+          <button
+            v-if="!rec.session"
+            type="button"
+            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+            @click="chooseScreen"
+          >
             <i class="fas fa-display mr-1"></i>{{ screen ? "Share another screen" : "Share screen" }}
           </button>
         </div>
@@ -245,13 +290,19 @@ onBeforeUnmount(() => {
             muted
             playsinline
           ></video>
-          <button type="button" class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm" @click="chooseCamera">
+          <button
+            v-if="!rec.session"
+            type="button"
+            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+            @click="chooseCamera"
+          >
             <i class="fas fa-video mr-1"></i>{{ camera ? "Choose another camera" : "Turn on camera" }}
           </button>
         </div>
       </div>
 
       <button
+        v-if="!rec.session"
         type="button"
         class="tum-live-button-primary self-start px-3 py-1 text-sm"
         :disabled="!canStart || !!busy"
@@ -259,78 +310,92 @@ onBeforeUnmount(() => {
       >
         <span class="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true"></span>Start recording
       </button>
-    </template>
 
-    <template v-else>
-      <div class="flex flex-wrap items-center gap-3">
-        <span v-if="rec.recording" class="flex items-center gap-2 font-semibold" role="status">
-          <span class="h-3 w-3 rounded-full" :class="paused ? 'bg-gray-400' : 'animate-pulse bg-red-600'"></span>
-          {{ paused ? "Paused" : "Recording" }} {{ elapsed }}
-        </span>
-        <span v-else-if="!allDone" class="text-3 flex items-center gap-2 text-sm" role="status">
-          <i class="fas fa-circle-notch animate-spin"></i>Finishing the upload…
-        </span>
-      </div>
-
-      <ul class="flex flex-col gap-1 text-sm" aria-label="Versions">
-        <li v-for="v in rec.versions" :key="v.version" class="flex flex-wrap items-center gap-2">
-          <span class="text-2 w-16 font-semibold">{{ LABEL[v.version] }}</span>
-          <span v-if="v.state === 'waiting'" class="text-amber-600 dark:text-amber-400">
-            Stopped sharing: not recording.
+      <template v-if="rec.session">
+        <div class="flex flex-wrap items-center gap-3">
+          <span v-if="rec.recording" class="flex items-center gap-2 font-semibold" role="status">
+            <span
+              class="h-3 w-3 rounded-full"
+              :class="paused || !pausable ? 'bg-gray-400' : 'animate-pulse bg-red-600'"
+            ></span>
+            {{ !pausable ? "Not recording" : paused ? "Paused" : "Recording" }} {{ elapsed }}
           </span>
-          <button
-            v-if="v.state === 'waiting'"
-            type="button"
-            class="tum-live-button-secondary tum-live-button px-2 py-0.5 text-xs"
-            @click="shareAgain(v.version)"
-          >
-            {{ v.version === "PRES" ? "Share screen again" : "Turn camera on again" }}
-          </button>
-          <span v-if="v.upload.state === 'done'" class="text-5">Uploaded; converting.</span>
-          <span v-else-if="v.upload.state === 'failed'" class="text-red-600 dark:text-red-400">{{ v.upload.error }}</span>
-          <button
-            v-if="v.upload.state === 'failed'"
-            type="button"
-            class="tum-live-button-secondary tum-live-button px-2 py-0.5 text-xs"
-            @click="saveCopy(v.version)"
-          >
-            Save a copy
-          </button>
-        </li>
-      </ul>
+          <span v-else-if="!allDone" class="text-3 flex items-center gap-2 text-sm" role="status">
+            <i class="fas fa-circle-notch animate-spin"></i>Finishing the upload…
+          </span>
+        </div>
 
-      <p v-if="unreachable" class="rounded-lg bg-warn/25 px-2 py-2 text-sm" role="alert">
-        The server can't be reached. Recording goes on and is kept in this browser
-        ({{ megabytes(pendingBytes) }} waiting); it is uploaded once the server is back.
-        <strong>Do not reload or close this page</strong> until then.
-      </p>
-      <p v-else-if="pendingBytes > 4 * 1024 ** 2" class="text-5 text-sm">{{ megabytes(pendingBytes) }} waiting to upload.</p>
-      <p v-if="rec.storageError" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
-        Part of the recording could not be stored in this browser: {{ rec.storageError }}
-      </p>
+        <ul class="flex flex-col gap-1 text-sm" aria-label="Versions">
+          <li v-for="v in rec.versions" :key="v.version" class="flex flex-wrap items-center gap-2">
+            <span class="text-2 w-16 font-semibold">{{ LABEL[v.version] }}</span>
+            <span v-if="v.state === 'waiting'" class="text-amber-600 dark:text-amber-400">
+              Not recording; until it is shared again, this video shows black.
+            </span>
+            <button
+              v-if="v.state === 'waiting'"
+              type="button"
+              class="tum-live-button-secondary tum-live-button px-2 py-0.5 text-xs"
+              @click="shareAgain(v.version)"
+            >
+              {{ v.version === "PRES" ? "Share screen again" : "Turn camera on again" }}
+            </button>
+            <span v-if="v.upload.state === 'done'" class="text-5">Uploaded; converting.</span>
+            <span v-else-if="v.upload.state === 'failed'" class="text-red-600 dark:text-red-400">{{ v.upload.error }}</span>
+            <button
+              v-if="v.upload.state === 'failed'"
+              type="button"
+              class="tum-live-button-secondary tum-live-button px-2 py-0.5 text-xs"
+              @click="saveCopy(v.version)"
+            >
+              Save a copy
+            </button>
+          </li>
+        </ul>
 
-      <div class="flex flex-wrap gap-2">
-        <template v-if="rec.recording">
-          <button
-            type="button"
-            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-            @click="paused ? rec.session.resume() : rec.session.pause()"
-          >
-            <i class="fas mr-1" :class="paused ? 'fa-play' : 'fa-pause'"></i>{{ paused ? "Resume" : "Pause" }}
-          </button>
-          <button type="button" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="stopping" @click="stop">
-            <i class="fas fa-stop mr-1"></i>Stop and upload
-          </button>
-        </template>
-        <button
-          v-if="!allDone"
-          type="button"
-          class="tum-live-button-secondary tum-live-button ml-auto px-3 py-1 text-sm"
-          @click="discard"
+        <p
+          v-if="rec.recording && rec.micState === 'lost'"
+          class="flex flex-wrap items-center gap-2 rounded-lg bg-warn/25 px-2 py-2 text-sm"
+          role="alert"
         >
-          Throw away
-        </button>
-      </div>
+          The microphone stopped: the recording goes on without sound.
+          <button type="button" class="tum-live-button-secondary tum-live-button px-2 py-0.5 text-xs" @click="micAgain">
+            Turn microphone on again
+          </button>
+        </p>
+        <p v-if="unreachable" class="rounded-lg bg-warn/25 px-2 py-2 text-sm" role="alert">
+          The server can't be reached. Recording goes on and is kept in this browser
+          ({{ megabytes(pendingBytes) }} waiting); it is uploaded once the server is back.
+          <strong>Do not reload or close this page</strong> until then.
+        </p>
+        <p v-else-if="pendingBytes > 4 * 1024 ** 2" class="text-5 text-sm">{{ megabytes(pendingBytes) }} waiting to upload.</p>
+        <p v-if="rec.storageError" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
+          Part of the recording could not be stored in this browser: {{ rec.storageError }}
+        </p>
+
+        <div class="flex flex-wrap gap-2">
+          <template v-if="rec.recording">
+            <button
+              v-if="pausable"
+              type="button"
+              class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+              @click="paused ? rec.session.resume() : rec.session.pause()"
+            >
+              <i class="fas mr-1" :class="paused ? 'fa-play' : 'fa-pause'"></i>{{ paused ? "Resume" : "Pause" }}
+            </button>
+            <button type="button" class="tum-live-button-primary px-3 py-1 text-sm" :disabled="stopping" @click="stop">
+              <i class="fas fa-stop mr-1"></i>Stop and upload
+            </button>
+          </template>
+          <button
+            v-if="!allDone"
+            type="button"
+            class="tum-live-button-secondary tum-live-button ml-auto px-3 py-1 text-sm"
+            @click="discard"
+          >
+            Throw away
+          </button>
+        </div>
+      </template>
     </template>
 
     <p v-if="error" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">{{ error }}</p>

@@ -23,6 +23,12 @@ export interface RecordingMeta {
   uploadPath: string;
   /** Per segment, how many chunks were recorded. */
   recorded: number[];
+  /** Per segment, how long recording was interrupted before it, in milliseconds. */
+  gaps?: number[];
+  /** Thrown away, but the server was away to hear it: to be told again. */
+  discarding?: boolean;
+  /** Counts the writes of the meta, so the newer of its two files can be told; see writeMeta. */
+  generation: number;
   /** Recording ended; what is left is to upload the rest and finalize. */
   stopped: boolean;
   createdAt: number;
@@ -52,7 +58,12 @@ export function recordingKey(streamId: number, version: RecordingVersion, record
 }
 
 const ROOT = "browser-recordings";
-const META = "meta.json";
+/**
+ * The meta is written to these by turns: a write is a truncate and then the bytes, and
+ * a crash between the two must not leave the only copy empty. Reading takes the newer
+ * of the two that parses.
+ */
+const META_FILES = ["meta-0.json", "meta-1.json"];
 
 /** Fixed width, so that names sort in recording order. */
 const segmentName = (segment: number) => String(segment).padStart(6, "0");
@@ -162,8 +173,9 @@ export class OPFSChunkStore implements ChunkStore {
   }
 
   async writeMeta(meta: RecordingMeta): Promise<void> {
+    meta.generation = (meta.generation ?? 0) + 1;
     const data = new TextEncoder().encode(JSON.stringify(meta));
-    await this.send([meta.key, META], data.buffer as ArrayBuffer);
+    await this.send([meta.key, META_FILES[meta.generation % 2]], data.buffer as ArrayBuffer);
   }
 
   async readMetas(): Promise<RecordingMeta[]> {
@@ -172,12 +184,9 @@ export class OPFSChunkStore implements ChunkStore {
     const metas: RecordingMeta[] = [];
     for await (const [, handle] of root.entries()) {
       if (handle.kind !== "directory") continue;
-      try {
-        const file = await (await (handle as FileSystemDirectoryHandle).getFileHandle(META)).getFile();
-        metas.push(JSON.parse(await file.text()) as RecordingMeta);
-      } catch {
-        // A recording whose meta was never written has nothing to resume from.
-      }
+      const newest = await newestMeta(handle as FileSystemDirectoryHandle);
+      // A recording whose meta was never written has nothing to resume from.
+      if (newest) metas.push(newest);
     }
     return metas.sort((a, b) => a.createdAt - b.createdAt);
   }
@@ -186,6 +195,19 @@ export class OPFSChunkStore implements ChunkStore {
     const root = await this.dir([]);
     await root?.removeEntry(key, { recursive: true }).catch(() => undefined);
   }
+}
+
+async function newestMeta(dir: FileSystemDirectoryHandle): Promise<RecordingMeta | null> {
+  let newest: RecordingMeta | null = null;
+  for (const name of META_FILES) {
+    try {
+      const meta = JSON.parse(await (await (await dir.getFileHandle(name)).getFile()).text()) as RecordingMeta;
+      if (!newest || meta.generation > newest.generation) newest = meta;
+    } catch {
+      // Missing, or cut short by a crash: the other one is the meta.
+    }
+  }
+  return newest;
 }
 
 /** A store in memory, for tests. */

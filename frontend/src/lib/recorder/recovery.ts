@@ -4,9 +4,8 @@
  * and finalize, which any tab of the course can do.
  */
 
-import { abandonBrowserRecording } from "./api";
 import type { ChunkStore, RecordingMeta } from "./chunk-store";
-import { lockName, server, tryLock } from "./session";
+import { lockName, server, throwAway, tryLock, type ThrowAwayResult } from "./session";
 import { UploadQueue, type QueueStatus } from "./upload-queue";
 
 /**
@@ -14,10 +13,14 @@ import { UploadQueue, type QueueStatus } from "./upload-queue";
  * holds is left out: it is being recorded or uploaded there.
  */
 export async function unfinishedRecordings(store: ChunkStore, courseId: number): Promise<RecordingMeta[]> {
-  const metas = (await store.readMetas()).filter((m) => m.courseId === courseId);
-  if (!navigator.locks?.query) return metas;
-  const held = new Set((await navigator.locks.query()).held?.map((l) => l.name));
-  return metas.filter((m) => !held.has(lockName(m.key)));
+  let metas = (await store.readMetas()).filter((m) => m.courseId === courseId);
+  if (navigator.locks?.query) {
+    const held = new Set((await navigator.locks.query()).held?.map((l) => l.name));
+    metas = metas.filter((m) => !held.has(lockName(m.key)));
+  }
+  // Thrown away while the server was away: told again now, and not offered either way.
+  for (const m of metas.filter((m) => m.discarding)) void throwAway(store, m, 1);
+  return metas.filter((m) => !m.discarding);
 }
 
 /**
@@ -39,10 +42,9 @@ export async function resumeRecording(
   return queue;
 }
 
-/** Throws a recording away, here and on the server. */
-export async function discardRecording(store: ChunkStore, meta: RecordingMeta): Promise<void> {
-  await abandonBrowserRecording(meta.courseId, meta.streamId, meta.recordingId).catch(() => undefined);
-  await store.drop(meta.key);
+/** Throws a recording away, here and on the server; see throwAway. */
+export function discardRecording(store: ChunkStore, meta: RecordingMeta): Promise<ThrowAwayResult> {
+  return throwAway(store, meta);
 }
 
 /**

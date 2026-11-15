@@ -17,6 +17,7 @@ function meta(): RecordingMeta {
     recorded: [],
     stopped: false,
     createdAt: 0,
+    generation: 0,
   };
 }
 
@@ -32,7 +33,10 @@ class FakeServer implements RecordingServer {
   answers: Array<() => Response | Promise<Response>> = [];
   finalizeErrors: unknown[] = [];
 
-  async putChunk(_path: string, segment: number, seq: number, data: Blob): Promise<Response> {
+  gaps: Array<[number, number | undefined]> = [];
+
+  async putChunk(_path: string, segment: number, seq: number, data: Blob, gapMs?: number): Promise<Response> {
+    this.gaps.push([segment, gapMs]);
     const answer = this.answers.shift();
     const res = answer ? await answer() : ok();
     if (res.ok) {
@@ -260,7 +264,7 @@ describe("UploadQueue", () => {
   it("finalizes with what arrived when chunks were lost from this browser", async () => {
     const store = new MemoryChunkStore();
     const server = new FakeServer();
-    server.finalizeErrors = [new ApiError(409, "chunks of the recording are still missing")];
+    server.finalizeErrors = [new ApiError(409, "chunks of the recording are still missing", true)];
     const m = meta();
     const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
 
@@ -285,6 +289,37 @@ describe("UploadQueue", () => {
     expect(queue.current.state).toBe("done");
   });
 
+  it("retries finalizing through a proxy's 404, which is not the server's", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    server.finalizeErrors = [new ApiError(404, "Not Found"), new ApiError(502, "Bad Gateway")];
+    const m = meta();
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+
+    await record(store, m, queue, 0, 0, "a");
+    await queue.finish();
+    expect(server.finalized).toEqual([[1]]);
+    expect(queue.current.state).toBe("done");
+  });
+
+  it("sends the gap before a segment with its first chunk", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    m.gaps = [0, 1500];
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+
+    await record(store, m, queue, 0, 0, "a");
+    await record(store, m, queue, 1, 0, "x");
+    await record(store, m, queue, 1, 1, "y");
+    await queue.finish();
+    expect(server.gaps).toEqual([
+      [0, 0],
+      [1, 1500],
+      [1, undefined],
+    ]);
+  });
+
   it("throws away a recording of nothing instead of finalizing it", async () => {
     const store = new MemoryChunkStore();
     const server = new FakeServer();
@@ -302,7 +337,7 @@ describe("UploadQueue", () => {
   it("keeps the recording when the session expired before finalizing", async () => {
     const store = new MemoryChunkStore();
     const server = new FakeServer();
-    server.finalizeErrors = [new ApiError(401, "unauthenticated")];
+    server.finalizeErrors = [new ApiError(401, "unauthenticated", true)];
     const m = meta();
     await store.writeMeta(m);
     const queue = new UploadQueue({ store, meta: m, server, ...noSleep });

@@ -20,6 +20,11 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /**
+     * The answer is the server's own, not a proxy's: Traefik answers 404 for a server
+     * that is down, which says nothing about what was asked for.
+     */
+    readonly fromServer = false,
   ) {
     super(message);
     this.name = "ApiError";
@@ -78,7 +83,8 @@ async function requestToken(): Promise<string> {
 
   if (!res.ok) {
     accessToken = null;
-    const error = new ApiError(res.status, "could not obtain an access token");
+    // Only the server says there is no session; anything else may be on the way to it.
+    const error = new ApiError(res.status, "could not obtain an access token", res.status === 401);
     // A 401 is answered once per page by sessionAbsent; anything else is worth backing off from.
     if (!error.isUnauthenticated) {
       tokenFailure = { error, until: Date.now() + cooldownOf(res) };
@@ -145,7 +151,7 @@ async function toApiError(res: Response): Promise<ApiError> {
   try {
     const body = await res.json();
     if (body && typeof body.message === "string") {
-      return new ApiError(res.status, body.message);
+      return new ApiError(res.status, body.message, true);
     }
   } catch {
     // response had no JSON body

@@ -10,7 +10,8 @@ import type { ChunkStore, RecordingMeta, StoredChunk } from "./chunk-store";
 
 /** What the queue needs of the server, so tests can stand in for it. */
 export interface RecordingServer {
-  putChunk(uploadPath: string, segment: number, seq: number, data: Blob): Promise<Response>;
+  /** gapMs, with a segment's first chunk, is how long recording was interrupted before it. */
+  putChunk(uploadPath: string, segment: number, seq: number, data: Blob, gapMs?: number): Promise<Response>;
   /** Per segment, how many chunks from 0 on the server has. */
   received(meta: RecordingMeta): Promise<number[]>;
   finalize(meta: RecordingMeta, expected: number[]): Promise<void>;
@@ -210,7 +211,8 @@ export class UploadQueue {
     }
     let outcome: ChunkOutcome;
     try {
-      outcome = await chunkOutcome(await this.server.putChunk(this.meta.uploadPath, chunk.segment, chunk.seq, data));
+      const gap = chunk.seq === 0 ? this.meta.gaps?.[chunk.segment] : undefined;
+      outcome = await chunkOutcome(await this.server.putChunk(this.meta.uploadPath, chunk.segment, chunk.seq, data, gap));
     } catch {
       outcome = { kind: "retry" };
     }
@@ -240,8 +242,11 @@ export class UploadQueue {
       try {
         await this.server.abandon(this.meta);
       } catch (err) {
-        await this.finalizeFailed(err);
-        return;
+        // Gone already is as good as thrown away.
+        if (!(isRefusal(err) && err.status === 404)) {
+          await this.finalizeFailed(err);
+          return;
+        }
       }
       await this.store.drop(this.meta.key);
       this.set({ state: "done", error: "", empty: true });
@@ -250,7 +255,7 @@ export class UploadQueue {
     try {
       await this.server.finalize(this.meta, this.meta.recorded);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 409) {
+      if (isRefusal(err) && err.status === 409) {
         // The server is short of chunks that are not here any more: rescue what it has.
         try {
           await this.server.finalize(this.meta, []);
@@ -272,7 +277,7 @@ export class UploadQueue {
   }
 
   private async finalizeFailed(err: unknown): Promise<void> {
-    if (err instanceof ApiError && err.status < 500 && err.status !== 408 && err.status !== 429) {
+    if (isRefusal(err)) {
       this.set({
         state: "failed",
         error: err.isUnauthenticated
@@ -284,6 +289,16 @@ export class UploadQueue {
     this.set({ state: "retrying" });
     await this.sleep(backoff(this.attempt++));
   }
+}
+
+/**
+ * Whether an API call's error is the server refusing it, rather than the server or
+ * the network being away, which is worth waiting out like a chunk's.
+ */
+export function isRefusal(err: unknown): err is ApiError {
+  return (
+    err instanceof ApiError && err.fromServer && err.status < 500 && err.status !== 408 && err.status !== 429
+  );
 }
 
 function refusedMessage(status: number, message: string): string {

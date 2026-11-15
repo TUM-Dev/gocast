@@ -3,7 +3,7 @@ import { computed, markRaw, ref, shallowRef } from "vue";
 
 import type { CourseLecture } from "@/lib/course-lectures";
 import { OPFSChunkStore, type ChunkStore } from "@/lib/recorder/chunk-store";
-import { RecordingSession, type VersionStatus } from "@/lib/recorder/session";
+import { RecordingSession, type MicState, type VersionStatus } from "@/lib/recorder/session";
 
 /**
  * The lecture being recorded in this tab. A store rather than the wizard's state, so
@@ -23,22 +23,29 @@ export const useBrowserRecordingStore = defineStore("browserRecording", () => {
   /** The session's state, copied on every change so the template follows it. */
   const versions = ref<VersionStatus[]>([]);
   const storageError = ref("");
+  const micState = ref<MicState>("none");
   const tick = ref(0);
 
   function refresh(): void {
     const s = session.value;
     versions.value = s ? s.status : [];
     storageError.value = s?.storageError ?? "";
+    micState.value = s?.micState ?? "none";
     tick.value++;
   }
 
-  function begin(course: number, recorded: CourseLecture): RecordingSession {
+  /** A session for a lecture of the course; its lecture is set once created. */
+  function begin(course: number): RecordingSession {
     const s = markRaw(new RecordingSession(chunks, refresh));
     session.value = s;
     courseId.value = course;
-    lecture.value = recorded;
+    lecture.value = null;
     refresh();
     return s;
+  }
+
+  function setLecture(recorded: CourseLecture): void {
+    lecture.value = recorded;
   }
 
   function clear(): void {
@@ -76,5 +83,5 @@ export const useBrowserRecordingStore = defineStore("browserRecording", () => {
     }
   }
 
-  return { chunks, storageWorks, session, lecture, courseId, versions, storageError, recording, busy, begin, clear };
+  return { chunks, storageWorks, session, lecture, courseId, micState, setLecture, versions, storageError, recording, busy, begin, clear };
 });
