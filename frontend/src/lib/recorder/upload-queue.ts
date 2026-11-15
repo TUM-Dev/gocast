@@ -144,6 +144,13 @@ export class UploadQueue {
       if (c.seq >= (received[c.segment] ?? 0)) this.pending.push(c);
       else if (c.seq !== 0) await this.store.remove(this.meta.key, c.segment, c.seq);
     }
+    // The counts may lag behind: a crash between storing a chunk and writing the meta
+    // leaves the chunk uncounted, and finalizing would leave it out, or take a recording
+    // with chunks for an empty one and throw it away.
+    const counts = [...this.meta.recorded];
+    for (const c of stored) counts[c.segment] = Math.max(counts[c.segment] ?? 0, c.seq + 1);
+    received.forEach((n, segment) => (counts[segment] = Math.max(counts[segment] ?? 0, n)));
+    this.meta.recorded = Array.from(counts, (n) => n ?? 0);
     this.set({});
     void this.run();
   }

@@ -38,18 +38,28 @@ export async function listBrowserRecordings(courseId: number, streamId: number):
   return (await apiGetMessage(ListBrowserRecordingsResponseSchema, base(courseId, streamId))).recordings;
 }
 
-/** With `expected`, refused with 409 until the server has that many chunks of each segment. */
+/**
+ * With `expected`, refused with 409 until the server has that many chunks of each
+ * segment. `trailingGapMs` is how long the version missed at the end.
+ */
 export function finalizeBrowserRecording(
   courseId: number,
   streamId: number,
   id: number,
   expected: number[] = [],
+  trailingGapMs = 0,
 ): Promise<BrowserRecording> {
   return apiPostMessage(
     FinalizeBrowserRecordingRequestSchema,
     BrowserRecordingSchema,
     `${base(courseId, streamId)}/${id}/finalize`,
-    create(FinalizeBrowserRecordingRequestSchema, { courseId, streamId, recordingId: id, expected }),
+    create(FinalizeBrowserRecordingRequestSchema, {
+      courseId,
+      streamId,
+      recordingId: id,
+      expected,
+      trailingGapMs: Math.round(trailingGapMs),
+    }),
   );
 }
 

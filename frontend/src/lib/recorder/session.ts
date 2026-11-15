@@ -35,7 +35,7 @@ export const server: RecordingServer = {
     return (await getBrowserRecording(meta.courseId, meta.streamId, meta.recordingId)).received;
   },
   async finalize(meta, expected) {
-    await finalizeBrowserRecording(meta.courseId, meta.streamId, meta.recordingId, expected);
+    await finalizeBrowserRecording(meta.courseId, meta.streamId, meta.recordingId, expected, meta.trailingGap);
   },
   abandon(meta) {
     return abandonBrowserRecording(meta.courseId, meta.streamId, meta.recordingId);
@@ -110,9 +110,21 @@ export class RecordingSession {
     return this.versions.some((v) => v.state !== "ended");
   }
 
-  /** Still recording, or chunks still on their way: leaving the page now would stop the upload. */
+  /** Starting: asking for the microphone, creating the lecture and its recordings. */
+  private starting = false;
+
+  /**
+   * Starting, still recording, or chunks still on their way: leaving the page now would
+   * stop the upload, and closing the recorder would lose its controls.
+   */
   get busy(): boolean {
-    return this.recording || this.versions.some((v) => !v.queue.over);
+    return this.starting || this.recording || this.versions.some((v) => !v.queue.over);
+  }
+
+  /** Marks the time from the click until recording runs, or is given up, as busy. */
+  setStarting(starting: boolean): void {
+    this.starting = starting;
+    this.onChange();
   }
 
   /**
@@ -278,6 +290,12 @@ export class RecordingSession {
     v.video = video;
     (v.meta.gaps ??= [])[v.segment] = Math.max(0, Math.round(this.activeMs() - v.endedAt));
     this.record(v);
+    // Shared again during a pause: it waits for Resume like the other version, or the
+    // two would part.
+    if (this.pausedSince) {
+      v.recorder?.pause();
+      v.state = "paused";
+    }
     this.onChange();
   }
 
@@ -309,6 +327,11 @@ export class RecordingSession {
 
   /** Stops recording, and resolves once every version is finalized or refused. */
   async stop(): Promise<void> {
+    // A version whose source was never shared again missed the time since: padded at
+    // the end, so both versions end together.
+    for (const v of this.versions) {
+      if (v.state === "waiting") v.meta.trailingGap = Math.max(0, Math.round(this.activeMs() - v.endedAt));
+    }
     await Promise.all(
       this.versions.map(async (v) => {
         await this.halt(v);

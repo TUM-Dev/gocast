@@ -93,7 +93,12 @@ async function start(): Promise<void> {
   // Before anything is awaited: the audio has to start on the click.
   const session = rec.begin(props.courseId);
   session.prepareAudio();
+  // Busy from here: the wizard can't be closed, nor the recording thrown away, while
+  // what starts it is still on its way.
+  session.setStarting(true);
+  busy.value = "Starting…";
   const giveUp = async () => {
+    session.setStarting(false);
     await session.discard();
     rec.clear();
     busy.value = "";
@@ -126,6 +131,7 @@ async function start(): Promise<void> {
     error.value = `The recording could not be started: ${err instanceof Error ? err.message : err}. The lecture was created; upload a video to it from its card.`;
     return giveUp();
   }
+  session.setStarting(false);
   busy.value = "";
 }
 
@@ -226,6 +232,8 @@ async function saveCopy(version: RecordingVersion): Promise<void> {
 /* Leaving. The recording lives in the store, not here, so leaving the page stops it
  * deliberately rather than leaving it running out of sight. The upload goes on. */
 onBeforeRouteLeave(() => {
+  // Starting: the recording would start with nothing left to stop it from.
+  if (busy.value) return false;
   if (!rec.recording) return true;
   if (!window.confirm("Leaving this page stops the recording. What was recorded is uploaded in the background.")) {
     return false;
@@ -320,7 +328,7 @@ onBeforeUnmount(() => {
             ></span>
             {{ !pausable ? "Not recording" : paused ? "Paused" : "Recording" }} {{ elapsed }}
           </span>
-          <span v-else-if="!allDone" class="text-3 flex items-center gap-2 text-sm" role="status">
+          <span v-else-if="!allDone && !busy" class="text-3 flex items-center gap-2 text-sm" role="status">
             <i class="fas fa-circle-notch animate-spin"></i>Finishing the upload…
           </span>
         </div>
@@ -390,6 +398,7 @@ onBeforeUnmount(() => {
             v-if="!allDone"
             type="button"
             class="tum-live-button-secondary tum-live-button ml-auto px-3 py-1 text-sm"
+            :disabled="!!busy || stopping"
             @click="discard"
           >
             Throw away

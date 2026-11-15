@@ -30,6 +30,7 @@ class FakeServer implements RecordingServer {
   received_: number[] = [];
   taken: string[] = [];
   finalized: number[][] = [];
+  trailing: Array<number | undefined> = [];
   answers: Array<() => Response | Promise<Response>> = [];
   finalizeErrors: unknown[] = [];
 
@@ -54,6 +55,7 @@ class FakeServer implements RecordingServer {
     const err = this.finalizeErrors.shift();
     if (err) throw err;
     this.finalized.push(expected);
+    this.trailing.push(_meta.trailingGap);
   }
 
   abandoned = 0;
@@ -242,6 +244,48 @@ describe("UploadQueue", () => {
 
     expect(server.taken).toEqual(["0/1=b", "0/2=c"]);
     expect(server.finalized).toEqual([[3]]);
+  });
+
+  it("counts a chunk that was stored but not yet counted when the tab crashed", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    // The meta was written before the chunks it should count.
+    m.recorded = [];
+    m.stopped = true;
+    await store.put(m.key, 0, 0, new Blob(["a"]));
+    await store.put(m.key, 0, 1, new Blob(["b"]));
+
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    await queue.resume();
+    await queue.finish();
+    expect(server.abandoned).toBe(0);
+    expect(server.finalized).toEqual([[2]]);
+  });
+
+  it("counts what the server has though the browser no longer does", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    m.recorded = [1];
+    m.stopped = true;
+    server.received_ = [3];
+
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    await queue.resume();
+    await queue.finish();
+    expect(server.finalized).toEqual([[3]]);
+  });
+
+  it("finalizes with the time the version missed at the end", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    await record(store, m, queue, 0, 0, "a");
+    m.trailingGap = 4200;
+    await queue.finish();
+    expect(server.trailing).toEqual([4200]);
   });
 
   it("resumes while the server is away by sending everything again", async () => {

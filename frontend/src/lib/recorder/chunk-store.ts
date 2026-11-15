@@ -25,6 +25,8 @@ export interface RecordingMeta {
   recorded: number[];
   /** Per segment, how long recording was interrupted before it, in milliseconds. */
   gaps?: number[];
+  /** How long, in milliseconds, recording was interrupted at the end: never shared again. */
+  trailingGap?: number;
   /** Thrown away, but the server was away to hear it: to be told again. */
   discarding?: boolean;
   /** Counts the writes of the meta, so the newer of its two files can be told; see writeMeta. */

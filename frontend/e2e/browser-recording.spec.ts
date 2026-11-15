@@ -92,6 +92,16 @@ function segmentFile(recordingId: number, segment: number): string {
   return file;
 }
 
+/** Whether ffprobe is there to look into a recording; CI's browser job has no ffmpeg. */
+function hasFfprobe(): boolean {
+  try {
+    execFileSync("ffprobe", ["-version"], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function streamTypes(file: string): string[] {
   return execFileSync("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", file])
     .toString()
@@ -202,6 +212,7 @@ test.describe("recording a lecture in the browser", () => {
 
   test("records sound with only the screen shared", async ({ page, playwright }) => {
     test.skip(!existsSync(chunkRoot), "the server's chunks are not reachable from here");
+    test.skip(!hasFfprobe(), "no ffprobe to look into the recording");
     const prof1 = await apiAs(playwright, users.prof1);
     const title = `${PREFIX} Nur Bildschirm`;
     try {
@@ -250,6 +261,35 @@ test.describe("recording a lecture in the browser", () => {
       const pres = (await recordingsOf(prof1, lecture.id)).find((r) => r.version === "PRES")!;
       const gap = Number(readFileSync(join(chunkRoot, String(pres.id), "000001", "gap-ms"), "utf8"));
       // About the four seconds waited, give or take the time to share again.
+      expect(gap).toBeGreaterThan(3500);
+      expect(gap).toBeLessThan(10_000);
+    } finally {
+      await cleanUp(prof1, title);
+    }
+  });
+
+  test("pads the screen version when sharing stops for good", async ({ page, playwright }) => {
+    test.skip(!existsSync(chunkRoot), "the server's chunks are not reachable from here");
+    const prof1 = await apiAs(playwright, users.prof1);
+    const title = `${PREFIX} Nicht wieder geteilt`;
+    try {
+      await prepare(page, title);
+      const w = wizard(page);
+      await w.getByRole("button", { name: "Start recording" }).click();
+      await expect(recordingStatus(w)).toBeVisible({ timeout: 15_000 });
+      const lecture = await lectureNamed(prof1, title);
+      await moveToTestYear(prof1, lecture.id);
+      await page.waitForTimeout(3000);
+
+      await stopSharing(page);
+      await expect(w.getByRole("button", { name: "Share screen again" })).toBeVisible();
+      await page.waitForTimeout(4000);
+      await w.getByRole("button", { name: "Stop and upload" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "Created 1 lecture." })).toBeVisible({ timeout: 60_000 });
+
+      // The time after the screen stopped is kept as the gap of a segment after the last.
+      const pres = (await recordingsOf(prof1, lecture.id)).find((r) => r.version === "PRES")!;
+      const gap = Number(readFileSync(join(chunkRoot, String(pres.id), "000001", "gap-ms"), "utf8"));
       expect(gap).toBeGreaterThan(3500);
       expect(gap).toBeLessThan(10_000);
     } finally {
