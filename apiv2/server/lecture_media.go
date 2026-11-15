@@ -75,36 +75,8 @@ func (a *API) proxyLectureMedia(w http.ResponseWriter, r *http.Request, stream m
 		return
 	}
 
-	// The card shows the upload as converting from here on. The runner's reports move the
-	// percentage, VODReady removes the row and VODFailed marks it failed. Replacing the row
-	// also clears a failure left by an earlier upload.
-	version := model.StreamVersion(videoType)
-	// What the row said before, for when the runner doesn't take this file after all: it
-	// may be another upload still converting, or a failure its uploader hasn't seen yet.
-	previous, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(version, stream.ID)
-	hadPrevious := err == nil
-	if err := a.dao.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{StreamID: stream.ID, Version: version}); err != nil {
-		// Not worth refusing the upload: the video is made all the same, the card just
-		// doesn't show it converting.
-		a.log.Warn("can't mark the upload as converting", "stream", stream.ID, "err", err)
-	}
-	// If the runner doesn't take the file there is no conversion of this upload to show.
-	dropProgress := func() {
-		var err error
-		if hadPrevious {
-			err = a.dao.StreamsDao.SaveTranscodingProgress(previous)
-		} else {
-			err = a.dao.StreamsDao.RemoveTranscodingProgress(version, stream.ID)
-		}
-		if err != nil {
-			a.log.Warn("can't clear the progress of an upload that wasn't taken", "stream", stream.ID, "err", err)
-		}
-	}
-	target := &url.URL{
-		Scheme: "http",
-		Host:   net.JoinHostPort(slot.Host, strconv.Itoa(slot.Port)),
-		Path:   "/upload/" + slot.Token,
-	}
+	dropProgress := a.markUploadConverting(stream.ID, model.StreamVersion(videoType))
+	target := slot.url()
 	proxy := &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.Out.URL = target
@@ -127,6 +99,43 @@ func (a *API) proxyLectureMedia(w http.ResponseWriter, r *http.Request, stream m
 		},
 	}
 	proxy.ServeHTTP(w, r)
+}
+
+// url is where the runner takes the upload.
+func (t UploadTarget) url() *url.URL {
+	return &url.URL{
+		Scheme: "http",
+		Host:   net.JoinHostPort(t.Host, strconv.Itoa(t.Port)),
+		Path:   "/upload/" + t.Token,
+	}
+}
+
+// markUploadConverting has the card show an upload of the version as converting from
+// here on. The runner's reports move the percentage, VODReady removes the row and
+// VODFailed marks it failed. Replacing the row also clears a failure left by an
+// earlier upload. The answer undoes it, for when the runner doesn't take the file
+// after all: there is no conversion of it to show then.
+func (a *API) markUploadConverting(streamID uint, version model.StreamVersion) (undo func()) {
+	// What the row said before: it may be another upload still converting, or a
+	// failure its uploader hasn't seen yet.
+	previous, err := a.dao.StreamsDao.GetTranscodingProgressByVersion(version, streamID)
+	hadPrevious := err == nil
+	if err := a.dao.StreamsDao.SaveTranscodingProgress(model.TranscodingProgress{StreamID: streamID, Version: version}); err != nil {
+		// Not worth refusing the upload: the video is made all the same, the card just
+		// doesn't show it converting.
+		a.log.Warn("can't mark the upload as converting", "stream", streamID, "err", err)
+	}
+	return func() {
+		var err error
+		if hadPrevious {
+			err = a.dao.StreamsDao.SaveTranscodingProgress(previous)
+		} else {
+			err = a.dao.StreamsDao.RemoveTranscodingProgress(version, streamID)
+		}
+		if err != nil {
+			a.log.Warn("can't clear the progress of an upload that wasn't taken", "stream", streamID, "err", err)
+		}
+	}
 }
 
 // runnerUploadResponse answers as the gateway answers: {} once the runner has the

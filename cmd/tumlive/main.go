@@ -168,6 +168,7 @@ func run(ctx context.Context) error {
 		&model.IntegrationGrant{},
 		&model.IntegrationAuthorizationCode{},
 		&model.IntegrationRecording{},
+		&model.BrowserRecording{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
@@ -327,6 +328,13 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		api2Opts = append(api2Opts, apiv2.WithSubtitleGenerator(subtitles, tools.Cfg.VoiceService.AuthToken))
 	}
 	api2Client := apiv2.New(dao.DB, api2Opts...)
+	if !tools.TestEnv.Enabled {
+		// Browser recordings a restart cut off on their way to a runner. The cron below
+		// catches the ones this is too early for, before the runners are back.
+		go api2Client.ResumeBrowserRecordingHandOffs()
+		_ = tools.Cron.AddFunc("resumeBrowserRecordingHandOffs", api2Client.ResumeBrowserRecordingHandOffs, "*/10 * * * *")
+		_ = tools.Cron.AddFunc("finalizeIdleBrowserRecordings", api2Client.FinalizeIdleBrowserRecordings, "17 * * * *")
+	}
 
 	g, _ := errgroup.WithContext(ctx)
 
