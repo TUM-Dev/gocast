@@ -155,7 +155,8 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 	// upload ever do, PrepareUpload has to say which uploads are segments.
 	var files []string
 	// How long the recording was interrupted before each file, in seconds: a
-	// "gap_ms" field before the file part it belongs to. Left out, there is none.
+	// "gap_ms" field before the file part it belongs to. Left out, there is none. One
+	// after the last file is the time missed at the end.
 	var gaps []float64
 	var gap float64
 	fail := func(msg string, status int) {
@@ -220,6 +221,9 @@ func (r *Runner) handleUpload(w http.ResponseWriter, req *http.Request) {
 			data["uploadGaps"] = gaps
 			break
 		}
+	}
+	if gap > 0 {
+		data["uploadTrailingGap"] = gap
 	}
 	jID := r.RunActionContext(tracing.WithTraceparent(req.Context(), slot.traceparent), uploadActions(slot.detectSilence), nil, data, log)
 	log.Info("upload import job added", "ID", jID)

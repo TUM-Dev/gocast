@@ -135,6 +135,7 @@ func TestHandleUpload(t *testing.T) {
 			fw, _ := mw.CreateFormFile("file", "segment")
 			_, _ = fw.Write([]byte(content))
 		}
+		_ = mw.WriteField("gap_ms", "2000")
 		_ = mw.Close()
 
 		var got map[string]any
@@ -161,6 +162,9 @@ func TestHandleUpload(t *testing.T) {
 		}
 		if gaps, _ := got["uploadGaps"].([]float64); !slices.Equal(gaps, []float64{0, 1.5}) {
 			t.Errorf("gaps = %v, want [0 1.5]", got["uploadGaps"])
+		}
+		if got["uploadTrailingGap"] != 2.0 {
+			t.Errorf("trailing gap = %v, want 2", got["uploadTrailingGap"])
 		}
 		for i, want := range []string{"first", "second"} {
 			if b, err := os.ReadFile(paths[i]); err != nil || string(b) != want {

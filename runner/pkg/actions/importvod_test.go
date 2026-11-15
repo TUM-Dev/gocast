@@ -199,8 +199,10 @@ func TestImportVODJoinsSegments(t *testing.T) {
 	data := map[string]any{
 		"streamID": uint64(7), "streamVersion": "STREAM_VERSION_PRESENTATION",
 		"uploadPath": first, "uploadPaths": []string{first, second, silent},
-		// Sharing stopped for a second and a half before the second segment.
-		"uploadGaps": []float64{0, 1.5, 0},
+		// Sharing stopped for a second and a half before the second segment, and for
+		// good a second before the end.
+		"uploadGaps":        []float64{0, 1.5, 0},
+		"uploadTrailingGap": 1.0,
 	}
 	if err := ImportVOD(context.Background(), testLogger(), notify, data, testBroker()); err != nil {
 		t.Fatalf("ImportVOD = %v", err)
@@ -211,8 +213,8 @@ func TestImportVODJoinsSegments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("probe the VOD: %v", err)
 	}
-	if d := probe.Duration(); d < 7 || d > 8 {
-		t.Errorf("duration = %.1fs, want the segments' 6s and the gap's 1.5s", d)
+	if d := probe.Duration(); d < 8 || d > 9 {
+		t.Errorf("duration = %.1fs, want the segments' 6s and the gaps' 2.5s", d)
 	}
 	if w, h := probe.Dimensions(); w != 320 || h != 240 {
 		t.Errorf("size = %dx%d, want the first segment's 320x240", w, h)
@@ -234,7 +236,7 @@ func TestConcatArgs(t *testing.T) {
 	args := strings.Join(concatArgs([]segment{
 		{path: "a", audio: true, duration: 10},
 		{path: "b", audio: false, duration: 5, gapBefore: 2.5},
-	}, "/vod", 1281, 721), " ")
+	}, 3, "/vod", 1281, 721), " ")
 	for _, want := range []string{
 		"-i a",
 		// The gap: black of the first segment's size and silence, before b.
@@ -243,7 +245,10 @@ func TestConcatArgs(t *testing.T) {
 		"-i b",
 		// b has no audio: silence of its length.
 		"-t 5.000 -i anullsrc",
-		"concat=n=3:v=1:a=1[v][a]",
+		// Sharing stopped for good: black and silence at the end.
+		"-t 3.000 -i color=c=black",
+		"-t 3.000 -i anullsrc",
+		"concat=n=4:v=1:a=1[v][a]",
 		"-map [v] -map [a]",
 	} {
 		if !strings.Contains(args, want) {

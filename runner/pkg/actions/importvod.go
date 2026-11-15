@@ -107,6 +107,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 		inputs = paths
 	}
 	gaps, _ := d["uploadGaps"].([]float64)
+	trailing, _ := d["uploadTrailingGap"].(float64)
 	defer func() {
 		for _, file := range inputs {
 			if err := os.Remove(file); err != nil && !os.IsNotExist(err) {
@@ -146,7 +147,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 
 	var args []string
 	var duration float64
-	if len(inputs) == 1 && !hasGap(gaps) {
+	if len(inputs) == 1 && !hasGap(gaps) && trailing <= 0 {
 		probe := probes[0]
 		transcode := needsTranscode(probe.Codec("video"), probe.Codec("audio"), probe.Level(), probe.PixelFormat())
 		logger.Info("importing upload", "transcode", transcode, "file", uploadPath)
@@ -171,9 +172,10 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 			segments[i].duration = d
 			duration += segments[i].gapBefore + d
 		}
+		duration += trailing
 		width, height := probes[0].Dimensions()
-		logger.Info("joining uploaded segments", "segments", len(inputs), "width", width, "height", height, "gaps", gaps)
-		args = concatArgs(segments, workDir, width, height)
+		logger.Info("joining uploaded segments", "segments", len(inputs), "width", width, "height", height, "gaps", gaps, "trailing", trailing)
+		args = concatArgs(segments, trailing, workDir, width, height)
 	}
 	// An argument slice, not a split string: the file name comes from the uploader.
 	command := exec.CommandContext(ctx, "ffmpeg", args...)
@@ -278,8 +280,9 @@ func hasGap(gaps []float64) bool {
 // segment start at zero, and segments can differ in size, as a screen shared anew does.
 // The concat filter wants the same streams in each part and the same size, so every
 // part gets video and audio, fitted into the first segment's size: a gap is a black
-// picture with silence, a segment without audio gets silence of its length.
-func concatArgs(segments []segment, vodDir string, width, height int) []string {
+// picture with silence, a segment without audio gets silence of its length. trailing is
+// a gap after the last segment: the time this version missed at the end.
+func concatArgs(segments []segment, trailing float64, vodDir string, width, height int) []string {
 	if width <= 0 || height <= 0 {
 		width, height = 1920, 1080
 	}
@@ -299,11 +302,14 @@ func concatArgs(segments []segment, vodDir string, width, height int) []string {
 
 	type part struct{ video, audio string }
 	var parts []part
+	gap := func(seconds float64) {
+		black := input("-f", "lavfi", "-t", formatSeconds(seconds), "-i",
+			fmt.Sprintf("color=c=black:s=%dx%d:r=30", width, height))
+		parts = append(parts, part{fmt.Sprintf("%d:v", black), fmt.Sprintf("%d:a", silence(seconds))})
+	}
 	for _, seg := range segments {
 		if seg.gapBefore > 0 {
-			black := input("-f", "lavfi", "-t", formatSeconds(seg.gapBefore), "-i",
-				fmt.Sprintf("color=c=black:s=%dx%d:r=30", width, height))
-			parts = append(parts, part{fmt.Sprintf("%d:v", black), fmt.Sprintf("%d:a", silence(seg.gapBefore))})
+			gap(seg.gapBefore)
 		}
 		file := input("-i", seg.path)
 		audio := fmt.Sprintf("%d:a", file)
@@ -311,6 +317,9 @@ func concatArgs(segments []segment, vodDir string, width, height int) []string {
 			audio = fmt.Sprintf("%d:a", silence(seg.duration))
 		}
 		parts = append(parts, part{fmt.Sprintf("%d:v", file), audio})
+	}
+	if trailing > 0 {
+		gap(trailing)
 	}
 
 	var filter, joined strings.Builder
