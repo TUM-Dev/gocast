@@ -40,6 +40,8 @@ export interface StoredChunk {
   segment: number;
   seq: number;
   size: number;
+  /** The chunk itself, when it could not be stored: it is uploaded from memory. */
+  data?: Blob;
 }
 
 export interface ChunkStore {

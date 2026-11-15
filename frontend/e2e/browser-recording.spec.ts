@@ -287,9 +287,9 @@ test.describe("recording a lecture in the browser", () => {
       await w.getByRole("button", { name: "Stop and upload" }).click();
       await expect(page.getByRole("status").filter({ hasText: "Created 1 lecture." })).toBeVisible({ timeout: 60_000 });
 
-      // The time after the screen stopped is kept as the gap of a segment after the last.
+      // The time after the screen stopped is kept as the recording's trailing gap.
       const pres = (await recordingsOf(prof1, lecture.id)).find((r) => r.version === "PRES")!;
-      const gap = Number(readFileSync(join(chunkRoot, String(pres.id), "000001", "gap-ms"), "utf8"));
+      const gap = Number(readFileSync(join(chunkRoot, String(pres.id), "trailing-gap-ms"), "utf8"));
       expect(gap).toBeGreaterThan(3500);
       expect(gap).toBeLessThan(10_000);
     } finally {

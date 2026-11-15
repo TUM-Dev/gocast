@@ -305,6 +305,62 @@ describe("UploadQueue", () => {
     expect(server.taken).toEqual(["0/0=a"]);
   });
 
+  it("sends chunks the server lacks before giving up on them", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    // The server lost the second chunk somehow; this browser still has it.
+    server.finalizeErrors = [new ApiError(409, "chunks of the recording are still missing", true)];
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    await record(store, m, queue, 0, 0, "a");
+    await record(store, m, queue, 0, 1, "b");
+    await new Promise((resolve) => setTimeout(resolve));
+    // Kept here as if its upload had never been answered.
+    await store.put(m.key, 0, 1, new Blob(["b"]));
+    server.received_ = [1];
+    await queue.finish();
+
+    expect(server.taken.filter((t) => t === "0/1=b")).toHaveLength(2);
+    expect(server.finalized).toEqual([[2]]);
+    expect(queue.current).toMatchObject({ state: "done", missing: false });
+  });
+
+  it("finishes with what arrived when the chunk the server lacks is gone here too", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    m.recorded = [3];
+    m.stopped = true;
+    // Chunk 1 is gone everywhere: the server counts only chunk 0, though it has 2.
+    await store.put(m.key, 0, 2, new Blob(["c"]));
+    server.received_ = [1];
+    server.received = async () => [1];
+    server.finalize = async function (_meta, expected) {
+      if (expected.length) throw new ApiError(409, "chunks of the recording are still missing", true);
+      this.finalized.push(expected);
+    };
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    await queue.resume();
+    await queue.finish();
+
+    // Sent once, and gone from here once taken: finalizing with what arrived follows.
+    expect(server.taken).toEqual(["0/2=c"]);
+    expect(server.finalized).toEqual([[]]);
+    expect(queue.current).toMatchObject({ state: "done", missing: true });
+  });
+
+  it("uploads a chunk from memory that could not be stored", async () => {
+    const store = new MemoryChunkStore();
+    const server = new FakeServer();
+    const m = meta();
+    const queue = new UploadQueue({ store, meta: m, server, ...noSleep });
+    m.recorded = [1];
+    queue.enqueue({ segment: 0, seq: 0, size: 1, data: new Blob(["a"]) });
+    await queue.finish();
+    expect(server.taken).toEqual(["0/0=a"]);
+    expect(server.finalized).toEqual([[1]]);
+  });
+
   it("finalizes with what arrived when chunks were lost from this browser", async () => {
     const store = new MemoryChunkStore();
     const server = new FakeServer();

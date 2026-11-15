@@ -209,7 +209,7 @@ export class UploadQueue {
   }
 
   private async send(chunk: StoredChunk): Promise<void> {
-    const data = await this.store.get(this.meta.key, chunk.segment, chunk.seq);
+    const data = chunk.data ?? (await this.store.get(this.meta.key, chunk.segment, chunk.seq));
     if (!data) {
       // Gone from disk (storage cleared): the server will be short of it, and says so on finalize.
       this.pending.shift();
@@ -263,7 +263,20 @@ export class UploadQueue {
       await this.server.finalize(this.meta, this.meta.recorded);
     } catch (err) {
       if (isRefusal(err) && err.status === 409) {
-        // The server is short of chunks that are not here any more: rescue what it has.
+        // The server is short of chunks. Those still here are sent first; only when
+        // none are is the recording finished with what the server has.
+        let unsent: StoredChunk[];
+        try {
+          unsent = await this.unsent();
+        } catch (again) {
+          await this.finalizeFailed(again);
+          return;
+        }
+        if (unsent.length) {
+          this.pending.push(...unsent);
+          this.set({});
+          return;
+        }
         try {
           await this.server.finalize(this.meta, []);
           await this.done(true);
@@ -276,6 +289,24 @@ export class UploadQueue {
       return;
     }
     await this.done(false);
+  }
+
+  /** The chunks sent again because finalizing found the server short, once each. */
+  private resent = new Set<string>();
+
+  /**
+   * The chunks stored here that the server does not count, not sent again already. The
+   * server counts up to the first chunk it lacks: when that one is gone here too, the
+   * ones after it are not counted however often they are sent.
+   */
+  private async unsent(): Promise<StoredChunk[]> {
+    const received = await this.server.received(this.meta);
+    const stored = await this.store.list(this.meta.key);
+    const unsent = stored.filter(
+      (c) => c.seq >= (received[c.segment] ?? 0) && !this.resent.has(`${c.segment}/${c.seq}`),
+    );
+    for (const c of unsent) this.resent.add(`${c.segment}/${c.seq}`);
+    return unsent;
   }
 
   private async done(missing: boolean): Promise<void> {

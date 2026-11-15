@@ -249,18 +249,31 @@ export class RecordingSession {
   /** A chunk to disk, then to the queue. Only once it is stored is it counted as recorded. */
   private async keep(v: Version, segment: number, seq: number, data: Blob): Promise<void> {
     if (this.discarded) return;
+    // Recorded, whatever happens to storing it: a chunk left out would cut the segment
+    // there, as the server takes chunks only up to the first one missing.
+    v.meta.recorded[segment] = seq + 1;
+    // Holes stay 0 rather than null in the JSON.
+    for (let i = 0; i < segment; i++) v.meta.recorded[i] ??= 0;
+    let onDisk = true;
     try {
       await this.store.put(v.meta.key, segment, seq, data);
-      v.meta.recorded[segment] = seq + 1;
-      // Holes stay 0 rather than null in the JSON.
-      for (let i = 0; i < segment; i++) v.meta.recorded[i] ??= 0;
+    } catch (err) {
+      // Most likely the disk is full. Uploaded from memory then: lost only should the
+      // tab go before it is sent.
+      onDisk = false;
+      this.storageFailed(err);
+    }
+    try {
       await this.store.writeMeta(v.meta);
     } catch (err) {
-      this.storageError = err instanceof Error ? err.message : String(err);
-      this.onChange();
-      return;
+      this.storageFailed(err);
     }
-    v.queue.enqueue({ segment, seq, size: data.size });
+    v.queue.enqueue({ segment, seq, size: data.size, data: onDisk ? undefined : data });
+  }
+
+  private storageFailed(err: unknown): void {
+    this.storageError = err instanceof Error ? err.message : String(err);
+    this.onChange();
   }
 
   private trackEnded(v: Version): void {
@@ -327,10 +340,14 @@ export class RecordingSession {
 
   /** Stops recording, and resolves once every version is finalized or refused. */
   async stop(): Promise<void> {
-    // A version whose source was never shared again missed the time since: padded at
-    // the end, so both versions end together.
+    // A version whose source was never shared again is padded at the end, to where the
+    // recording ends: when the last version still recording stops, or, when every
+    // source had ended, the last of them. Not to now: a laptop that slept would get the
+    // hour until Stop was clicked as black.
+    const recordingNow = this.versions.some((v) => v.state === "recording" || v.state === "paused");
+    const end = recordingNow ? this.activeMs() : Math.max(...this.versions.map((v) => v.endedAt));
     for (const v of this.versions) {
-      if (v.state === "waiting") v.meta.trailingGap = Math.max(0, Math.round(this.activeMs() - v.endedAt));
+      if (v.state === "waiting") v.meta.trailingGap = Math.max(0, Math.round(end - v.endedAt));
     }
     await Promise.all(
       this.versions.map(async (v) => {
