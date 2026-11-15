@@ -144,32 +144,25 @@ func (d streamsDao) UpdateTranscodingProgress(v model.StreamVersion, streamId ui
 		Update("progress", progress).Error
 }
 
-// AddVodView Adds a stat entry to the database or increases the one existing for this hour
+// AddVodView counts a VoD view in the stream's stat row for the current hour.
 func (d streamsDao) AddVodView(id string) error {
 	intId, err := strconv.Atoi(id)
 	if err != nil {
 		return err
 	}
-	err = DB.Transaction(func(tx *gorm.DB) error {
-		t := time.Now()
-		tFrom := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
-		tUntil := tFrom.Add(time.Hour)
-		var stat *model.Stat
-		err := DB.First(&stat, "live = 0 AND time BETWEEN ? and ?", tFrom, tUntil).Error
-		if err != nil { // first view this hour, create
-			stat := model.Stat{
-				Time:     tFrom,
-				StreamID: uint(intId),
-				Viewers:  1,
-				Live:     false,
-			}
-			err = tx.Create(&stat).Error
-			return err
-		}
-		stat.Viewers++
-		return tx.Save(&stat).Error
-	})
-	return err
+	t := time.Now()
+	hour := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.Local)
+	// The increment happens in SQL: reading the row and saving viewers+1 lost every
+	// view that ended while another was being counted.
+	res := DB.Model(&model.Stat{}).
+		Where("stream_id = ? AND live = ? AND time = ?", intId, false, hour).
+		Update("viewers", gorm.Expr("viewers + 1"))
+	if res.Error != nil || res.RowsAffected > 0 {
+		return res.Error
+	}
+	// Two first views racing here leave two rows for the hour. That is fine: every
+	// reader sums VoD rows.
+	return DB.Create(&model.Stat{Time: hour, StreamID: uint(intId), Viewers: 1, Live: false}).Error
 }
 
 func (d streamsDao) GetStreamByKey(ctx context.Context, key string) (stream model.Stream, err error) {
