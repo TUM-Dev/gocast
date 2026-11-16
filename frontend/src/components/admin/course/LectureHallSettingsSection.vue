@@ -14,8 +14,9 @@ import { courseError } from "@/stores/course-admin";
  * camera preset to start from. Hidden for a course without any, rather than showing
  * an empty box.
  *
- * A dropdown of presets instead of the old grid of camera snapshots: the names are
- * what people chose by, and the grid needed horizontal scrolling at any width.
+ * Presets are snapshots to compare, not names: people choose by what the camera sees.
+ * The tiles wrap, because the old row needed horizontal scrolling at any width.
+ * Selecting a tile never moves the camera.
  */
 const props = defineProps<{ courseId: number }>();
 
@@ -72,6 +73,14 @@ function defaultPresetName(hall: LectureHallSetting): string {
   return preset ? `Hall default (${preset.name})` : "Hall default";
 }
 
+/** The hall default comes first and shows the preset it stands for. */
+function tilesOf(hall: LectureHallSetting) {
+  return [
+    { id: 0, name: defaultPresetName(hall), image: hall.presets.find((p) => p.isDefault)?.image ?? "" },
+    ...presetsOf(hall).map((p) => ({ id: p.presetId, name: p.name, image: p.image })),
+  ];
+}
+
 async function save(): Promise<void> {
   saving.value = true;
   error.value = "";
@@ -110,33 +119,50 @@ async function save(): Promise<void> {
     <div
       v-for="hall in halls"
       :key="hall.lectureHallId"
-      class="grid items-end gap-3 border-t pt-3 text-sm sm:grid-cols-[1fr_1fr_1fr] dark:border-gray-800"
+      class="flex flex-col gap-3 border-t pt-3 text-sm dark:border-gray-800"
     >
-      <p class="text-1 self-center font-semibold">{{ hall.lectureHallName }}</p>
-      <div class="flex flex-col gap-1">
-        <label :for="`cs-hall-${hall.lectureHallId}-source`" class="text-4 text-xs">Sources</label>
-        <select
-          :id="`cs-hall-${hall.lectureHallId}-source`"
-          v-model.number="hall.sourceMode"
-          class="tum-live-input"
-        >
-          <option v-for="mode in sourceModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
-        </select>
+      <div class="grid items-end gap-3 sm:grid-cols-2">
+        <p class="text-1 self-center font-semibold">{{ hall.lectureHallName }}</p>
+        <div class="flex flex-col gap-1">
+          <label :for="`cs-hall-${hall.lectureHallId}-source`" class="text-4 text-xs">Sources</label>
+          <select
+            :id="`cs-hall-${hall.lectureHallId}-source`"
+            v-model.number="hall.sourceMode"
+            class="tum-live-input"
+          >
+            <option v-for="mode in sourceModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
+          </select>
+        </div>
       </div>
-      <div class="flex flex-col gap-1">
-        <label :for="`cs-hall-${hall.lectureHallId}-preset`" class="text-4 text-xs">Camera preset</label>
-        <select
-          :id="`cs-hall-${hall.lectureHallId}-preset`"
-          v-model.number="hall.selectedPresetId"
-          class="tum-live-input"
-          :disabled="!hall.presets.length"
-        >
-          <option :value="0">{{ defaultPresetName(hall) }}</option>
-          <option v-for="preset in presetsOf(hall)" :key="preset.presetId" :value="preset.presetId">
-            {{ preset.name }}
-          </option>
-        </select>
-      </div>
+      <fieldset v-if="hall.presets.length" class="flex flex-col gap-1">
+        <legend class="text-4 mb-1 text-xs">Camera preset</legend>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <label
+            v-for="tile in tilesOf(hall)"
+            :key="tile.id"
+            class="cursor-pointer overflow-hidden rounded border-2"
+            :class="hall.selectedPresetId === tile.id ? 'border-blue-500' : 'border-transparent hover:border-gray-400'"
+            :data-testid="`preset-tile-${hall.lectureHallId}-${tile.id}`"
+          >
+            <img
+              :src="`/public/${tile.image || 'noPreset.jpg'}`"
+              :alt="`Preview of ${tile.name}`"
+              class="aspect-video w-full bg-black object-cover"
+              loading="lazy"
+            />
+            <span class="text-3 flex items-center gap-1 bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">
+              <input
+                v-model.number="hall.selectedPresetId"
+                type="radio"
+                class="w-auto"
+                :name="`cs-hall-${hall.lectureHallId}-preset`"
+                :value="tile.id"
+              />
+              <span class="truncate" :title="tile.name">{{ tile.name }}</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
     </div>
 
     <div class="flex items-center justify-end gap-3">
