@@ -61,6 +61,35 @@ func DownloadFileName(courseSlug string, s *model.Stream, version string) string
 	return strings.Join(parts, "_") + ".mp4"
 }
 
+// OfflinePlaylistURL returns the signed URL of an offline package's playlist. Runners
+// write packages to vod/offline/<packageID>/ on the edge that serves vodPlaylist, the
+// recording the package was made from. The token is scoped to the package's directory
+// by the edge's path check, and lives as long as a playlist token: the device fetches
+// the package right away.
+func OfflinePlaylistURL(vodPlaylist string, packageID uint, s *model.Stream, user *model.User) (string, error) {
+	i := strings.Index(vodPlaylist, "/vod/")
+	if i < 0 {
+		return "", fmt.Errorf("playlist %q is not served from an edge's /vod/", vodPlaylist)
+	}
+	playlist := fmt.Sprintf("%s/vod/offline/%d/playlist.m3u8", vodPlaylist[:i], packageID)
+
+	t := jwt.New(jwt.GetSigningMethod("RS256"))
+	t.Claims = &JWTPlaylistClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 7)},
+		},
+		UserID:   user.ID,
+		Playlist: playlist,
+		StreamID: fmt.Sprintf("%d", s.ID),
+		CourseID: fmt.Sprintf("%d", s.CourseID),
+	}
+	str, err := t.SignedString(Cfg.GetJWTKey())
+	if err != nil {
+		return "", err
+	}
+	return playlist + "?jwt=" + str, nil
+}
+
 // SetSignedPlaylists adds a signed jwt to all available playlist urls that indicates that the
 // user is allowed to consume the playlist. The method assumes that the user has been pre-authorized and doesn't
 // check for permissions. Downloads signed through it are not named after a course, use

@@ -152,6 +152,7 @@ func run(ctx context.Context) error {
 		&model.Integration{},
 		&model.IntegrationGrant{},
 		&model.IntegrationAuthorizationCode{},
+		&model.OfflinePackage{},
 		&model.IntegrationRecording{},
 	)
 	if err != nil {
@@ -297,6 +298,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),
+		// Lectures saved offline are packaged and deleted by the runners.
+		apiv2.WithOfflinePackager(manager),
 		apiv2.WithSelfStreamStarter(manager),
 		apiv2.WithSubtitleSearch(tools.NewMeiliSearchFunctions()),
 		// The Meilisearch filters and post-filtering in pkg/search decide who may find what.
@@ -381,6 +384,8 @@ func initCron(logger *slog.Logger, m *runner_manager.Manager, hub realtimehub.Hu
 	_ = tools.Cron.AddFunc("reapStaleStreams", m.ReapStaleStreams, "1/30 * * * *")
 	// apply correct live lights
 	_ = tools.Cron.AddFunc("updateLights", m.UpdateLights, "1/5 * * * *")
+	// give up on offline packages whose runner job or download was lost
+	_ = tools.Cron.AddFunc("expireOfflinePackages", m.ExpireOfflinePackages, "*/15 * * * *")
 
 	tools.Cron.Run()
 }
