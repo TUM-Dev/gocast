@@ -577,8 +577,10 @@ func (a *API) inviteParticipant(ctx context.Context, course model.Course, name, 
 	switch {
 	case err == nil:
 		// Invitations are for people without a TUM account; those are enrolled by
-		// looking them up, which does not mail an address someone typed by hand.
-		if existing.Role != model.GenericType {
+		// looking them up, which does not mail an address someone typed by hand. The
+		// identifiers say who has one: a role also covers accounts an administrator
+		// created with a password, which have neither.
+		if existing.LrzID != "" || existing.MatriculationNumber != "" {
 			return false, errors.New("this address belongs to a TUM account, look the person up instead")
 		}
 		if err := a.dao.CoursesDao.AddUserToCourse(ctx, existing.ID, course.ID); err != nil {

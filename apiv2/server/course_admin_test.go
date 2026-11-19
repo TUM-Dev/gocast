@@ -601,7 +601,7 @@ func TestInviteCourseParticipants(t *testing.T) {
 
 	t.Run("creates and invites a new address, enrols and notifies a known one", func(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)
-		known := model.User{Model: gorm.Model{ID: 8}, Role: model.GenericType, Email: sql.NullString{String: "anja@example.org", Valid: true}}
+		known := model.User{Model: gorm.Model{ID: 8}, Email: sql.NullString{String: "anja@example.org", Valid: true}}
 
 		m.users.EXPECT().GetUserByEmail(gomock.Any(), "anja@example.org").Return(known, nil)
 		m.courses.EXPECT().AddUserToCourse(gomock.Any(), uint(8), uint(5)).Return(nil)
@@ -663,7 +663,7 @@ func TestInviteCourseParticipants(t *testing.T) {
 
 	t.Run("refuses an address that belongs to a TUM account", func(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)
-		student := model.User{Model: gorm.Model{ID: 8}, Role: model.StudentType, Email: sql.NullString{String: "ge42abc@tum.de", Valid: true}}
+		student := model.User{Model: gorm.Model{ID: 8}, Role: model.StudentType, LrzID: "ge42abc", Email: sql.NullString{String: "ge42abc@tum.de", Valid: true}}
 		m.users.EXPECT().GetUserByEmail(gomock.Any(), "ge42abc@tum.de").Return(student, nil)
 		// No AddUserToCourse, no mail, and nothing invited, so nothing audited.
 
@@ -675,6 +675,41 @@ func TestInviteCourseParticipants(t *testing.T) {
 		}
 		if resp.Results[0].Error == "" || resp.Results[0].AccountCreated {
 			t.Errorf("result = %v", resp.Results[0])
+		}
+	})
+
+	t.Run("refuses a TUM account whatever its role", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		demoted := model.User{Model: gorm.Model{ID: 8}, Role: model.GenericType, MatriculationNumber: "03712345", Email: sql.NullString{String: "old@tum.de", Valid: true}}
+		m.users.EXPECT().GetUserByEmail(gomock.Any(), "old@tum.de").Return(demoted, nil)
+
+		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
+			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Old", Email: "old@tum.de"}},
+		})
+		if err != nil {
+			t.Fatalf("InviteCourseParticipants: %v", err)
+		}
+		if resp.Results[0].Error == "" {
+			t.Error("the TUM account was invited")
+		}
+	})
+
+	t.Run("enrols a password-only lecturer, who has no TUM identifiers", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		lecturer := model.User{Model: gorm.Model{ID: 3}, Role: model.LecturerType, Email: sql.NullString{String: "guest@example.org", Valid: true}}
+		m.users.EXPECT().GetUserByEmail(gomock.Any(), "guest@example.org").Return(lecturer, nil)
+		m.courses.EXPECT().AddUserToCourse(gomock.Any(), uint(3), uint(5)).Return(nil)
+		m.emails.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+
+		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
+			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Guest", Email: "guest@example.org"}},
+		})
+		if err != nil {
+			t.Fatalf("InviteCourseParticipants: %v", err)
+		}
+		if resp.Results[0].Error != "" {
+			t.Errorf("error = %s", resp.Results[0].Error)
 		}
 	})
 
