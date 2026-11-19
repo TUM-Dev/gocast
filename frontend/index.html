@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- Safari ignores the manifest's icons and colours for an installed app. -->
+    <link rel="apple-touch-icon" href="/icons-192.png" />
+    <meta name="theme-color" content="#161c22" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>TUM-Live</title>
     <script>
       // Applies the theme before first paint to avoid a flash of the wrong theme.
