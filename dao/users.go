@@ -26,6 +26,10 @@ type UsersDao interface {
 	SearchUserWithRole(query string, role uint64) (users []model.User, err error)
 	IsUserAdmin(ctx context.Context, uid uint) (res bool, err error)
 	GetUserByEmail(ctx context.Context, email string) (user model.User, err error)
+	// FindUsersByIdentifier returns the accounts whose LRZ ID, matriculation number
+	// or email equals identifier. Equals, not contains: it backs a search open to
+	// every lecturer, who must not be able to page through the user table.
+	FindUsersByIdentifier(ctx context.Context, identifier string) (users []model.User, err error)
 	GetAllAdminsAndLecturers(users *[]model.User) (err error)
 	GetUserByID(ctx context.Context, id uint) (user model.User, err error)
 	CreateRegisterLink(ctx context.Context, user model.User) (registerLink model.RegisterLink, err error)
@@ -98,6 +102,15 @@ func (d usersDao) GetUserByEmail(ctx context.Context, email string) (user model.
 	var res model.User
 	err = DB.First(&res, "email = ?", email).Error
 	return res, err
+}
+
+func (d usersDao) FindUsersByIdentifier(ctx context.Context, identifier string) (users []model.User, err error) {
+	// lrz_id is not unique, so more than one account can match; a handful is plenty
+	// for a lecturer to pick from.
+	err = DB.WithContext(ctx).
+		Where("lrz_id = ? OR matriculation_number = ? OR email = ?", identifier, identifier, identifier).
+		Order("id").Limit(5).Find(&users).Error
+	return users, err
 }
 
 func (d usersDao) GetAllAdminsAndLecturers(users *[]model.User) (err error) {

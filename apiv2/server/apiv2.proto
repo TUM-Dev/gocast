@@ -723,7 +723,28 @@ service CourseService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: "Course Administration"
       summary: "Invite external participants to a course by email."
-      description: "An address without an account gets one and an email to set its password; an existing account is enrolled and notified. At most 200 per call. Requires administering the course."
+      description: "For people without a TUM account. An address without an account gets one and an email to set its password; an external account is enrolled and notified; an address of a TUM account is refused, those are enrolled with enrolCourseParticipant. At most 200 per call. Requires administering the course."
+    };
+  }
+
+  rpc lookupUsersForCourse(LookupUsersForCourseRequest) returns (LookupUsersForCourseResponse) {
+    option (google.api.http) = {get: "/courses/{course_id}/participants/lookup"};
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Find an existing account to enrol in a course."
+      description: "Matches the query exactly against LRZ ID, matriculation number or email; at least three characters. Nothing is returned for a partial match, so the user table cannot be browsed. Requires administering the course."
+    };
+  }
+
+  rpc enrolCourseParticipant(EnrolCourseParticipantRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/courses/{course_id}/participants/enrol"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "Course Administration"
+      summary: "Enrol an existing account in a course."
+      description: "For people with a TUM account; enrolling twice is no error. The account is not notified, and nothing about it is answered: only a lookup tells a lecturer who an account is. Requires administering the course."
     };
   }
 
@@ -3051,6 +3072,20 @@ message ListCourseParticipantsResponse {
   repeated CourseParticipant participants = 1;
 }
 
+message LookupUsersForCourseRequest {
+  uint32 course_id = 1;
+  string q = 2;
+}
+
+message LookupUsersForCourseResponse {
+  repeated CourseAdminUser users = 1;
+}
+
+message EnrolCourseParticipantRequest {
+  uint32 course_id = 1;
+  uint32 user_id = 2;
+}
+
 message CourseInvitee {
   string name = 1;
   string email = 2;
@@ -3063,7 +3098,7 @@ message InviteCourseParticipantsRequest {
 
 message CourseInvitationResult {
   string email = 1;
-  // False when the address already had an account, which was enrolled instead.
+  // False when the address already had an external account, which was enrolled instead.
   bool account_created = 2;
   // Empty on success.
   string error = 3;

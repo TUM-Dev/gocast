@@ -149,6 +149,8 @@ var services = []service{
 			"updateCourseLectureHallSettings": requiresCourseAdmin(),
 			"listCourseParticipants":          requiresCourseAdmin(),
 			"inviteCourseParticipants":        requiresCourseAdmin(),
+			"lookupUsersForCourse":            requiresCourseAdmin(),
+			"enrolCourseParticipant":          requiresCourseAdmin(),
 			// Course-scoped, unlike searchUsers: a course's lecturers lack
 			// users.manage, and this answers only names, logins and roles.
 			"searchUsersForCourse": requiresCourseAdmin(),

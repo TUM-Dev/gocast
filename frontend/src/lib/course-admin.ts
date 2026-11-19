@@ -7,6 +7,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
+import { EmptySchema } from "@bufbuild/protobuf/wkt";
 
 import {
   AddCourseAdminRequestSchema,
@@ -15,6 +16,7 @@ import {
   CourseAdminSchema,
   CourseAdminUserSchema,
   CourseSourceMode,
+  EnrolCourseParticipantRequestSchema,
   ExportCourseVideosResponseSchema,
   InviteCourseParticipantsRequestSchema,
   InviteCourseParticipantsResponseSchema,
@@ -23,6 +25,7 @@ import {
   ListCourseIntegrationGrantsResponseSchema,
   ListCourseLectureHallSettingsResponseSchema,
   ListCourseParticipantsResponseSchema,
+  LookupUsersForCourseResponseSchema,
   SearchUsersForCourseResponseSchema,
   UpdateCourseLectureHallSettingsRequestSchema,
   UpdateCourseSettingsRequestSchema,
@@ -367,6 +370,28 @@ export async function inviteCourseParticipants(
     create(InviteCourseParticipantsRequestSchema, { courseId, invitees }),
   );
   return res.results.map((r) => ({ email: r.email, accountCreated: r.accountCreated, error: r.error }));
+}
+
+/**
+ * Accounts whose LRZ ID, matriculation number or email is exactly `q`. A partial
+ * identifier finds nobody: the server will not list accounts to a lecturer.
+ */
+export async function lookupUsersForCourse(courseId: number, q: string): Promise<CourseAdminUser[]> {
+  const res = await apiGetMessage(
+    LookupUsersForCourseResponseSchema,
+    `/courses/${courseId}/participants/lookup?q=${encodeURIComponent(q)}`,
+  );
+  return res.users.map(toUser);
+}
+
+/** Enrols an existing account; doing it twice is no error, and the account is not mailed. */
+export async function enrolCourseParticipant(courseId: number, userId: number): Promise<void> {
+  await apiPostMessage(
+    EnrolCourseParticipantRequestSchema,
+    EmptySchema,
+    `/courses/${courseId}/participants/enrol`,
+    create(EnrolCourseParticipantRequestSchema, { courseId, userId }),
+  );
 }
 
 export interface ParsedBatch {

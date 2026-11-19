@@ -2,19 +2,25 @@
 import { computed, reactive, ref, watch } from "vue";
 
 import {
+  enrolCourseParticipant,
   fetchCourseParticipants,
   inviteCourseParticipants,
+  lookupUsersForCourse,
+  MIN_USER_QUERY,
   parseInviteBatch,
+  type CourseAdminUser,
   type CourseParticipant,
   type InvitationResult,
   type Invitee,
 } from "@/lib/course-admin";
+import { roleLabel } from "@/lib/users";
 import { courseError, useCourseAdminStore } from "@/stores/course-admin";
 
 /**
- * The participants tab: people without a TUM login, invited to the course by email.
- * A new address gets an account and an email to set its password; one that already
- * has an account is enrolled and told.
+ * The participants tab. People with a TUM account are looked up by LRZ ID,
+ * matriculation number or email and enrolled; the TUM import only adds the students
+ * CAMPUSonline lists. People without one are invited by email: a new address gets an
+ * account and an email to set its password.
  *
  * The old form answered with a redirect whatever happened, and ran a batch in the
  * background; inviteCourseParticipants answers once everyone is handled, so this can
@@ -40,6 +46,53 @@ async function load(): Promise<void> {
 }
 
 watch(courseId, (id) => id && load(), { immediate: true });
+watch(courseId, () => {
+  lookupQuery.value = "";
+  lookupError.value = "";
+  found.value = null;
+  enrolled.value = [];
+});
+
+const lookupQuery = ref("");
+const lookupBusy = ref(false);
+const lookupError = ref("");
+const found = ref<CourseAdminUser[] | null>(null);
+const enrolled = ref<CourseAdminUser[]>([]);
+
+// Exact identifiers: the server answers nobody for half of one, so this waits for a
+// submit instead of searching on every key press.
+async function lookup(): Promise<void> {
+  const q = lookupQuery.value.trim();
+  if (q.length < MIN_USER_QUERY) {
+    lookupError.value = `Enter at least ${MIN_USER_QUERY} characters.`;
+    return;
+  }
+  lookupBusy.value = true;
+  lookupError.value = "";
+  try {
+    found.value = await lookupUsersForCourse(courseId.value, q);
+  } catch (err) {
+    found.value = null;
+    lookupError.value = courseError(err);
+  } finally {
+    lookupBusy.value = false;
+  }
+}
+
+async function enrol(user: CourseAdminUser): Promise<void> {
+  lookupBusy.value = true;
+  lookupError.value = "";
+  try {
+    await enrolCourseParticipant(courseId.value, user.id);
+    enrolled.value = [...enrolled.value.filter((u) => u.id !== user.id), user];
+    found.value = null;
+    lookupQuery.value = "";
+  } catch (err) {
+    lookupError.value = courseError(err);
+  } finally {
+    lookupBusy.value = false;
+  }
+}
 
 const single = reactive<Invitee>({ name: "", email: "" });
 const batch = ref("");
@@ -90,11 +143,79 @@ function outcome(result: InvitationResult): string {
 
 <template>
   <div class="flex flex-col gap-6">
+    <section class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800" aria-labelledby="cp-enrol">
+      <header>
+        <h2 id="cp-enrol" class="text-1 text-lg font-semibold">Add a Participant with a TUM Account</h2>
+        <p class="text-5 text-sm">
+          Look them up by LRZ ID, matriculation number or email. It has to be the whole identifier, and they need
+          to have signed in to TUM-Live once.
+        </p>
+      </header>
+
+      <p
+        v-if="lookupError"
+        class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+        role="alert"
+      >
+        {{ lookupError }}
+      </p>
+
+      <ul v-if="enrolled.length" class="flex flex-col gap-1 text-sm" role="status">
+        <li v-for="user in enrolled" :key="user.id" class="text-green-700 dark:text-green-400">
+          {{ user.name }} ({{ user.login }}) is enrolled.
+        </li>
+      </ul>
+
+      <form class="grid gap-3 text-sm sm:grid-cols-[1fr_auto] sm:items-end" @submit.prevent="lookup">
+        <div class="flex flex-col gap-1">
+          <label for="cp-lookup" class="text-2">LRZ ID, matriculation number or email</label>
+          <input
+            id="cp-lookup"
+            v-model="lookupQuery"
+            type="text"
+            autocomplete="off"
+            placeholder="ge42abc"
+            required
+            class="tum-live-input"
+          />
+        </div>
+        <button type="submit" class="tum-live-button-primary px-4 py-2 text-sm sm:h-12" :disabled="lookupBusy">
+          Search
+        </button>
+      </form>
+
+      <p v-if="found && !found.length" class="text-5 text-sm italic">
+        Nobody has this identifier. If they have no TUM account, invite them by email below.
+      </p>
+      <ul v-else-if="found" class="flex flex-col text-sm" aria-label="Search results">
+        <li
+          v-for="user in found"
+          :key="user.id"
+          class="flex items-center justify-between gap-3 border-t py-2 dark:border-gray-800"
+        >
+          <span class="min-w-0">
+            <span class="text-1 block">{{ user.name }}</span>
+            <span class="text-3 block break-all">{{ user.login }} · {{ roleLabel(user.role) }}</span>
+          </span>
+          <button
+            type="button"
+            class="tum-live-button-primary shrink-0 px-4 py-2 text-sm"
+            :disabled="lookupBusy"
+            :aria-label="`Add ${user.name} to the course`"
+            @click="enrol(user)"
+          >
+            Add
+          </button>
+        </li>
+      </ul>
+    </section>
+
     <section class="flex flex-col gap-4 rounded-lg border p-4 dark:border-gray-800" aria-labelledby="cp-invite">
       <header>
         <h2 id="cp-invite" class="text-1 text-lg font-semibold">Invite External Participants</h2>
         <p class="text-5 text-sm">
-          For people without a TUM login. They are notified about your invitation by email.
+          Only for people without a TUM account; look everyone else up above. They are notified about your
+          invitation by email.
         </p>
       </header>
 

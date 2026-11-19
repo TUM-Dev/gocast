@@ -2424,6 +2424,104 @@ func local_request_CourseService_InviteCourseParticipants_0(ctx context.Context,
 	return msg, metadata, err
 }
 
+var filter_CourseService_LookupUsersForCourse_0 = &utilities.DoubleArray{Encoding: map[string]int{"course_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
+func request_CourseService_LookupUsersForCourse_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq LookupUsersForCourseRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CourseService_LookupUsersForCourse_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.LookupUsersForCourse(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CourseService_LookupUsersForCourse_0(ctx context.Context, marshaler runtime.Marshaler, server CourseServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq LookupUsersForCourseRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_CourseService_LookupUsersForCourse_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.LookupUsersForCourse(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_CourseService_EnrolCourseParticipant_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq EnrolCourseParticipantRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.EnrolCourseParticipant(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CourseService_EnrolCourseParticipant_0(ctx context.Context, marshaler runtime.Marshaler, server CourseServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq EnrolCourseParticipantRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["course_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "course_id")
+	}
+	protoReq.CourseId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "course_id", err)
+	}
+	msg, err := server.EnrolCourseParticipant(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_CourseService_ListAdministeredCourses_0(ctx context.Context, marshaler runtime.Marshaler, client CourseServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq emptypb.Empty
@@ -7541,6 +7639,46 @@ func RegisterCourseServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CourseService_InviteCourseParticipants_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CourseService_LookupUsersForCourse_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.CourseService/LookupUsersForCourse", runtime.WithHTTPPathPattern("/courses/{course_id}/participants/lookup"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CourseService_LookupUsersForCourse_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_LookupUsersForCourse_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_CourseService_EnrolCourseParticipant_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.CourseService/EnrolCourseParticipant", runtime.WithHTTPPathPattern("/courses/{course_id}/participants/enrol"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CourseService_EnrolCourseParticipant_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_EnrolCourseParticipant_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_CourseService_ListAdministeredCourses_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -10607,6 +10745,40 @@ func RegisterCourseServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CourseService_InviteCourseParticipants_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CourseService_LookupUsersForCourse_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.CourseService/LookupUsersForCourse", runtime.WithHTTPPathPattern("/courses/{course_id}/participants/lookup"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CourseService_LookupUsersForCourse_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_LookupUsersForCourse_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_CourseService_EnrolCourseParticipant_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.CourseService/EnrolCourseParticipant", runtime.WithHTTPPathPattern("/courses/{course_id}/participants/enrol"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CourseService_EnrolCourseParticipant_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CourseService_EnrolCourseParticipant_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_CourseService_ListAdministeredCourses_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -10895,6 +11067,8 @@ var (
 	pattern_CourseService_UpdateCourseLectureHallSettings_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "lecture-halls"}, ""))
 	pattern_CourseService_ListCourseParticipants_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "participants"}, ""))
 	pattern_CourseService_InviteCourseParticipants_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"courses", "course_id", "participants"}, ""))
+	pattern_CourseService_LookupUsersForCourse_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"courses", "course_id", "participants", "lookup"}, ""))
+	pattern_CourseService_EnrolCourseParticipant_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 2, 3}, []string{"courses", "course_id", "participants", "enrol"}, ""))
 	pattern_CourseService_ListAdministeredCourses_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"courses", "administered"}, ""))
 	pattern_CourseService_CreateLectureSections_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"courses", "course_id", "streams", "stream_id", "sections"}, ""))
 	pattern_CourseService_UpdateLectureSection_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"courses", "course_id", "streams", "stream_id", "sections", "section_id"}, ""))
@@ -10958,6 +11132,8 @@ var (
 	forward_CourseService_UpdateCourseLectureHallSettings_0 = runtime.ForwardResponseMessage
 	forward_CourseService_ListCourseParticipants_0          = runtime.ForwardResponseMessage
 	forward_CourseService_InviteCourseParticipants_0        = runtime.ForwardResponseMessage
+	forward_CourseService_LookupUsersForCourse_0            = runtime.ForwardResponseMessage
+	forward_CourseService_EnrolCourseParticipant_0          = runtime.ForwardResponseMessage
 	forward_CourseService_ListAdministeredCourses_0         = runtime.ForwardResponseMessage
 	forward_CourseService_CreateLectureSections_0           = runtime.ForwardResponseMessage
 	forward_CourseService_UpdateLectureSection_0            = runtime.ForwardResponseMessage
