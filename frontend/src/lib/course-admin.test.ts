@@ -12,7 +12,9 @@ import {
   fetchCourseVideoExport,
   fetchLectureHallSettings,
   groupBySemester,
+  enrolCourseParticipant,
   inviteCourseParticipants,
+  lookupUsersForCourse,
   parseInviteBatch,
   publicCoursePath,
   removeCourseAdmin,
@@ -221,6 +223,25 @@ describe("participants", () => {
       { email: "tim@lmu.de", accountCreated: true, error: "" },
       { email: "a@b.de", accountCreated: false, error: "nope" },
     ]);
+  });
+});
+
+describe("enrolling existing accounts", () => {
+  it("escapes the identifier it looks up", async () => {
+    respondWith({ users: [{ id: 5, name: "Stephanie Studi", login: "ge42abc@tum.de", role: 4 }] });
+
+    const found = await lookupUsersForCourse(1, "ge42abc@tum.de");
+    expect(lastCall().url).toBe("/api/v2/courses/1/participants/lookup?q=ge42abc%40tum.de");
+    expect(found).toEqual([{ id: 5, name: "Stephanie Studi", login: "ge42abc@tum.de", role: 4 }]);
+  });
+
+  it("enrols by user id", async () => {
+    respondWith({});
+
+    await enrolCourseParticipant(1, 5);
+    expect(lastCall().url).toBe("/api/v2/courses/1/participants/enrol");
+    expect(lastCall().method).toBe("POST");
+    expect(lastCall().body).toEqual({ courseId: 1, userId: 5 });
   });
 });
 

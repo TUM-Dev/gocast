@@ -2548,7 +2548,7 @@
       },
       "post": {
         "summary": "Invite external participants to a course by email.",
-        "description": "An address without an account gets one and an email to set its password; an existing account is enrolled and notified. At most 200 per call. Requires administering the course.",
+        "description": "For people without a TUM account. An address without an account gets one and an email to set its password; an external account is enrolled and notified; an address of a TUM account is refused, those are enrolled with enrolCourseParticipant. At most 200 per call. Requires administering the course.",
         "operationId": "CourseService_inviteCourseParticipants",
         "responses": {
           "200": {
@@ -2579,6 +2579,87 @@
             "schema": {
               "$ref": "#/definitions/CourseServiceinviteCourseParticipantsBody"
             }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/participants/enrol": {
+      "post": {
+        "summary": "Enrol an existing account in a course.",
+        "description": "For people with a TUM account; enrolling twice is no error. The account is not notified, and nothing about it is answered: only a lookup tells a lecturer who an account is. Requires administering the course.",
+        "operationId": "CourseService_enrolCourseParticipant",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CourseServiceenrolCourseParticipantBody"
+            }
+          }
+        ],
+        "tags": [
+          "Course Administration"
+        ]
+      }
+    },
+    "/courses/{courseId}/participants/lookup": {
+      "get": {
+        "summary": "Find an existing account to enrol in a course.",
+        "description": "Matches the query exactly against LRZ ID, matriculation number or email; at least three characters. Nothing is returned for a partial match, so the user table cannot be browsed. Requires administering the course.",
+        "operationId": "CourseService_lookupUsersForCourse",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/protobufLookupUsersForCourseResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -6201,6 +6282,15 @@
         }
       }
     },
+    "CourseServiceenrolCourseParticipantBody": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "CourseServiceinviteCourseParticipantsBody": {
       "type": "object",
       "properties": {
@@ -7356,7 +7446,7 @@
         },
         "accountCreated": {
           "type": "boolean",
-          "description": "False when the address already had an account, which was enrolled instead."
+          "description": "False when the address already had an external account, which was enrolled instead."
         },
         "error": {
           "type": "string",
@@ -8988,6 +9078,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/protobufUserSummary"
+          }
+        }
+      }
+    },
+    "protobufLookupUsersForCourseResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufCourseAdminUser"
           }
         }
       }

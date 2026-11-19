@@ -813,6 +813,8 @@ const (
 	CourseService_UpdateCourseLectureHallSettings_FullMethodName = "/protobuf.CourseService/updateCourseLectureHallSettings"
 	CourseService_ListCourseParticipants_FullMethodName          = "/protobuf.CourseService/listCourseParticipants"
 	CourseService_InviteCourseParticipants_FullMethodName        = "/protobuf.CourseService/inviteCourseParticipants"
+	CourseService_LookupUsersForCourse_FullMethodName            = "/protobuf.CourseService/lookupUsersForCourse"
+	CourseService_EnrolCourseParticipant_FullMethodName          = "/protobuf.CourseService/enrolCourseParticipant"
 	CourseService_ListAdministeredCourses_FullMethodName         = "/protobuf.CourseService/listAdministeredCourses"
 	CourseService_CreateLectureSections_FullMethodName           = "/protobuf.CourseService/createLectureSections"
 	CourseService_UpdateLectureSection_FullMethodName            = "/protobuf.CourseService/updateLectureSection"
@@ -897,6 +899,8 @@ type CourseServiceClient interface {
 	UpdateCourseLectureHallSettings(ctx context.Context, in *UpdateCourseLectureHallSettingsRequest, opts ...grpc.CallOption) (*ListCourseLectureHallSettingsResponse, error)
 	ListCourseParticipants(ctx context.Context, in *ListCourseParticipantsRequest, opts ...grpc.CallOption) (*ListCourseParticipantsResponse, error)
 	InviteCourseParticipants(ctx context.Context, in *InviteCourseParticipantsRequest, opts ...grpc.CallOption) (*InviteCourseParticipantsResponse, error)
+	LookupUsersForCourse(ctx context.Context, in *LookupUsersForCourseRequest, opts ...grpc.CallOption) (*LookupUsersForCourseResponse, error)
+	EnrolCourseParticipant(ctx context.Context, in *EnrolCourseParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// The sidebar's tree of courses; a flat list, grouped by semester by the caller.
 	ListAdministeredCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error)
 	CreateLectureSections(ctx context.Context, in *CreateLectureSectionsRequest, opts ...grpc.CallOption) (*CreateLectureSectionsResponse, error)
@@ -1382,6 +1386,26 @@ func (c *courseServiceClient) InviteCourseParticipants(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *courseServiceClient) LookupUsersForCourse(ctx context.Context, in *LookupUsersForCourseRequest, opts ...grpc.CallOption) (*LookupUsersForCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LookupUsersForCourseResponse)
+	err := c.cc.Invoke(ctx, CourseService_LookupUsersForCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) EnrolCourseParticipant(ctx context.Context, in *EnrolCourseParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_EnrolCourseParticipant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) ListAdministeredCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAdministeredCoursesResponse)
@@ -1590,6 +1614,8 @@ type CourseServiceServer interface {
 	UpdateCourseLectureHallSettings(context.Context, *UpdateCourseLectureHallSettingsRequest) (*ListCourseLectureHallSettingsResponse, error)
 	ListCourseParticipants(context.Context, *ListCourseParticipantsRequest) (*ListCourseParticipantsResponse, error)
 	InviteCourseParticipants(context.Context, *InviteCourseParticipantsRequest) (*InviteCourseParticipantsResponse, error)
+	LookupUsersForCourse(context.Context, *LookupUsersForCourseRequest) (*LookupUsersForCourseResponse, error)
+	EnrolCourseParticipant(context.Context, *EnrolCourseParticipantRequest) (*emptypb.Empty, error)
 	// The sidebar's tree of courses; a flat list, grouped by semester by the caller.
 	ListAdministeredCourses(context.Context, *emptypb.Empty) (*ListAdministeredCoursesResponse, error)
 	CreateLectureSections(context.Context, *CreateLectureSectionsRequest) (*CreateLectureSectionsResponse, error)
@@ -1752,6 +1778,12 @@ func (UnimplementedCourseServiceServer) ListCourseParticipants(context.Context, 
 }
 func (UnimplementedCourseServiceServer) InviteCourseParticipants(context.Context, *InviteCourseParticipantsRequest) (*InviteCourseParticipantsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InviteCourseParticipants not implemented")
+}
+func (UnimplementedCourseServiceServer) LookupUsersForCourse(context.Context, *LookupUsersForCourseRequest) (*LookupUsersForCourseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LookupUsersForCourse not implemented")
+}
+func (UnimplementedCourseServiceServer) EnrolCourseParticipant(context.Context, *EnrolCourseParticipantRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnrolCourseParticipant not implemented")
 }
 func (UnimplementedCourseServiceServer) ListAdministeredCourses(context.Context, *emptypb.Empty) (*ListAdministeredCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAdministeredCourses not implemented")
@@ -2644,6 +2676,42 @@ func _CourseService_InviteCourseParticipants_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_LookupUsersForCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupUsersForCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).LookupUsersForCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_LookupUsersForCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).LookupUsersForCourse(ctx, req.(*LookupUsersForCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_EnrolCourseParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrolCourseParticipantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).EnrolCourseParticipant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_EnrolCourseParticipant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).EnrolCourseParticipant(ctx, req.(*EnrolCourseParticipantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_ListAdministeredCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -3086,6 +3154,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "inviteCourseParticipants",
 			Handler:    _CourseService_InviteCourseParticipants_Handler,
+		},
+		{
+			MethodName: "lookupUsersForCourse",
+			Handler:    _CourseService_LookupUsersForCourse_Handler,
+		},
+		{
+			MethodName: "enrolCourseParticipant",
+			Handler:    _CourseService_EnrolCourseParticipant_Handler,
 		},
 		{
 			MethodName: "listAdministeredCourses",
