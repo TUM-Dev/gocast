@@ -17,6 +17,13 @@ import (
 
 // CheckVoD probes both the livestream and the VoD and checks if they are identical.
 func CheckVoD(ctx context.Context, logger *slog.Logger, _ chan *protobuf.Notification, d map[string]any, metrics *metrics.Broker) error {
+	// With the VoDPendingFile still there, MkVOD gave up before writing anything, so that
+	// the next start of the runner makes the VoD: the job was cancelled or the runner
+	// drained. There is nothing to judge, and a .keep would have the recording backed up
+	// and removed under the VoD that is still to come.
+	if recordingDir, ok := d["recordingDir"].(string); ok && vodPending(recordingDir) {
+		return AbortingError(fmt.Errorf("VoD left to the next start of the runner"))
+	}
 	duration, err := checkVoD(ctx, logger, d, metrics)
 	recordingDir, ok := d["recordingDir"].(string)
 	if !ok {

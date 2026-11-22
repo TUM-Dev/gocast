@@ -123,7 +123,7 @@ func importVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.N
 	// must leave the previous VOD intact, and a half-written one must never be served.
 	// Unique per import, so two uploads of the same stream version can't wipe each
 	// other's output.
-	if err := os.MkdirAll(path.Dir(vodDir), os.ModePerm); err != nil {
+	if err := storageMkdirAll(ctx, path.Dir(vodDir)); err != nil {
 		return failImport(reasonStorage, fmt.Errorf("create stream directory: %w", err))
 	}
 	workDir, err := os.MkdirTemp(path.Dir(vodDir), ".importing-")

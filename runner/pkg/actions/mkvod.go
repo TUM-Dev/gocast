@@ -3,11 +3,11 @@ package actions
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/url"
-	"os"
 	"os/exec"
 	"path"
 	"strings"
@@ -40,11 +40,23 @@ func MkVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Notif
 	defer metrics.ConvertingProgresses.With(metrics.With().Stream(streamID).L()).Dec()
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
-	err := os.MkdirAll(vodDir, os.ModePerm)
+	drained, _ := d["drained"].(<-chan struct{})
+	err := waitForStorage(ctx, drained, logger, vodDir)
 	if err != nil {
+		if ctx.Err() == nil && !errors.Is(err, errDraining) {
+			// Neither a retry nor a restart changes this one, so it is left to a human,
+			// and the .keep of CheckVoD is what tells them. Unmarked, or the next start
+			// would make the VoD under the backup of the recording.
+			if err := unmarkPendingVoD(recordingDir); err != nil {
+				logger.Error("can't unmark pending VoD", "error", err)
+			}
+		}
 		return AbortingError(fmt.Errorf("create VOD directory: %w", err))
 	}
 
+	if err := unmarkPendingVoD(recordingDir); err != nil {
+		return fmt.Errorf("unmark pending VoD: %w", err)
+	}
 	err = convertStream(ctx, logger, streamID, path.Join(recordingDir, "playlist.m3u8"), vodDir, "playlist.m3u8")
 	if err != nil {
 		return AbortingError(fmt.Errorf("convert stream: %w", err))

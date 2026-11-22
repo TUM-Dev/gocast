@@ -64,6 +64,9 @@ type Runner struct {
 
 	// draining is read by the heartbeat goroutine while Drain sets it on a signal.
 	draining atomic.Bool
+	// drained is closed by Drain, see drainedCh.
+	drained               chan struct{}
+	drainedInit, drainEnd sync.Once
 
 	// busy counts what must finish before the process may exit: running jobs, uploads
 	// that are still being received and critical notifications that are not delivered yet.
@@ -153,6 +156,7 @@ func (r *Runner) Run(ctx context.Context) {
 
 	go r.Metrics.Run()
 	go r.handleNotifications(ctx)
+	r.resumePendingVoDs()
 	go r.InitApiGrpc()
 	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
 	go r.uploadCleanup(ctx, r.log.With("job", "uploadCleanup"))
@@ -202,10 +206,19 @@ func (r *Runner) heartbeat() *protobuf.Notification {
 func (r *Runner) Drain(ctx context.Context) {
 	r.log.Info("Runner set to drain.")
 	r.draining.Store(true)
+	r.drainEnd.Do(func() { r.drainedCh(); close(r.drained) })
 	select {
 	case r.notifications <- r.heartbeat():
 	case <-ctx.Done():
 	}
+}
+
+// drainedCh is closed once the runner drains. It lets a VoD job that waits for the
+// storage give up, see actions.MkVOD. Made on first use, as tests build runners without
+// NewRunner.
+func (r *Runner) drainedCh() <-chan struct{} {
+	r.drainedInit.Do(func() { r.drained = make(chan struct{}) })
+	return r.drained
 }
 
 func (r *Runner) InitApiGrpc() {

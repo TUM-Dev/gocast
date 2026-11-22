@@ -101,7 +101,7 @@ func cutVOD(ctx context.Context, logger *slog.Logger, notify chan *protobuf.Noti
 	}
 
 	vodDir := path.Join(config.Config.StoragePath, fmt.Sprintf("%d", streamID), streamVersion)
-	if err := os.MkdirAll(path.Dir(vodDir), os.ModePerm); err != nil {
+	if err := storageMkdirAll(ctx, path.Dir(vodDir)); err != nil {
 		return failImport(reasonStorage, fmt.Errorf("create stream directory: %w", err))
 	}
 	// Next to the final directory and swapped in at the end, see importVOD.

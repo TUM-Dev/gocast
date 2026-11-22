@@ -24,27 +24,36 @@ func (r *Runner) RequestStream(ctx context.Context, req *protobuf.StreamRequest)
 		"outputOpts":    req.GetFfmpegOutputOptions(),
 		"input":         req.GetInput(),
 		"selfStream":    req.GetSelfStream(),
+		"detectSilence": req.GetDetectSilence(),
+		"drained":       r.drainedCh(),
 	}
 	r.log.Info("RequestStream data constructed", "data", data)
 	a := []actions.Action{
 		actions.Stream,
 		actions.StreamEnd,
 	}
+	jID := r.RunActionContext(ctx, a, vodActions(req.GetDetectSilence()), data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
+	r.log.Info("job added", "ID", jID)
+
+	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
+}
+
+// vodActions turn a stream's recording into a VoD, both after the stream and when a
+// restarted runner resumes it, see actions.VoDPendingFile.
+func vodActions(detectSilence bool) []actions.Action {
 	vod := []actions.Action{
+		actions.MarkVoDPending,
 		actions.MkVOD,
 		actions.MkDuration,
 		actions.CheckVoD,
 		actions.MkThumb,
 		actions.MkSprite,
 	}
-	if req.GetDetectSilence() {
+	if detectSilence {
 		// Last, and non-fatal on failure: it is a long scan nobody should wait for or retry.
 		vod = append(vod, actions.MkSilence)
 	}
-	jID := r.RunActionContext(ctx, a, vod, data, r.log.With("stream_id", req.GetStreamId(), "stream_version", req.GetVersion(), "input", req.GetInput()))
-	r.log.Info("job added", "ID", jID)
-
-	return &protobuf.StreamResponse{JobId: ptr.Take(jID)}, nil
+	return vod
 }
 
 func (r *Runner) RequestStreamEnd(_ context.Context, req *protobuf.StreamEndRequest) (*protobuf.StreamEndResponse, error) {
