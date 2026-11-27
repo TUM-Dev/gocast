@@ -447,14 +447,20 @@ func (m *Manager) streamStarted(ctx context.Context, req *protobuf.StreamStartNo
 		return err
 	}
 	m.streamStartLock.Lock()
-	switch req.GetStreamVersion() {
-	case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
-		m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url)
-	case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
-		m.dao.StreamsDao.SavePRESURL(&stream, *req.Url)
-	case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
-		m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url)
-	}
+		switch req.GetStreamVersion() {
+		case protobuf.StreamVersion_STREAM_VERSION_COMBINED:
+			if err := m.dao.StreamsDao.SaveCOMBURL(&stream, *req.Url); err != nil {
+				return err
+			}
+		case protobuf.StreamVersion_STREAM_VERSION_PRESENTATION:
+			if err := m.dao.StreamsDao.SavePRESURL(&stream, *req.Url); err != nil {
+				return err
+			}
+		case protobuf.StreamVersion_STREAM_VERSION_CAMERA:
+			if err := m.dao.StreamsDao.SaveCAMURL(&stream, *req.Url); err != nil {
+				return err
+			}
+		}
 	m.streamStartLock.Unlock()
 
 	m.notifyLiveState(stream.ID, true)
