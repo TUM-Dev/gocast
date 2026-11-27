@@ -52,9 +52,9 @@ type StreamsDao interface {
 	SetStreamNotLiveById(streamID uint) error
 	SetStreamLiveNowTimestampById(streamID uint, liveNowTimestamp time.Time) error
 	SaveEndedState(streamID uint, hasEnded bool) error
-	SaveCOMBURL(stream *model.Stream, url string)
-	SaveCAMURL(stream *model.Stream, url string)
-	SavePRESURL(stream *model.Stream, url string)
+	SaveCOMBURL(stream *model.Stream, url string) error
+	SaveCAMURL(stream *model.Stream, url string) error
+	SavePRESURL(stream *model.Stream, url string) error
 	SaveTranscodingProgress(progress model.TranscodingProgress) error
 	// UpdateTranscodingProgress moves the percentage of a conversion that is under way.
 	// It does nothing for a version with no row, or one that failed: a report that comes
@@ -676,22 +676,25 @@ func (d streamsDao) SaveEndedState(streamID uint, hasEnded bool) error {
 	return DB.Model(&model.Stream{}).Where("id = ?", streamID).Updates(map[string]interface{}{"Ended": hasEnded}).Error
 }
 
-func (d streamsDao) SaveCOMBURL(stream *model.Stream, url string) {
+func (d streamsDao) SaveCOMBURL(stream *model.Stream, url string) error {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1, "recording": 0})
+	err := DB.Model(stream).Updates(map[string]interface{}{"playlist_url": url, "live_now": 1, "recording": 0}).Error
 	Cache.Clear()
+	return err
 }
 
-func (d streamsDao) SaveCAMURL(stream *model.Stream, url string) {
+func (d streamsDao) SaveCAMURL(stream *model.Stream, url string) error {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1, "recording": 0})
+	err := DB.Model(stream).Updates(map[string]interface{}{"playlist_url_cam": url, "live_now": 1, "recording": 0}).Error
 	Cache.Clear()
+	return err
 }
 
-func (d streamsDao) SavePRESURL(stream *model.Stream, url string) {
+func (d streamsDao) SavePRESURL(stream *model.Stream, url string) error {
 	Cache.Clear()
-	DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1, "recording": 0})
+	err := DB.Model(stream).Updates(map[string]interface{}{"playlist_url_pres": url, "live_now": 1, "recording": 0}).Error
 	Cache.Clear()
+	return err
 }
 
 func (d streamsDao) ToggleVisibility(streamId uint, private bool) error {

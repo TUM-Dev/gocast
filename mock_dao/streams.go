@@ -475,9 +475,11 @@ func (mr *MockStreamsDaoMockRecorder) RemoveTranscodingProgress(streamVersion, s
 }
 
 // SaveCAMURL mocks base method.
-func (m *MockStreamsDao) SaveCAMURL(stream *model.Stream, url string) {
+func (m *MockStreamsDao) SaveCAMURL(stream *model.Stream, url string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveCAMURL", stream, url)
+	ret := m.ctrl.Call(m, "SaveCAMURL", stream, url)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SaveCAMURL indicates an expected call of SaveCAMURL.
@@ -487,9 +489,11 @@ func (mr *MockStreamsDaoMockRecorder) SaveCAMURL(stream, url any) *gomock.Call {
 }
 
 // SaveCOMBURL mocks base method.
-func (m *MockStreamsDao) SaveCOMBURL(stream *model.Stream, url string) {
+func (m *MockStreamsDao) SaveCOMBURL(stream *model.Stream, url string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveCOMBURL", stream, url)
+	ret := m.ctrl.Call(m, "SaveCOMBURL", stream, url)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SaveCOMBURL indicates an expected call of SaveCOMBURL.
@@ -513,9 +517,11 @@ func (mr *MockStreamsDaoMockRecorder) SaveEndedState(streamID, hasEnded any) *go
 }
 
 // SavePRESURL mocks base method.
-func (m *MockStreamsDao) SavePRESURL(stream *model.Stream, url string) {
+func (m *MockStreamsDao) SavePRESURL(stream *model.Stream, url string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SavePRESURL", stream, url)
+	ret := m.ctrl.Call(m, "SavePRESURL", stream, url)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SavePRESURL indicates an expected call of SavePRESURL.
