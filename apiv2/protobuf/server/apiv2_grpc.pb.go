@@ -1780,10 +1780,10 @@ func (UnimplementedCourseServiceServer) InviteCourseParticipants(context.Context
 	return nil, status.Error(codes.Unimplemented, "method InviteCourseParticipants not implemented")
 }
 func (UnimplementedCourseServiceServer) LookupUsersForCourse(context.Context, *LookupUsersForCourseRequest) (*LookupUsersForCourseResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LookupUsersForCourse not implemented")
+	return nil, status.Error(codes.Unimplemented, "method LookupUsersForCourse not implemented")
 }
 func (UnimplementedCourseServiceServer) EnrolCourseParticipant(context.Context, *EnrolCourseParticipantRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EnrolCourseParticipant not implemented")
+	return nil, status.Error(codes.Unimplemented, "method EnrolCourseParticipant not implemented")
 }
 func (UnimplementedCourseServiceServer) ListAdministeredCourses(context.Context, *emptypb.Empty) (*ListAdministeredCoursesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAdministeredCourses not implemented")
