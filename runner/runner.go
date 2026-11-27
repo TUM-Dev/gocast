@@ -156,6 +156,7 @@ func (r *Runner) Run(ctx context.Context) {
 	go r.InitApiGrpc()
 	go r.livestreamCleanup(ctx, r.log.With("job", "livestreamCleanup"))
 	go r.uploadCleanup(ctx, r.log.With("job", "uploadCleanup"))
+	go r.offlinePackageCleanup(ctx, r.log.With("job", "offlinePackageCleanup"))
 	go r.serveUploads(ctx)
 	go func() {
 		err := r.hlsServer.Start()
@@ -452,6 +453,8 @@ func isCritical(n *protobuf.Notification) bool {
 		*protobuf.Notification_ThumbnailReady,
 		*protobuf.Notification_SectionImagesReady,
 		*protobuf.Notification_SilenceDetected,
+		*protobuf.Notification_OfflinePackageReady,
+		*protobuf.Notification_OfflinePackageFailed,
 		*protobuf.Notification_DurationProbed,
 		*protobuf.Notification_SpriteReady,
 		*protobuf.Notification_WaveformReady,
