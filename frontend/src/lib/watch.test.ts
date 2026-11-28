@@ -52,6 +52,30 @@ describe("layout", () => {
     expect(resolveLayout(pres, L.CAMERA)).toBe(L.PRESENTATION);
     expect(resolveLayout(pres, L.SPLIT)).toBe(L.PRESENTATION);
   });
+
+  it("falls back to Combined when the preferred layout is unavailable", () => {
+    const combinedOnly = mk({
+      views: [{ kind: K.COMBINED, playlistUrl: "c.m3u8" }],
+      defaultLayout: L.UNSPECIFIED,
+      splitAvailable: false,
+    });
+
+    expect(resolveLayout(combinedOnly, L.SPLIT)).toBe(L.COMBINED);
+    expect(resolveLayout(combinedOnly, L.PRESENTATION)).toBe(L.COMBINED);
+  });
+
+  it("prefers Combined over view order when the server default is unavailable", () => {
+    const combinedAvailable = mk({
+      views: [
+        { kind: K.PRESENTATION, playlistUrl: "p.m3u8" },
+        { kind: K.COMBINED, playlistUrl: "c.m3u8" },
+      ],
+      defaultLayout: L.CAMERA,
+      splitAvailable: false,
+    });
+
+    expect(resolveLayout(combinedAvailable, L.SPLIT)).toBe(L.COMBINED);
+  });
 });
 
 describe("watchPhase", () => {
