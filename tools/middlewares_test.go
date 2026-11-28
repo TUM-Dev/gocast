@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
@@ -185,6 +186,44 @@ func TestInitStreamCourseScope(t *testing.T) {
 			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/"+tt.streamID, nil))
 			if rec.Code != tt.want {
 				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+func TestInitStreamExpiredLecture(t *testing.T) {
+	course := model.Course{
+		Model: gorm.Model{ID: 1}, Visibility: "public", LectureExpirationDays: 1,
+	}
+	stream := model.Stream{
+		Model: gorm.Model{ID: 10}, CourseID: 1, End: time.Now().Add(-48 * time.Hour),
+	}
+
+	for _, tt := range []struct {
+		name string
+		user *model.User
+		want int
+	}{
+		{"student", &model.User{Role: model.StudentType}, http.StatusGone},
+		{"course administrator", &model.User{Role: model.LecturerType, AdministeredCourses: []model.Course{course}}, http.StatusOK},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			streams := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+			streams.EXPECT().GetStreamByID(gomock.Any(), "10").Return(stream, nil)
+
+			router := NewRouter()
+			router.Use(withContext(TUMLiveContext{User: tt.user, Course: &course}))
+			router.Group(InitStream(dao.DaoWrapper{StreamsDao: streams})).HandleFunc("GET /{streamID}", func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/10", nil))
+			if rec.Code != tt.want {
+				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+			if tt.want == http.StatusGone && rec.Body.String() != ExpiredStreamAccess {
+				t.Errorf("body = %q, want %q", rec.Body.String(), ExpiredStreamAccess)
 			}
 		})
 	}

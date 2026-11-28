@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -88,7 +89,11 @@ func (a *API) handleCourseCalendar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	entries := make([]calendarEntry, 0, len(course.Streams))
+	now := time.Now()
 	for _, s := range course.Streams {
+		if course.IsLectureExpired(s, now) {
+			continue
+		}
 		entries = append(entries, streamToCalendarEntry(s, course))
 	}
 

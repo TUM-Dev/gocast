@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 
@@ -117,6 +118,7 @@ const (
 		"Please reach out if this seems wrong :)"
 	ForbiddenStreamAccess = "You don't have permissions to access this stream. " +
 		"Please make sure to use the correct login."
+	ExpiredStreamAccess   = "This lecture has expired and is no longer available."
 	ForbiddenCourseAccess = "You don't have permissions to access this course. " +
 		"Please make sure to use the correct login."
 )
@@ -228,6 +230,11 @@ func InitStream(wrapper dao.DaoWrapper) Middleware {
 					RenderErrorPage(w, r, http.StatusForbidden, ForbiddenStreamAccess)
 					return
 				}
+			}
+			if course.IsLectureExpired(stream, time.Now()) &&
+				(tumLiveContext.User == nil || !tumLiveContext.User.IsAdminOfCourse(course)) {
+				RenderErrorPage(w, r, http.StatusGone, ExpiredStreamAccess)
+				return
 			}
 			tumLiveContext.Course = &course
 			tumLiveContext.Stream = &stream

@@ -42,6 +42,9 @@ export interface CourseLecture {
   streamKey: string;
   chatEnabled: boolean;
   private: boolean;
+  /** Null inherits the course setting; 0 never expires; positive values are days after end. */
+  expirationDaysOverride: number | null;
+  expired: boolean;
   liveNow: boolean;
   /** Has a recording (a VoD). */
   recording: boolean;
@@ -74,6 +77,8 @@ export function toLecture(l: CourseLectureAdmin): CourseLecture {
     streamKey: l.streamKey,
     chatEnabled: l.chatEnabled,
     private: l.private,
+    expirationDaysOverride: l.expirationDaysOverride ?? null,
+    expired: l.expired,
     liveNow: l.liveNow,
     recording: l.recording,
     past: l.past,
@@ -130,6 +135,8 @@ export interface LectureChanges {
   lectureHallId?: number;
   chatEnabled?: boolean;
   private?: boolean;
+  /** -1 inherits the course setting; 0 never expires; positive values are days after end. */
+  expirationDaysOverride?: number;
 }
 
 /** What updateLectureSeries can set on every lecture of a series. */
@@ -254,6 +261,7 @@ export function lectureBadges(l: CourseLecture): LectureBadge[] {
   const state = lectureState(l);
   const badges: LectureBadge[] = [{ key: state, ...STATE_BADGES[state] }];
   if (l.private) badges.push({ key: "private", label: "Private", tone: "muted" });
+  if (l.expired) badges.push({ key: "expired", label: "Expired", tone: "muted" });
   badges.push(
     l.chatEnabled
       ? { key: "chat", label: "Chat on", tone: "muted" }

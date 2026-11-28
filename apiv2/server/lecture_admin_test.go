@@ -2,8 +2,10 @@ package apiv2
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -155,6 +157,48 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpdateLecture: %v", err)
 		}
+	})
+
+	t.Run("sets an explicit expiration override and can inherit the course default", func(t *testing.T) {
+		for _, days := range []int32{0, 14, -1} {
+			api, m := newLectureAPI(t)
+			m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+			m.audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error {
+				if days == -1 && !strings.Contains(a.Message, "expiration days override: use course default") {
+					t.Errorf("audit message = %q, want readable course default", a.Message)
+				}
+				if strings.Contains(a.Message, "expiration days override: -1") {
+					t.Errorf("audit message = %q, must not record the sentinel", a.Message)
+				}
+				return nil
+			})
+			m.streams.EXPECT().UpdateStream(gomock.Any()).DoAndReturn(func(s model.Stream) error {
+				if days == -1 {
+					if s.ExpirationDaysOverride.Valid {
+						t.Errorf("override = %+v, want inherited", s.ExpirationDaysOverride)
+					}
+				} else if !s.ExpirationDaysOverride.Valid || s.ExpirationDaysOverride.Int32 != days {
+					t.Errorf("override = %+v, want %d", s.ExpirationDaysOverride, days)
+				}
+				return nil
+			})
+			_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+				CourseId: 1, StreamId: 7, ExpirationDaysOverride: &days,
+			})
+			if err != nil {
+				t.Fatalf("UpdateLecture with expiration override %d: %v", days, err)
+			}
+		}
+	})
+
+	t.Run("rejects an invalid expiration override without writing", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		days := model.MaxLectureExpirationDays + 1
+		_, err := api.UpdateLecture(asCaller(lectureAdmin), &protobuf.UpdateLectureRequest{
+			CourseId: 1, StreamId: 7, ExpirationDaysOverride: &days,
+		})
+		wantCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("hall 0 takes the lecture out of its hall", func(t *testing.T) {
@@ -666,11 +710,16 @@ func TestCopyLecture(t *testing.T) {
 
 	t.Run("a copy keeps the original and gets its own stream key", func(t *testing.T) {
 		api, m := newLectureAPI(t)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(withChildren(), nil)
+		original := withChildren()
+		original.ExpirationDaysOverride = sql.NullInt32{Int32: 14, Valid: true}
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(original, nil)
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(courseThree, nil)
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
 			if s.StreamKey == "secret" || s.StreamKey == "" {
 				t.Errorf("stream key = %q, want a fresh one", s.StreamKey)
+			}
+			if s.ExpirationDaysOverride.Valid {
+				t.Errorf("copied expiration override = %+v, want target course default", s.ExpirationDaysOverride)
 			}
 			s.ID = 99
 			return nil
@@ -682,6 +731,29 @@ func TestCopyLecture(t *testing.T) {
 			CourseId: 1, StreamId: 7, TargetCourseId: 3,
 		}); err != nil {
 			t.Fatalf("CopyLecture: %v", err)
+		}
+	})
+
+	t.Run("a move keeps the lecture's expiration override", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		original := withChildren()
+		original.ExpirationDaysOverride = sql.NullInt32{Int32: 14, Valid: true}
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(original, nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(courseThree, nil)
+		created := m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
+			if !s.ExpirationDaysOverride.Valid || s.ExpirationDaysOverride.Int32 != 14 {
+				t.Errorf("moved expiration override = %+v, want 14", s.ExpirationDaysOverride)
+			}
+			s.ID = 99
+			return nil
+		})
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+		m.streams.EXPECT().RemoveStream("7").Return(nil).After(created)
+
+		if _, err := api.CopyLecture(asCaller(caller), &protobuf.CopyLectureRequest{
+			CourseId: 1, StreamId: 7, TargetCourseId: 3, Move: true,
+		}); err != nil {
+			t.Fatalf("CopyLecture move: %v", err)
 		}
 	})
 

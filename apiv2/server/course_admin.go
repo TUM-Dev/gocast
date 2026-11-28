@@ -91,6 +91,10 @@ func (a *API) UpdateCourseSettings(ctx context.Context, req *protobuf.UpdateCour
 	if req.Visibility != nil && !courseVisibilities[req.GetVisibility()] {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("visibility must be public, loggedin, enrolled or hidden"))
 	}
+	if req.LectureExpirationDays != nil &&
+		(req.GetLectureExpirationDays() < 0 || req.GetLectureExpirationDays() > model.MaxLectureExpirationDays) {
+		return nil, e.WithStatus(http.StatusBadRequest, fmt.Errorf("lecture_expiration_days must be between 0 and %d", model.MaxLectureExpirationDays))
+	}
 
 	var columns, changes []string
 	set := func(column string, value any) {
@@ -128,6 +132,10 @@ func (a *API) UpdateCourseSettings(ctx context.Context, req *protobuf.UpdateCour
 	if req.VodPrivate != nil {
 		course.VodPrivate = req.GetVodPrivate()
 		set("vod_private", course.VodPrivate)
+	}
+	if req.LectureExpirationDays != nil {
+		course.LectureExpirationDays = req.GetLectureExpirationDays()
+		set("lecture_expiration_days", course.LectureExpirationDays)
 	}
 
 	if len(columns) == 0 {
@@ -190,6 +198,7 @@ func (a *API) CopyCourse(ctx context.Context, req *protobuf.CopyCourseRequest) (
 	for _, stream := range streams {
 		stream.Model = gorm.Model{}
 		stream.CourseID = copied.ID
+		stream.ExpirationDaysOverride = sql.NullInt32{}
 		// Loaded with the course, these still carry the original's primary keys, so
 		// creating them would only collide; v1's copies ended up without them too.
 		stream.Files = nil
@@ -719,23 +728,24 @@ func (a *API) ListAdministeredCourses(ctx context.Context, _ *emptypb.Empty) (*p
 
 func courseAdminMessage(c model.Course) *protobuf.CourseAdmin {
 	return &protobuf.CourseAdmin{
-		Id:                   uint32(c.ID),
-		Name:                 c.Name,
-		Slug:                 c.Slug,
-		Year:                 int32(c.Year),
-		Term:                 c.TeachingTerm,
-		Visibility:           c.Visibility,
-		VodEnabled:           c.VODEnabled,
-		DownloadsEnabled:     c.DownloadsEnabled,
-		ChatEnabled:          c.ChatEnabled,
-		AnonymousChatEnabled: c.AnonymousChatEnabled,
-		ModeratedChatEnabled: c.ModeratedChatEnabled,
-		VodChatEnabled:       c.VodChatEnabled,
-		LivePrivate:          c.LivePrivate,
-		VodPrivate:           c.VodPrivate,
-		Language:             c.Language.String,
-		TumOnlineIdentifier:  c.TUMOnlineIdentifier,
-		UserId:               uint32(c.UserID),
+		Id:                    uint32(c.ID),
+		Name:                  c.Name,
+		Slug:                  c.Slug,
+		Year:                  int32(c.Year),
+		Term:                  c.TeachingTerm,
+		Visibility:            c.Visibility,
+		VodEnabled:            c.VODEnabled,
+		DownloadsEnabled:      c.DownloadsEnabled,
+		ChatEnabled:           c.ChatEnabled,
+		AnonymousChatEnabled:  c.AnonymousChatEnabled,
+		ModeratedChatEnabled:  c.ModeratedChatEnabled,
+		VodChatEnabled:        c.VodChatEnabled,
+		LivePrivate:           c.LivePrivate,
+		VodPrivate:            c.VodPrivate,
+		Language:              c.Language.String,
+		TumOnlineIdentifier:   c.TUMOnlineIdentifier,
+		UserId:                uint32(c.UserID),
+		LectureExpirationDays: c.LectureExpirationDays,
 	}
 }
 

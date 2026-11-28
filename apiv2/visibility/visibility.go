@@ -6,6 +6,8 @@
 package visibility
 
 import (
+	"time"
+
 	"github.com/TUM-Dev/gocast/model"
 )
 
@@ -44,8 +46,18 @@ func Reachable(user *model.User, course model.Course) bool {
 // StreamVisible reports whether one stream of a course may be shown to user. It
 // assumes the course itself has already been cleared.
 func StreamVisible(user *model.User, course model.Course, stream model.Stream) bool {
+	return StreamVisibleAt(user, course, stream, time.Now())
+}
+
+// StreamVisibleAt reports whether one stream may be shown at now. Expired lectures
+// are hidden from students but remain available to course administrators.
+func StreamVisibleAt(user *model.User, course model.Course, stream model.Stream, now time.Time) bool {
+	admin := user.IsAdminOfCourse(course)
+	if course.IsLectureExpired(stream, now) && !admin {
+		return false
+	}
 	if stream.Private {
-		return user.IsAdminOfCourse(course)
+		return admin
 	}
 
 	return true
@@ -54,8 +66,9 @@ func StreamVisible(user *model.User, course model.Course, stream model.Stream) b
 // VisibleStreams returns the streams of a course visible to user, in order.
 func VisibleStreams(user *model.User, course model.Course) []model.Stream {
 	streams := make([]model.Stream, 0, len(course.Streams))
+	now := time.Now()
 	for _, stream := range course.Streams {
-		if StreamVisible(user, course, stream) {
+		if StreamVisibleAt(user, course, stream, now) {
 			streams = append(streams, stream)
 		}
 	}

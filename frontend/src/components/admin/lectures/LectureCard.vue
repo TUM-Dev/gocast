@@ -128,7 +128,7 @@ const watchLink = computed(() =>
             class="rounded-full px-2 py-0.5 text-xs font-semibold"
             :class="TONE[badge.tone]"
           >
-            <i v-if="badge.key === 'private'" class="fas fa-eye-slash mr-1"></i>{{ badge.label }}
+            <i v-if="badge.key === 'private' || badge.key === 'expired'" class="fas fa-eye-slash mr-1"></i>{{ badge.label }}
           </li>
         </ul>
         <div class="flex gap-2">

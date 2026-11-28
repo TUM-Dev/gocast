@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -136,7 +137,10 @@ func (a *API) GetStreamWatch(ctx context.Context, req *protobuf.GetStreamWatchRe
 	}
 
 	if isAdmin {
-		watch.Admin = &protobuf.WatchAdmin{CanEndStream: stream.LiveNow && stream.LectureHallID != 0}
+		watch.Admin = &protobuf.WatchAdmin{
+			CanEndStream: stream.LiveNow && stream.LectureHallID != 0,
+			Expired:      course.IsLectureExpired(stream, time.Now()),
+		}
 		if stream.LectureHallID != 0 {
 			id := uint32(stream.LectureHallID)
 			watch.Admin.LectureHallId = &id

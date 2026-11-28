@@ -12,6 +12,7 @@ import (
 
 	"github.com/meilisearch/meilisearch-go"
 
+	"github.com/TUM-Dev/gocast/apiv2/visibility"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 )
@@ -95,7 +96,7 @@ func checkAndFillResponse(c context.Context, user *model.User, limit int64, daoW
 				}
 
 				meiliStream.CourseSlug = course.Slug
-				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
+				if userEligibleToSeeResultsOfHiddenCourse(course) && visibility.StreamVisible(user, course, stream) {
 					hit, err := dtoToHit(meiliStream)
 					if err != nil {
 						logger.Warn("meilisearch response post processing streams hit conversion error", "err", err)
@@ -176,7 +177,7 @@ func checkAndFillResponse(c context.Context, user *model.User, limit int64, daoW
 				meiliSubtitle.CourseName = course.Name
 				meiliSubtitle.CourseYear = course.Year
 				meiliSubtitle.CourseTeachingTerm = course.TeachingTerm
-				if userEligibleToSeeResultsOfHiddenCourse(course) && (!stream.Private || user.IsAdminOfCourse(course)) {
+				if userEligibleToSeeResultsOfHiddenCourse(course) && visibility.StreamVisible(user, course, stream) {
 					hit, err := dtoToHit(meiliSubtitle)
 					if err != nil {
 						logger.Warn("meilisearch response post processing subtitles hit conversion error", "err", err)

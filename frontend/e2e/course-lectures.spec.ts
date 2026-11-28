@@ -185,7 +185,7 @@ test.describe("changing a lecture's hall", () => {
     const target = card(page, moved[0]);
     await target.getByRole("button", { name: "Edit" }).click();
     await expect(target.getByText("Streamed from")).toBeVisible();
-    await expect(target.locator("select")).toHaveCount(1); // the copy target only
+    await expect(target.getByLabel("Streamed from")).toHaveCount(0);
     await expect(page.getByLabel("Move selected to")).toHaveCount(0);
   });
 

@@ -37,6 +37,9 @@ const linkClass = "text-3 hover:text-1 inline-flex items-center gap-1 rounded px
 
 <template>
   <section aria-label="Lecturer controls" class="flex flex-col gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700" data-testid="watch-admin">
+    <p v-if="admin.expired" class="text-sm font-semibold text-amber-700 dark:text-amber-300" role="status" data-testid="lecture-expired">
+      This lecture has expired.
+    </p>
     <div class="flex flex-wrap items-center gap-1">
       <RouterLink :to="links.edit" :class="linkClass"><i class="fas fa-pen" aria-hidden="true"></i> Edit lecture</RouterLink>
       <RouterLink :to="links.stats" :class="linkClass"><i class="fas fa-chart-bar" aria-hidden="true"></i> Statistics</RouterLink>

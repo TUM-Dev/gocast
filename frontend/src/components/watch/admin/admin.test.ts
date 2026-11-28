@@ -105,6 +105,11 @@ describe("WatchAdminStrip", () => {
     expect(w.text()).not.toContain("End stream");
   });
 
+  it("shows the expired status to course administrators", () => {
+    const w = mount(WatchAdminStrip, { props: props({ expired: true }), global: { stubs } });
+    expect(w.get('[data-testid="lecture-expired"]').text()).toBe("This lecture has expired.");
+  });
+
   it("asks before ending, and tells the page", async () => {
     const w = mount(WatchAdminStrip, { props: props(), global: { stubs } });
     await w.findAll("button").find((b) => b.text().includes("End stream"))!.trigger("click");

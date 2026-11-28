@@ -2,6 +2,7 @@ package visibility
 
 import (
 	"testing"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -132,6 +133,53 @@ func TestVisibleStreamsKeepsOrderAndDropsPrivate(t *testing.T) {
 	all := VisibleStreams(&model.User{Model: gorm.Model{ID: 99}}, c)
 	if len(all) != 3 {
 		t.Errorf("owner got %v, want all three", ids(all))
+	}
+}
+
+func TestExpiredLectureIsHiddenFromStudentsButVisibleToAdmins(t *testing.T) {
+	c := course(public)
+	c.LectureExpirationDays = 7
+	stream := model.Stream{End: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)}
+	now := stream.End.Add(7 * 24 * time.Hour)
+
+	if StreamVisibleAt(callers()["enrolled"], c, stream, now) {
+		t.Fatal("expired lecture was visible to an enrolled student")
+	}
+	if !StreamVisibleAt(callers()["course admin"], c, stream, now) {
+		t.Fatal("expired lecture was hidden from its course administrator")
+	}
+	if StreamVisibleAt(callers()["stranger"], c, stream, now) {
+		t.Fatal("expired lecture was visible to a stranger")
+	}
+}
+
+func TestLectureExpirationOverride(t *testing.T) {
+	c := course(public)
+	c.LectureExpirationDays = 7
+	end := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+	now := end.Add(8 * 24 * time.Hour)
+
+	for name, tt := range map[string]struct {
+		override int32
+		valid    bool
+		expired  bool
+	}{
+		"inherits course setting": {expired: true},
+		"custom retention":        {override: 14, valid: true},
+		"never expires":           {valid: true},
+	} {
+		stream := model.Stream{End: end}
+		if tt.valid {
+			stream.ExpirationDaysOverride.Valid = true
+			stream.ExpirationDaysOverride.Int32 = tt.override
+		}
+		if got := c.IsLectureExpired(stream, now); got != tt.expired {
+			t.Errorf("%s: IsLectureExpired() = %v, want %v", name, got, tt.expired)
+		}
+	}
+
+	if c.IsLectureExpired(model.Stream{End: end, LiveNow: true}, now) {
+		t.Error("an active lecture expired while it was still live")
 	}
 }
 

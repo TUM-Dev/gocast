@@ -13,6 +13,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 
 	protobuf "github.com/TUM-Dev/gocast/apiv2/protobuf/server"
@@ -198,6 +199,28 @@ func TestGetStreamWatchPolicy(t *testing.T) {
 		_, err := env.api.GetStreamWatch(asCaller(nil), &protobuf.GetStreamWatchRequest{StreamId: 99, Slug: "gbs"})
 		wantChatCode(t, err, codes.NotFound)
 	})
+}
+
+func TestGetStreamWatchExpiredLecture(t *testing.T) {
+	env := newWatchEnv(t)
+	env.course.Visibility = "public"
+	env.course.LectureExpirationDays = 1
+	env.progress.EXPECT().LoadProgress(courseAdm.ID, []uint{7}).Return(nil, nil).AnyTimes()
+	env.subs.EXPECT().GetLanguagesByStreamID(gomock.Any(), uint(7)).Return(nil, nil).AnyTimes()
+
+	_, err := env.watch(t, student)
+	wantChatCode(t, err, codes.PermissionDenied)
+	if got := status.Convert(err).Message(); got != tools.ExpiredStreamAccess {
+		t.Errorf("error message = %q, want %q", got, tools.ExpiredStreamAccess)
+	}
+
+	watch, err := env.watch(t, courseAdm)
+	if err != nil {
+		t.Fatalf("GetStreamWatch for course administrator: %v", err)
+	}
+	if watch.Admin == nil || !watch.Admin.Expired {
+		t.Errorf("admin metadata = %+v, want expired", watch.Admin)
+	}
 }
 
 func TestGetStreamWatchViews(t *testing.T) {

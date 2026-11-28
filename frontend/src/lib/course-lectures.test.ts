@@ -62,6 +62,8 @@ describe("fetchCourseLectures", () => {
           start: "2022-04-11T08:00:00Z",
           end: "2022-04-11T10:00:00Z",
           recording: true,
+          expired: true,
+          expirationDaysOverride: 0,
           vodVersions: ["COMB", "PRES"],
           durationSeconds: 5400,
           files: [{ id: 3, type: 2, friendlyName: "slides.pdf" }],
@@ -83,6 +85,8 @@ describe("fetchCourseLectures", () => {
     expect(lecture.lectureHallId).toBe(0);
     expect(lecture.lectureHallName).toBe("");
     expect(lecture.chatEnabled).toBe(false);
+    expect(lecture.expirationDaysOverride).toBe(0);
+    expect(lecture.expired).toBe(true);
     expect(lecture.vodVersions).toEqual(["COMB", "PRES"]);
     expect(lecture.files).toEqual([{ id: 3, type: 2, friendlyName: "slides.pdf" }]);
     expect(lecture.transcodingProgresses).toEqual([
@@ -139,6 +143,12 @@ describe("updating", () => {
     respondWith({});
     await updateLecture(1, 12, { chatEnabled: false, private: false });
     expect(sentBody()).toEqual({ chatEnabled: false, private: false });
+  });
+
+  it("sends the course-inheritance sentinel for a lecture override", async () => {
+    respondWith({});
+    await updateLecture(1, 12, { expirationDaysOverride: -1 });
+    expect(sentBody()).toEqual({ expirationDaysOverride: -1 });
   });
 
   it("changes a series through its own route", async () => {
@@ -212,6 +222,8 @@ function lecture(overrides: Partial<CourseLecture> = {}): CourseLecture {
     streamKey: "k",
     chatEnabled: false,
     private: false,
+    expirationDaysOverride: null,
+    expired: false,
     liveNow: false,
     recording: false,
     past: false,

@@ -208,6 +208,37 @@ func TestUpdateCourseSettings(t *testing.T) {
 		}
 	})
 
+	t.Run("saves the lecture expiration period", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		var written model.Course
+		m.courses.EXPECT().UpdateCourseColumns(gomock.Any(), gomock.Any(), "lecture_expiration_days").
+			DoAndReturn(func(_ context.Context, c model.Course, _ ...string) error {
+				written = c
+				return nil
+			})
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+		days := int32(7)
+
+		resp, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, LectureExpirationDays: &days,
+		})
+		if err != nil {
+			t.Fatalf("UpdateCourseSettings: %v", err)
+		}
+		if written.LectureExpirationDays != days || resp.LectureExpirationDays != days {
+			t.Errorf("saved %d, answered %d; want %d", written.LectureExpirationDays, resp.LectureExpirationDays, days)
+		}
+	})
+
+	t.Run("rejects an invalid expiration period without writing", func(t *testing.T) {
+		api, _ := courseAdminAPI(t, adminCourse)
+		days := model.MaxLectureExpirationDays + 1
+		_, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, LectureExpirationDays: &days,
+		})
+		wantCode(t, err, codes.InvalidArgument)
+	})
+
 	// v1's unanchored regexp let any value containing a visibility through.
 	for _, v := range []string{"", "publicly", "everyone"} {
 		t.Run("rejects the visibility "+v, func(t *testing.T) {
@@ -230,7 +261,8 @@ func TestUpdateCourseSettings(t *testing.T) {
 func TestCopyCourse(t *testing.T) {
 	withStreams := adminCourse
 	withStreams.Streams = []model.Stream{
-		{Model: gorm.Model{ID: 10}, CourseID: 5, Name: "VL 1", Files: []model.File{{Model: gorm.Model{ID: 3}}}},
+		{Model: gorm.Model{ID: 10}, CourseID: 5, Name: "VL 1", Files: []model.File{{Model: gorm.Model{ID: 3}}},
+			ExpirationDaysOverride: sql.NullInt32{Int32: 14, Valid: true}},
 		{Model: gorm.Model{ID: 11}, CourseID: 5, Name: "VL 2"},
 	}
 
@@ -249,6 +281,9 @@ func TestCopyCourse(t *testing.T) {
 		var copied []model.Stream
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
 			copied = append(copied, *s)
+			if s.ExpirationDaysOverride.Valid {
+				t.Errorf("copied lecture expiration override = %+v, want inherited target-course default", s.ExpirationDaysOverride)
+			}
 			return nil
 		}).Times(2)
 		m.courses.EXPECT().AddAdminToCourse(uint(2), uint(77)).Return(nil)

@@ -139,7 +139,7 @@ func (a *API) CreateLectures(ctx context.Context, req *protobuf.CreateLecturesRe
 	for i := range lectures {
 		a.audit(ctx, model.AuditStreamCreate, fmt.Sprintf("Stream for '%s' Created. Time: %s",
 			course.Name, lectures[i].Start.Format("2006 02 Jan, 15:04")), forStream(lectures[i]))
-		resp.Lectures = append(resp.Lectures, courseLectureAdmin(&lectures[i], hallNames))
+		resp.Lectures = append(resp.Lectures, courseLectureAdmin(&lectures[i], hallNames, course, time.Now()))
 	}
 	return resp, nil
 }

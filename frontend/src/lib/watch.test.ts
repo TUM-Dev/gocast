@@ -141,6 +141,9 @@ describe("misc", () => {
     expect(classifyWatchError(new ApiError(404, ""), true)).toBe("not-found");
     expect(classifyWatchError(new ApiError(403, ""), true)).toBe("private");
     expect(classifyWatchError(new ApiError(403, ""), false)).toBe("login");
+    expect(classifyWatchError(new ApiError(403, "This lecture has expired and is no longer available."), true)).toBe(
+      "expired",
+    );
     expect(classifyWatchError(new ApiError(500, ""), false)).toBe("error");
   });
 });
