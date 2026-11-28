@@ -133,6 +133,7 @@ export function resolveLayout(watch: StreamWatch, requested: WatchLayout | undef
   if (watch.defaultLayout !== WatchLayout.UNSPECIFIED && layoutAvailable(watch, watch.defaultLayout)) {
     return watch.defaultLayout;
   }
+  if (layoutAvailable(watch, WatchLayout.COMBINED)) return WatchLayout.COMBINED;
   const first = watch.views[0];
   return first ? layoutOfKind(first.kind) : WatchLayout.UNSPECIFIED;
 }
