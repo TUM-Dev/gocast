@@ -137,6 +137,7 @@ type ScheduleEntry struct {
 	StreamID        uint
 	CourseID        uint
 	CourseName      string
+	Organization    string
 	Name            string
 	Description     string
 	Start           time.Time
@@ -153,7 +154,7 @@ func (d lectureHallsDao) GetSchedule(userID uint, from, to time.Time, lectureHal
 	query := DB.Model(&model.Stream{}).
 		Joins("LEFT JOIN lecture_halls ON lecture_halls.id = streams.lecture_hall_id").
 		Joins("JOIN courses ON courses.id = streams.course_id").
-		Select("streams.id AS stream_id, courses.id AS course_id, courses.name AS course_name, "+
+		Select("streams.id AS stream_id, courses.id AS course_id, courses.name AS course_name, courses.organization, "+
 			"streams.name, streams.description, streams.start, streams.end, "+
 			"IFNULL(streams.lecture_hall_id, 0) AS lecture_hall_id, "+
 			"IFNULL(lecture_halls.name, '') AS lecture_hall_name").

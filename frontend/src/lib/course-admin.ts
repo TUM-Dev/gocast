@@ -58,6 +58,7 @@ export interface CourseAdmin {
   /** "de", "en" or "". */
   language: string;
   tumOnlineIdentifier: string;
+  organization: string;
 }
 
 /** The settings updateCourseSettings changes; anything left out stays as it is. */
@@ -71,6 +72,7 @@ export type CourseSettings = Pick<
   | "moderatedChatEnabled"
   | "livePrivate"
   | "vodPrivate"
+  | "organization"
 >;
 
 function toVisibility(value: string): CourseVisibility {
@@ -95,6 +97,7 @@ function toCourseAdmin(c: CourseAdminMessage): CourseAdmin {
     vodPrivate: c.vodPrivate,
     language: c.language,
     tumOnlineIdentifier: c.tumOnlineIdentifier,
+    organization: c.organization,
   };
 }
 

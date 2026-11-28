@@ -91,6 +91,9 @@ func (a *API) UpdateCourseSettings(ctx context.Context, req *protobuf.UpdateCour
 	if req.Visibility != nil && !courseVisibilities[req.GetVisibility()] {
 		return nil, e.WithStatus(http.StatusBadRequest, errors.New("visibility must be public, loggedin, enrolled or hidden"))
 	}
+	if req.Organization != nil && utf8.RuneCountInString(strings.TrimSpace(req.GetOrganization())) > 100 {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("organization must be at most 100 characters"))
+	}
 
 	var columns, changes []string
 	set := func(column string, value any) {
@@ -128,6 +131,10 @@ func (a *API) UpdateCourseSettings(ctx context.Context, req *protobuf.UpdateCour
 	if req.VodPrivate != nil {
 		course.VodPrivate = req.GetVodPrivate()
 		set("vod_private", course.VodPrivate)
+	}
+	if req.Organization != nil {
+		course.Organization = strings.TrimSpace(req.GetOrganization())
+		set("organization", course.Organization)
 	}
 
 	if len(columns) == 0 {
@@ -736,6 +743,7 @@ func courseAdminMessage(c model.Course) *protobuf.CourseAdmin {
 		Language:             c.Language.String,
 		TumOnlineIdentifier:  c.TUMOnlineIdentifier,
 		UserId:               uint32(c.UserID),
+		Organization:         c.Organization,
 	}
 }
 

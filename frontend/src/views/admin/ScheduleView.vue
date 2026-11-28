@@ -14,6 +14,8 @@ import {
   SELF_STREAMED,
   fetchSchedule,
   fetchScheduleLectureHalls,
+  filterScheduleLectures,
+  scheduleOrganizationColor,
   updateLecture,
   type ScheduleLectureHall,
   type ScheduledLecture,
@@ -35,6 +37,8 @@ const halls = ref<ScheduleLectureHall[]>([]);
 const shown = ref<Set<number>>(new Set([SELF_STREAMED]));
 const showAll = ref(true);
 const filterOpen = ref(false);
+const shownOrganization = ref("");
+const organizations = ref<string[]>([]);
 
 const loadError = ref("");
 
@@ -74,18 +78,26 @@ function toggleAll(on: boolean): void {
 
 const isShown = (id: number) => showAll.value || shown.value.has(id);
 
-watch([showAll, shown], () => calendar?.refetchEvents());
+watch([showAll, shown, shownOrganization], () => calendar?.refetchEvents());
 
 async function events(info: EventSourceFuncArg) {
-  const lectures = await fetchSchedule(info.start, info.end, showAll.value ? "all" : [...shown.value]);
+  const lectures = await fetchSchedule(info.start, info.end, "all");
+  const foundOrganizations = new Set(lectures.map((lecture) => lecture.organization.trim() || "Unassigned"));
+  if (shownOrganization.value) foundOrganizations.add(shownOrganization.value);
+  organizations.value = [...foundOrganizations].sort((a, b) => a.localeCompare(b));
   loadError.value = "";
-  return lectures.map((lecture) => ({
-    id: String(lecture.streamId),
-    title: lecture.courseName,
-    start: lecture.start,
-    end: lecture.end,
-    extendedProps: { lecture },
-  }));
+  return filterScheduleLectures(
+    lectures,
+    showAll.value ? "all" : [...shown.value],
+    shownOrganization.value,
+  )
+    .map((lecture) => ({
+      id: String(lecture.streamId),
+      title: lecture.courseName,
+      start: lecture.start,
+      end: lecture.end,
+      extendedProps: { lecture },
+    }));
 }
 
 function open(arg: EventClickArg): void {
@@ -156,11 +168,15 @@ onMounted(async () => {
     // HTML: course and hall names are user input.
     eventDidMount: ({ el, event }) => {
       const lecture = event.extendedProps.lecture as ScheduledLecture;
-      el.title = lecture.lectureHallName
-        ? `${lecture.courseName} · ${lecture.lectureHallName}`
-        : lecture.courseName;
+      const organization = lecture.organization.trim() || "Unassigned";
+      const streamType = lecture.lectureHallId === SELF_STREAMED ? "Self-stream" : "Lecture hall";
+      el.style.backgroundColor = scheduleOrganizationColor(lecture.organization);
+      el.style.color = "#ffffff";
+      el.style.borderColor = lecture.lectureHallId === SELF_STREAMED ? "#111827" : "#ffffff";
+      el.style.borderStyle = lecture.lectureHallId === SELF_STREAMED ? "dashed" : "solid";
+      el.title = `${lecture.courseName} · ${organization} · ${streamType}`;
       const time = el.querySelector(".fc-event-time");
-      if (time && lecture.lectureHallName) time.append(` · ${lecture.lectureHallName}`);
+      if (time) time.append(` · ${lecture.lectureHallName || "Self-stream"}`);
     },
     eventClick: open,
   };
@@ -181,37 +197,50 @@ onUnmounted(() => {
     <section class="mx-auto flex max-w-6xl flex-col gap-4">
       <header class="flex flex-wrap items-center justify-between gap-2">
         <h1 class="text-1 text-2xl font-bold">Schedule</h1>
-        <div class="relative">
-          <button
-            type="button"
-            class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
-            :aria-expanded="filterOpen"
-            aria-controls="schedule-halls"
-            @click="filterOpen = !filterOpen"
-          >
-            Lecture halls
-          </button>
-          <fieldset
-            v-show="filterOpen"
-            id="schedule-halls"
-            class="text-3 absolute right-0 z-20 mt-2 max-h-96 w-64 overflow-y-auto rounded-lg border bg-white p-3 text-sm shadow dark:border-gray-700 dark:bg-gray-800"
-          >
-            <legend class="sr-only">Lecture halls to show</legend>
-            <label class="mb-2 block font-semibold">
-              <input type="checkbox" :checked="showAll" @change="toggleAll(($event.target as HTMLInputElement).checked)" />
-              All
-            </label>
-            <label v-for="hall in hallOptions" :key="hall.id" class="block">
-              <input
-                type="checkbox"
-                :checked="isShown(hall.id)"
-                @change="toggleHall(hall.id, ($event.target as HTMLInputElement).checked)"
-              />
-              {{ hall.name }}
-            </label>
-          </fieldset>
+        <div class="flex flex-wrap items-center gap-3">
+          <label for="schedule-organization" class="text-3 text-sm">Organization</label>
+          <select id="schedule-organization" v-model="shownOrganization" class="tum-live-input text-sm">
+            <option value="">All organizations</option>
+            <option v-for="organization in organizations" :key="organization" :value="organization">
+              {{ organization }}
+            </option>
+          </select>
+          <div class="relative">
+            <button
+              type="button"
+              class="tum-live-button-secondary tum-live-button px-3 py-1 text-sm"
+              :aria-expanded="filterOpen"
+              aria-controls="schedule-halls"
+              @click="filterOpen = !filterOpen"
+            >
+              Lecture halls
+            </button>
+            <fieldset
+              v-show="filterOpen"
+              id="schedule-halls"
+              class="text-3 absolute right-0 z-20 mt-2 max-h-96 w-64 overflow-y-auto rounded-lg border bg-white p-3 text-sm shadow dark:border-gray-700 dark:bg-gray-800"
+            >
+              <legend class="sr-only">Lecture halls to show</legend>
+              <label class="mb-2 block font-semibold">
+                <input type="checkbox" :checked="showAll" @change="toggleAll(($event.target as HTMLInputElement).checked)" />
+                All
+              </label>
+              <label v-for="hall in hallOptions" :key="hall.id" class="block">
+                <input
+                  type="checkbox"
+                  :checked="isShown(hall.id)"
+                  @change="toggleHall(hall.id, ($event.target as HTMLInputElement).checked)"
+                />
+                {{ hall.name }}
+              </label>
+            </fieldset>
+          </div>
         </div>
       </header>
+
+      <p class="text-4 text-xs">
+        Event color identifies the organization; solid border means lecture hall, dashed border means self-stream.
+      </p>
 
       <p v-if="loadError" class="rounded-lg bg-danger/25 px-2 py-2 text-sm" role="alert">
         {{ loadError }}

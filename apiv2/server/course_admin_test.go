@@ -165,6 +165,29 @@ func TestGetCourseAdmin(t *testing.T) {
 }
 
 func TestUpdateCourseSettings(t *testing.T) {
+	t.Run("sets and trims the organization", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		m.courses.EXPECT().UpdateCourseColumns(gomock.Any(), gomock.Any(), "organization").
+			DoAndReturn(func(_ context.Context, c model.Course, _ ...string) error {
+				if c.Organization != "CIT" {
+					t.Errorf("organization = %q", c.Organization)
+				}
+				return nil
+			})
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+
+		organization := "  CIT  "
+		resp, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, Organization: &organization,
+		})
+		if err != nil {
+			t.Fatalf("UpdateCourseSettings: %v", err)
+		}
+		if resp.Organization != "CIT" {
+			t.Errorf("organization = %q", resp.Organization)
+		}
+	})
+
 	t.Run("writes only the fields sent, false included, and audits them", func(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)
 		var written model.Course
@@ -216,6 +239,15 @@ func TestUpdateCourseSettings(t *testing.T) {
 			wantCode(t, err, codes.InvalidArgument)
 		})
 	}
+
+	t.Run("rejects an organization longer than 100 characters", func(t *testing.T) {
+		api, _ := courseAdminAPI(t, adminCourse)
+		organization := strings.Repeat("x", 101)
+		_, err := api.UpdateCourseSettings(asCaller(courseLecturer), &protobuf.UpdateCourseSettingsRequest{
+			CourseId: 5, Organization: &organization,
+		})
+		wantCode(t, err, codes.InvalidArgument)
+	})
 
 	t.Run("reports a failed write", func(t *testing.T) {
 		api, m := courseAdminAPI(t, adminCourse)

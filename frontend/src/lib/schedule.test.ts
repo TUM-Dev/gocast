@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { clearToken } from "./api";
-import { SELF_STREAMED, fetchSchedule, updateLecture } from "./schedule";
+import {
+  SELF_STREAMED,
+  fetchSchedule,
+  filterScheduleLectures,
+  scheduleOrganizationColor,
+  updateLecture,
+  type ScheduledLecture,
+} from "./schedule";
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -63,6 +70,7 @@ describe("fetchSchedule", () => {
           streamId: 12,
           courseId: 1,
           courseName: "Einführung Brauereiwesen",
+          organization: "CIT",
           name: "VL 5",
           start: "2026-10-05T21:45:00Z",
           end: "2026-10-05T21:59:00Z",
@@ -73,10 +81,42 @@ describe("fetchSchedule", () => {
     const [lecture] = await fetchSchedule(from, to, "all");
 
     expect(lecture.streamId).toBe(12);
+    expect(lecture.organization).toBe("CIT");
     expect(lecture.start.toISOString()).toBe("2026-10-05T21:45:00.000Z");
     expect(lecture.lectureHallId).toBe(0);
     expect(lecture.lectureHallName).toBe("");
     expect(lecture.description).toBe("");
+  });
+});
+
+describe("scheduleOrganizationColor", () => {
+  it("assigns stable colors and handles unassigned organizations", () => {
+    expect(scheduleOrganizationColor("CIT")).toBe(scheduleOrganizationColor("CIT"));
+    expect(scheduleOrganizationColor("CIT")).not.toBe(scheduleOrganizationColor("IN"));
+    expect(scheduleOrganizationColor("")).toBe("#475569");
+  });
+});
+
+describe("filterScheduleLectures", () => {
+  const lecture = (organization: string, lectureHallId: number): ScheduledLecture => ({
+    streamId: lectureHallId,
+    courseId: 1,
+    courseName: "Course",
+    organization,
+    name: "Lecture",
+    description: "",
+    start: from,
+    end: to,
+    lectureHallId,
+    lectureHallName: "",
+  });
+
+  it("filters by organization and hall while retaining unassigned courses", () => {
+    const lectures = [lecture("CIT", SELF_STREAMED), lecture("IN", 3), lecture("", 3)];
+
+    expect(filterScheduleLectures(lectures, [SELF_STREAMED, 3], "CIT")).toEqual([lectures[0]]);
+    expect(filterScheduleLectures(lectures, [3], "Unassigned")).toEqual([lectures[2]]);
+    expect(filterScheduleLectures(lectures, "all", "")).toEqual(lectures);
   });
 });
 
