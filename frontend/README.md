@@ -259,8 +259,9 @@ links to them keep working unchanged; everything else carries the semester as
 `?year=&term=`, absent meaning whichever semester is current.
 
 There is deliberately no `/course/:slug` for the current semester, although the API
-would support it: gin panics when two parameters with different names share a
-position, so it could never be registered beside `/course/:year/:term/:slug`.
+would support it. It used to be impossible, because gin panicked when two parameters
+with different names shared a position; the router is `net/http`'s now and would
+accept it, so it is a product decision, not a limit.
 
 ## Adding a page
 

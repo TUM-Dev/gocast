@@ -206,13 +206,18 @@ func importArgs(input, vodDir string, transcode bool) []string {
 	} else {
 		args = append(args, "-c", "copy")
 	}
-	return append(args,
+	return append(args, hlsOutputArgs(vodDir)...)
+}
+
+// hlsOutputArgs are the arguments that write the encoded streams as a VOD playlist into vodDir.
+func hlsOutputArgs(vodDir string) []string {
+	return []string{
 		"-f", "hls",
 		"-hls_time", "20",
 		"-hls_playlist_type", "vod",
 		"-hls_segment_filename", path.Join(vodDir, "%05d.ts"),
 		path.Join(vodDir, "playlist.m3u8"),
-	)
+	}
 }
 
 // replaceVOD puts the finished import at vodDir, replacing a previous VOD. The old one is

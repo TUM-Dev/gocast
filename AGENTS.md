@@ -14,8 +14,8 @@ Four Go modules, joined by `go.work`:
 | `runner/` | Captures and transcodes streams (replaced the old `worker/`, which is gone) |
 | `vod-service/` | Video-on-demand serving |
 
-Inside the main module: `model/` (GORM models), `dao/` (data access), `api/` (the REST
-API, v1), `apiv2/` (Protobuf/Connect API), `web/` (Go side of the SPA: routing, session pages, branding files), `tools/`
+Inside the main module: `model/` (GORM models), `dao/` (data access), `apiv2/` (Protobuf/Connect API,
+plus the few plain-HTTP routes that scripts and webhooks call), `web/` (Go side of the SPA: routing, session pages, branding files), `tools/`
 (shared helpers), `mock_dao/` + `mock_tools/` (generated). `ingest/`, `rtmp-proxy/` and
 `voice-service/` are supporting services; `docs_v2/` is the Docusaurus site.
 
@@ -30,6 +30,13 @@ session/SAML handlers and the default branding files.
 Adding a page means adding its path **both** there and in `frontend/src/router/index.ts`
 — the shell renders nothing if the client router doesn't know the route.
 `web/spa_test.go` and `spa-routes.test.ts` cover the contract.
+
+Routing is `net/http`'s `ServeMux`, wrapped by `tools.Router` for middleware groups
+(`router.Group(tools.RequirePermission(...))`). Patterns are `"GET /w/{slug}/{id}"`,
+read with `r.PathValue`; `spaRoutes` keeps the client router's `:param` syntax and
+`muxPattern` converts it. `ServeMux` panics at startup when two patterns overlap and
+neither is more specific, so a new route is checked by `go test ./web ./cmd/tumlive`,
+which register the whole table. There is no compression in the server: Traefik does it.
 
 **The SPA build is mandatory.** The server panics at startup when `web/spa/index.html`
 is missing, and the Docker build runs the Vite build. Run `make spa` (or
@@ -68,12 +75,15 @@ go run cmd/modelGen/modelGen.go <ModelName>   # scaffolds a model + dao
 The protos live in `apiv2/server/`, and both sides generate from them.
 Change one and run both generators, or the Go and TypeScript halves drift.
 
-New API work belongs in `apiv2/` (Protobuf/Connect), not `api/`.
+New API work belongs in `apiv2/` (Protobuf/Connect). The v1 `api/` package is gone; its
+three external URLs (`/api/selfstream/onPublish`, `/api/token/proxy/:token`,
+`/api/schedule.ics`) are served from `apiv2/server/legacy_routes.go`, each also at a
+`/api/v2/...` address.
 
-## v1 is being deleted — spend the effort on v2
+## v1 is deleted — spend the effort on v2
 
-The migration's endpoint is v2 replacing v1, so refactoring v1 is work that gets
-thrown away. Keep edits to the legacy v1 API (`api/`)
+The migration's endpoint was v2 replacing v1, and the REST API (`api/`) is gone. What
+remains of v1 is the `web/` gohtml handlers: keep edits to them
 to the minimum the task needs: fix bugs, and do what a v2 change forces — no
 opportunistic cleanup. The higher bar applies on the v2 side instead: interceptors,
 declarative authorization, tests.
@@ -101,6 +111,9 @@ contents. Treat its users, courses and lectures as an API.
 - Comments should explain *why*, especially where the code looks odd. This codebase
   does that well; match it. Several comments exist specifically to stop someone
   "fixing" a deliberate choice — leave those in place.
+- Short sentences. RFC 2119 keywords for obligations. Commit = imperative subject;
+  body only for a fact the diff cannot show.
+  Comments only where code needs clarification, never narration. 
 - **Releases are a tag push.** Everything downstream — images, Matrix notice, and the
   GitHub release notes rendered from the commit log — hangs off it. Use the
   **`release` skill** (`.claude/skills/release/`); don't hand-write a release body,

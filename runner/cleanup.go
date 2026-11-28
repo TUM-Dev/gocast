@@ -21,6 +21,8 @@ import (
 //     if they are older than two hours
 //   - prefixed .keep- in config.Config.SegmentPath and moves them to config.Config.ErrorPath
 //     if they are older than two hours
+//   - empty directories in config.Config.SegmentPath and deletes them once they have been
+//     empty for emptyDirGrace
 func (r *Runner) livestreamCleanup(ctx context.Context, log *slog.Logger) {
 	log.Info("Starting livestream cleanup")
 	for {
@@ -99,6 +101,13 @@ func (r *Runner) uploadCleanup(ctx context.Context, log *slog.Logger) {
 	}
 }
 
+// emptyDirGrace is how long an empty directory is left alone. A stream's directory is
+// created empty and stays so until ffmpeg has connected and written the first segment,
+// which takes seconds. Removing it then fails the stream, and a runner that just started
+// gets its first jobs right as this cleanup runs. A stream whose source stays unreachable
+// for longer loses the directory, but every retry of the action creates it again.
+const emptyDirGrace = 10 * time.Minute
+
 func determineCleanableDirectories(path string) (remove map[string]time.Time, backup map[string]time.Time, err error) {
 	remove = make(map[string]time.Time)
 	backup = make(map[string]time.Time)
@@ -126,7 +135,11 @@ func determineCleanableDirectories(path string) (remove map[string]time.Time, ba
 				return err
 			}
 			if len(dir) == 0 {
-				remove[path] = time.Now()
+				info, err := d.Info()
+				if err != nil {
+					return err
+				}
+				remove[path] = info.ModTime().Add(emptyDirGrace)
 			}
 		}
 		return nil

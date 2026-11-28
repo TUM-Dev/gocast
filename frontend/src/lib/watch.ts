@@ -45,7 +45,7 @@ export async function fetchStreamWatch(slug: string, streamId: number): Promise<
 }
 
 /** Why the page cannot show the stream. */
-export type WatchFailure = "private" | "login" | "not-found" | "error";
+export type WatchFailure = "private" | "expired" | "login" | "not-found" | "error";
 
 /**
  * Maps a failed getStreamWatch to what the page says. 400 is a slug that belongs to
@@ -56,6 +56,7 @@ export type WatchFailure = "private" | "login" | "not-found" | "error";
  */
 export function classifyWatchError(err: unknown, signedIn: boolean): WatchFailure {
   if (!(err instanceof ApiError)) return "error";
+  if (err.status === 403 && err.message === "This lecture has expired and is no longer available.") return "expired";
   switch (err.status) {
     case 400:
     case 404:

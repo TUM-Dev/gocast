@@ -97,6 +97,10 @@ func TestCourseAdminRefusesCourseZero(t *testing.T) {
 			_, err := api.DeleteCourse(ctx, &protobuf.DeleteCourseRequest{})
 			return err
 		},
+		"exportCourseVideos": func() error {
+			_, err := api.ExportCourseVideos(ctx, &protobuf.ExportCourseVideosRequest{})
+			return err
+		},
 		"listCourseAdmins": func() error {
 			_, err := api.ListCourseAdmins(ctx, &protobuf.ListCourseAdminsRequest{})
 			return err
@@ -123,6 +127,14 @@ func TestCourseAdminRefusesCourseZero(t *testing.T) {
 		},
 		"listCourseParticipants": func() error {
 			_, err := api.ListCourseParticipants(ctx, &protobuf.ListCourseParticipantsRequest{})
+			return err
+		},
+		"lookupUsersForCourse": func() error {
+			_, err := api.LookupUsersForCourse(ctx, &protobuf.LookupUsersForCourseRequest{Q: "ge42abc"})
+			return err
+		},
+		"enrolCourseParticipant": func() error {
+			_, err := api.EnrolCourseParticipant(ctx, &protobuf.EnrolCourseParticipantRequest{UserId: 4})
 			return err
 		},
 		"inviteCourseParticipants": func() error {
@@ -249,7 +261,8 @@ func TestUpdateCourseSettings(t *testing.T) {
 func TestCopyCourse(t *testing.T) {
 	withStreams := adminCourse
 	withStreams.Streams = []model.Stream{
-		{Model: gorm.Model{ID: 10}, CourseID: 5, Name: "VL 1", Files: []model.File{{Model: gorm.Model{ID: 3}}}},
+		{Model: gorm.Model{ID: 10}, CourseID: 5, Name: "VL 1", Files: []model.File{{Model: gorm.Model{ID: 3}}},
+			ExpirationDaysOverride: sql.NullInt32{Int32: 14, Valid: true}},
 		{Model: gorm.Model{ID: 11}, CourseID: 5, Name: "VL 2"},
 	}
 
@@ -268,6 +281,9 @@ func TestCopyCourse(t *testing.T) {
 		var copied []model.Stream
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
 			copied = append(copied, *s)
+			if s.ExpirationDaysOverride.Valid {
+				t.Errorf("copied lecture expiration override = %+v, want inherited target-course default", s.ExpirationDaysOverride)
+			}
 			return nil
 		}).Times(2)
 		m.courses.EXPECT().AddAdminToCourse(uint(2), uint(77)).Return(nil)
@@ -453,6 +469,71 @@ func TestSearchUsersForCourse(t *testing.T) {
 	})
 }
 
+func TestLookupUsersForCourse(t *testing.T) {
+	t.Run("answers the accounts matching the identifier exactly", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		// Not stripped like the admin search: an email's @ and . are part of the match.
+		m.users.EXPECT().FindUsersByIdentifier(gomock.Any(), "ge42abc@tum.de").Return([]model.User{
+			{Model: gorm.Model{ID: 4}, Name: "Stephanie", LrzID: "ge42abc", Role: model.StudentType},
+		}, nil)
+
+		resp, err := api.LookupUsersForCourse(asCaller(courseLecturer), &protobuf.LookupUsersForCourseRequest{CourseId: 5, Q: " ge42abc@tum.de "})
+		if err != nil {
+			t.Fatalf("LookupUsersForCourse: %v", err)
+		}
+		if len(resp.Users) != 1 || resp.Users[0].Id != 4 || resp.Users[0].Role != uint32(model.StudentType) {
+			t.Errorf("users = %v", resp.Users)
+		}
+	})
+
+	t.Run("answers nobody for an unknown identifier", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		m.users.EXPECT().FindUsersByIdentifier(gomock.Any(), "nobody").Return(nil, nil)
+
+		resp, err := api.LookupUsersForCourse(asCaller(courseLecturer), &protobuf.LookupUsersForCourseRequest{CourseId: 5, Q: "nobody"})
+		if err != nil {
+			t.Fatalf("LookupUsersForCourse: %v", err)
+		}
+		if len(resp.Users) != 0 {
+			t.Errorf("users = %v", resp.Users)
+		}
+	})
+
+	t.Run("rejects a query shorter than three characters", func(t *testing.T) {
+		api, _ := courseAdminAPI(t, adminCourse)
+		_, err := api.LookupUsersForCourse(asCaller(courseLecturer), &protobuf.LookupUsersForCourseRequest{CourseId: 5, Q: " ab "})
+		wantCode(t, err, codes.InvalidArgument)
+	})
+}
+
+func TestEnrolCourseParticipant(t *testing.T) {
+	t.Run("enrols an existing account without mailing it", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		m.users.EXPECT().GetUserByID(gomock.Any(), uint(4)).
+			Return(model.User{Model: gorm.Model{ID: 4}, Name: "Stephanie", Role: model.StudentType}, nil)
+		m.courses.EXPECT().AddUserToCourse(gomock.Any(), uint(4), uint(5)).Return(nil)
+		m.audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error {
+			if a.Type != model.AuditCourseEdit || !strings.Contains(a.Message, "enrolled user 4") {
+				t.Errorf("audit = %+v", a)
+			}
+			return nil
+		})
+
+		if _, err := api.EnrolCourseParticipant(asCaller(courseLecturer), &protobuf.EnrolCourseParticipantRequest{CourseId: 5, UserId: 4}); err != nil {
+			t.Fatalf("EnrolCourseParticipant: %v", err)
+		}
+	})
+
+	t.Run("answers 404 for a user who does not exist", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		// What GetUserByID's Find answers for a missing row.
+		m.users.EXPECT().GetUserByID(gomock.Any(), uint(99)).Return(model.User{}, nil)
+
+		_, err := api.EnrolCourseParticipant(asCaller(courseLecturer), &protobuf.EnrolCourseParticipantRequest{CourseId: 5, UserId: 99})
+		wantCode(t, err, codes.NotFound)
+	})
+}
+
 func TestCourseLectureHallSettings(t *testing.T) {
 	inHall := adminCourse
 	inHall.Streams = []model.Stream{{LectureHallID: 1}, {LectureHallID: 1}, {LectureHallID: 0}}
@@ -612,6 +693,58 @@ func TestInviteCourseParticipants(t *testing.T) {
 			if r.Error != "" {
 				t.Errorf("%s: %s", r.Email, r.Error)
 			}
+		}
+	})
+
+	t.Run("refuses an address that belongs to a TUM account", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		student := model.User{Model: gorm.Model{ID: 8}, Role: model.StudentType, LrzID: "ge42abc", Email: sql.NullString{String: "ge42abc@tum.de", Valid: true}}
+		m.users.EXPECT().GetUserByEmail(gomock.Any(), "ge42abc@tum.de").Return(student, nil)
+		// No AddUserToCourse, no mail, and nothing invited, so nothing audited.
+
+		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
+			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Stephanie", Email: "ge42abc@tum.de"}},
+		})
+		if err != nil {
+			t.Fatalf("InviteCourseParticipants: %v", err)
+		}
+		if resp.Results[0].Error == "" || resp.Results[0].AccountCreated {
+			t.Errorf("result = %v", resp.Results[0])
+		}
+	})
+
+	t.Run("refuses a TUM account whatever its role", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		demoted := model.User{Model: gorm.Model{ID: 8}, Role: model.GenericType, MatriculationNumber: "03712345", Email: sql.NullString{String: "old@tum.de", Valid: true}}
+		m.users.EXPECT().GetUserByEmail(gomock.Any(), "old@tum.de").Return(demoted, nil)
+
+		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
+			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Old", Email: "old@tum.de"}},
+		})
+		if err != nil {
+			t.Fatalf("InviteCourseParticipants: %v", err)
+		}
+		if resp.Results[0].Error == "" {
+			t.Error("the TUM account was invited")
+		}
+	})
+
+	t.Run("enrols a password-only lecturer, who has no TUM identifiers", func(t *testing.T) {
+		api, m := courseAdminAPI(t, adminCourse)
+		lecturer := model.User{Model: gorm.Model{ID: 3}, Role: model.LecturerType, Email: sql.NullString{String: "guest@example.org", Valid: true}}
+		m.users.EXPECT().GetUserByEmail(gomock.Any(), "guest@example.org").Return(lecturer, nil)
+		m.courses.EXPECT().AddUserToCourse(gomock.Any(), uint(3), uint(5)).Return(nil)
+		m.emails.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+
+		resp, err := api.InviteCourseParticipants(asCaller(courseLecturer), &protobuf.InviteCourseParticipantsRequest{
+			CourseId: 5, Invitees: []*protobuf.CourseInvitee{{Name: "Guest", Email: "guest@example.org"}},
+		})
+		if err != nil {
+			t.Fatalf("InviteCourseParticipants: %v", err)
+		}
+		if resp.Results[0].Error != "" {
+			t.Errorf("error = %s", resp.Results[0].Error)
 		}
 	})
 

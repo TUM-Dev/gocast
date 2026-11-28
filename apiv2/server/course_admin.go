@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
@@ -197,6 +198,7 @@ func (a *API) CopyCourse(ctx context.Context, req *protobuf.CopyCourseRequest) (
 	for _, stream := range streams {
 		stream.Model = gorm.Model{}
 		stream.CourseID = copied.ID
+		stream.ExpirationDaysOverride = sql.NullInt32{}
 		// Loaded with the course, these still carry the original's primary keys, so
 		// creating them would only collide; v1's copies ended up without them too.
 		stream.Files = nil
@@ -578,11 +580,18 @@ func (a *API) InviteCourseParticipants(ctx context.Context, req *protobuf.Invite
 }
 
 // inviteParticipant is v1's addSingleUserToCourse, reporting whether it created the
-// account.
+// account. An address that belongs to a non-external account is refused.
 func (a *API) inviteParticipant(ctx context.Context, course model.Course, name, email string) (bool, error) {
 	existing, err := a.dao.UsersDao.GetUserByEmail(ctx, email)
 	switch {
 	case err == nil:
+		// Invitations are for people without a TUM account; those are enrolled by
+		// looking them up, which does not mail an address someone typed by hand. The
+		// identifiers say who has one: a role also covers accounts an administrator
+		// created with a password, which have neither.
+		if existing.LrzID != "" || existing.MatriculationNumber != "" {
+			return false, errors.New("this address belongs to a TUM account, look the person up instead")
+		}
 		if err := a.dao.CoursesDao.AddUserToCourse(ctx, existing.ID, course.ID); err != nil {
 			return false, errors.New("could not enrol the existing account")
 		}
@@ -622,6 +631,60 @@ func (a *API) inviteParticipant(ctx context.Context, course model.Course, name, 
 		return true, errors.New("account created, but the invitation could not be sent")
 	}
 	return true, nil
+}
+
+// LookupUsersForCourse finds the account to enrol by hand: people with a TUM login,
+// whom an invitation must not create a second account for. It matches exactly, so
+// a lecturer needs to know who they are looking for. SearchUsersForCourse's
+// substring match would let any lecturer list names and addresses.
+func (a *API) LookupUsersForCourse(ctx context.Context, req *protobuf.LookupUsersForCourseRequest) (*protobuf.LookupUsersForCourseResponse, error) {
+	if err := refuseCourseZero(req.GetCourseId()); err != nil {
+		return nil, err
+	}
+
+	query := strings.TrimSpace(req.GetQ())
+	if utf8.RuneCountInString(query) < searchQueryMinLength {
+		return nil, e.WithStatus(http.StatusBadRequest, errors.New("query too short (minimum length is 3)"))
+	}
+
+	users, err := a.dao.UsersDao.FindUsersByIdentifier(ctx, query)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, e.WithStatus(http.StatusInternalServerError, err)
+	}
+
+	out := make([]*protobuf.CourseAdminUser, 0, len(users))
+	for _, user := range users {
+		out = append(out, courseAdminUserMessage(user))
+	}
+	return &protobuf.LookupUsersForCourseResponse{Users: out}, nil
+}
+
+// EnrolCourseParticipant enrols an existing account. Unlike an invitation it sends
+// no mail: the person has a TUM login and finds the course in their list.
+func (a *API) EnrolCourseParticipant(ctx context.Context, req *protobuf.EnrolCourseParticipantRequest) (*emptypb.Empty, error) {
+	course, err := a.administeredCourse(ctx, req.GetCourseId())
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := a.dao.UsersDao.GetUserByID(ctx, uint(req.GetUserId()))
+	if err != nil {
+		return nil, e.FromGorm(err, "can't find user")
+	}
+	// GetUserByID's Find reports a missing row as a zero-value user.
+	if user.ID == 0 {
+		return nil, e.WithStatus(http.StatusNotFound, errors.New("no such user"))
+	}
+
+	if err := a.dao.CoursesDao.AddUserToCourse(ctx, user.ID, course.ID); err != nil {
+		return nil, e.WithStatus(http.StatusInternalServerError, errors.New("could not enrol the user"))
+	}
+	dao.InvalidateUserCache(user.ID)
+
+	a.audit(ctx, model.AuditCourseEdit, fmt.Sprintf("%s:'%s' enrolled user %d", course.Name, course.Slug, user.ID), forCourse(course.ID))
+	// Answers nothing: user IDs are sequential, and echoing the account would let a
+	// lecturer read every one by walking them.
+	return &emptypb.Empty{}, nil
 }
 
 // ListAdministeredCourses replaces the course list web.AdminPage rendered into the

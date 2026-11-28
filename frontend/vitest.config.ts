@@ -6,8 +6,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [vue()],
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "virtual:pwa-register": fileURLToPath(new URL("./src/test/pwa-register-stub.ts", import.meta.url)),
+    },
   },
+  define: { __PWA_DEV__: "false" },
   test: {
     environment: "happy-dom",
     setupFiles: ["src/test/setup.ts"],

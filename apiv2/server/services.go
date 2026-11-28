@@ -45,6 +45,9 @@ var services = []service{
 			"redeemIntegrationAuthorization": integrationOnly,
 			"getIntegrationGrant":            integrationOnly,
 			"revokeIntegrationGrant":         integrationOnly,
+			"getIntegrationRecording":        integrationOnly,
+			"createIntegrationUpload":        integrationOnly,
+			"deleteIntegrationRecording":     integrationOnly,
 		},
 	},
 	{
@@ -138,6 +141,7 @@ var services = []service{
 			"copyCourse":                      requiresCourseAdmin(),
 			"deleteCourse":                    requiresCourseAdmin(),
 			"redoCoursePostProcessing":        requiresCourseAdmin(),
+			"exportCourseVideos":              requiresCourseAdmin(),
 			"listCourseAdmins":                requiresCourseAdmin(),
 			"addCourseAdmin":                  requiresCourseAdmin(),
 			"removeCourseAdmin":               requiresCourseAdmin(),
@@ -145,6 +149,8 @@ var services = []service{
 			"updateCourseLectureHallSettings": requiresCourseAdmin(),
 			"listCourseParticipants":          requiresCourseAdmin(),
 			"inviteCourseParticipants":        requiresCourseAdmin(),
+			"lookupUsersForCourse":            requiresCourseAdmin(),
+			"enrolCourseParticipant":          requiresCourseAdmin(),
 			// Course-scoped, unlike searchUsers: a course's lecturers lack
 			// users.manage, and this answers only names, logins and roles.
 			"searchUsersForCourse": requiresCourseAdmin(),
@@ -161,6 +167,12 @@ var services = []service{
 			"deleteLectureThumbnail":        requiresCourseAdmin(),
 			"requestLectureSubtitles":       requiresCourseAdmin(),
 			"getLectureTranscodingProgress": requiresCourseAdmin(),
+			"requestLectureWaveform":        requiresCourseAdmin(),
+			"getLectureWaveform":            requiresCourseAdmin(),
+			"cutLecture":                    requiresCourseAdmin(),
+			"getLectureCut":                 requiresCourseAdmin(),
+			"retryLectureCut":               requiresCourseAdmin(),
+			"abandonLectureCut":             requiresCourseAdmin(),
 		},
 	},
 	{
@@ -270,13 +282,14 @@ var services = []service{
 			"deleteMaintenanceTranscodingFailure": requires(model.PermAdministerServer),
 			"listMaintenanceEmailFailures":        requires(model.PermAdministerServer),
 			"deleteMaintenanceEmailFailure":       requires(model.PermAdministerServer),
+			"reapDeletedMedia":                    requires(model.PermAdministerServer),
 
 			// Course import reaches TUMonline directly and creates courses outright;
 			// server-wide, same as runners and info pages.
 			"searchCourseImportSchedule": requires(model.PermAdministerServer),
 			"importCourseImportCourses":  requires(model.PermAdministerServer),
-			// Tokens are the only way to reach the API as another account, so they
-			// stay behind the same permission as the accounts they authenticate as.
+			// A token makes rtmp-proxy start streams as the account that issued it, so
+			// issuing one stays behind the same permission as the accounts themselves.
 			"listTokens":  requires(model.PermManageUsers),
 			"createToken": requires(model.PermManageUsers),
 			"deleteToken": requires(model.PermManageUsers),

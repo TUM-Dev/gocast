@@ -7,6 +7,7 @@
  */
 
 import { create } from "@bufbuild/protobuf";
+import { EmptySchema } from "@bufbuild/protobuf/wkt";
 
 import {
   AddCourseAdminRequestSchema,
@@ -15,6 +16,8 @@ import {
   CourseAdminSchema,
   CourseAdminUserSchema,
   CourseSourceMode,
+  EnrolCourseParticipantRequestSchema,
+  ExportCourseVideosResponseSchema,
   InviteCourseParticipantsRequestSchema,
   InviteCourseParticipantsResponseSchema,
   ListAdministeredCoursesResponseSchema,
@@ -22,6 +25,7 @@ import {
   ListCourseIntegrationGrantsResponseSchema,
   ListCourseLectureHallSettingsResponseSchema,
   ListCourseParticipantsResponseSchema,
+  LookupUsersForCourseResponseSchema,
   SearchUsersForCourseResponseSchema,
   UpdateCourseLectureHallSettingsRequestSchema,
   UpdateCourseSettingsRequestSchema,
@@ -146,6 +150,56 @@ export async function deleteCourse(courseId: number): Promise<void> {
  */
 export async function redoCoursePostProcessing(courseId: number): Promise<void> {
   await apiPost(`/courses/${courseId}/actions/redo-post-processing`, {});
+}
+
+/** Which version of the recordings to export; "ALL" is every version a lecture has. */
+export type VideoExportKind = "ALL" | "COMBINED" | "PRESENTATION" | "CAMERA";
+
+export interface CourseVideoExport {
+  streamId: number;
+  fileName: string;
+  url: string;
+}
+
+/**
+ * Signed download links for every recorded lecture of the course, in every version or in
+ * one. A lecture can appear several times, once per version, under different file names. The
+ * links expire after a few hours, so fetch them again rather than keeping them around.
+ */
+export async function fetchCourseVideoExport(
+  courseId: number,
+  kind: VideoExportKind = "ALL",
+): Promise<CourseVideoExport[]> {
+  // Leaving the kind out is how the API asks for every version.
+  const query = kind === "ALL" ? "" : `?kind=WATCH_VIEW_KIND_${kind}`;
+  const res = await apiGetMessage(ExportCourseVideosResponseSchema, `/courses/${courseId}/export/videos${query}`);
+  return res.videos.map((v) => ({ streamId: v.streamId, fileName: v.fileName, url: v.url }));
+}
+
+function shellQuote(v: string): string {
+  return `'${v.replaceAll("'", `'\\''`)}'`;
+}
+
+/**
+ * A shell script that fetches the videos one after another. The edge prepares each file
+ * before it starts sending it, so downloading them in turn keeps its load bounded. A file
+ * is written to `.part` and renamed once complete: a rerun skips finished files, resumes
+ * an interrupted one (`-C -`), and one failing lecture does not stop the others. `--retry`
+ * rides out a busy edge: it answers 503 with a Retry-After when too many downloads run.
+ */
+export function videoExportScript(videos: CourseVideoExport[]): string {
+  const lines = videos.map((v) => `get ${shellQuote(v.fileName)} ${shellQuote(v.url)}`);
+  return [
+    "#!/bin/sh",
+    "failed=0",
+    "get() {",
+    '  [ -e "$1" ] && return 0',
+    '  curl -fL -C - --retry 10 -o "$1.part" "$2" && mv "$1.part" "$1" || { echo "failed: $1" >&2; failed=1; }',
+    "}",
+    ...lines,
+    "exit $failed",
+    "",
+  ].join("\n");
 }
 
 // ----- Authorized applications -----
@@ -319,6 +373,28 @@ export async function inviteCourseParticipants(
     create(InviteCourseParticipantsRequestSchema, { courseId, invitees }),
   );
   return res.results.map((r) => ({ email: r.email, accountCreated: r.accountCreated, error: r.error }));
+}
+
+/**
+ * Accounts whose LRZ ID, matriculation number or email is exactly `q`. A partial
+ * identifier finds nobody: the server will not list accounts to a lecturer.
+ */
+export async function lookupUsersForCourse(courseId: number, q: string): Promise<CourseAdminUser[]> {
+  const res = await apiGetMessage(
+    LookupUsersForCourseResponseSchema,
+    `/courses/${courseId}/participants/lookup?q=${encodeURIComponent(q)}`,
+  );
+  return res.users.map(toUser);
+}
+
+/** Enrols an existing account; doing it twice is no error, and the account is not mailed. */
+export async function enrolCourseParticipant(courseId: number, userId: number): Promise<void> {
+  await apiPostMessage(
+    EnrolCourseParticipantRequestSchema,
+    EmptySchema,
+    `/courses/${courseId}/participants/enrol`,
+    create(EnrolCourseParticipantRequestSchema, { courseId, userId }),
+  );
 }
 
 export interface ParsedBatch {

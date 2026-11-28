@@ -17,7 +17,6 @@ type CoursesDao interface {
 	CreateCourse(ctx context.Context, course *model.Course, keep bool) error
 	AddAdminToCourse(userID uint, courseID uint) error
 
-	GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error)
 	GetAllCourses() ([]model.Course, error)
 	GetAdministeredCoursesByUserId(ctx context.Context, userid uint, teachingTerm string, year int) (courses []model.Course, err error)
 	GetAllCoursesForSemester(ctx context.Context, year int, term string) (courses []model.Course)
@@ -30,7 +29,6 @@ type CoursesDao interface {
 	// GetAllCoursesWithTUMIDFromSemester returns all courses with a non-null tum_identifier from a given semester or later
 	GetAllCoursesWithTUMIDFromSemester(ctx context.Context, year int, term string) (courses []model.Course, err error)
 	GetAvailableSemesters(c context.Context, includeTestSemester bool) []model.Semester
-	GetCourseByShortLink(link string) (model.Course, error)
 	GetCourseAdmins(courseID uint) ([]model.User, error)
 	// ExecAllCourses executes f on all courses from database without batching
 	ExecAllCourses(f func([]Course))
@@ -74,13 +72,6 @@ func (d CoursesDaoImpl) CreateCourse(ctx context.Context, course *model.Course, 
 func (d CoursesDaoImpl) AddAdminToCourse(userID uint, courseID uint) error {
 	defer Cache.Clear()
 	return DB.Exec("insert into course_admins (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
-}
-
-// GetCurrentOrNextLectureForCourse Gets the next lecture for a course or the lecture that is currently live. Error otherwise.
-func (d CoursesDaoImpl) GetCurrentOrNextLectureForCourse(ctx context.Context, courseID uint) (model.Stream, error) {
-	var res model.Stream
-	err := DB.Model(&model.Stream{}).Preload("Chats").Order("start").First(&res, "course_id = ? AND (end > NOW() OR live_now)", courseID).Error
-	return res, err
 }
 
 // GetAllCourses retrieves all courses from the database.
@@ -261,17 +252,6 @@ func (d CoursesDaoImpl) GetAvailableSemesters(c context.Context, includeTestSeme
 	return filtered
 }
 
-// GetCourseByShortLink returns the course associated with the given short link (e.g. EIDI2022)
-func (d CoursesDaoImpl) GetCourseByShortLink(link string) (model.Course, error) {
-	var sl model.ShortLink
-	err := DB.First(&sl, "link = ?", link).Error
-	if err != nil {
-		return model.Course{}, err
-	}
-	course, err := d.GetCourseById(context.Background(), sl.CourseId)
-	return course, err
-}
-
 // GetCourseAdmins returns the admins of the given course excluding the creator (usually system) and the tumlive admins
 func (d CoursesDaoImpl) GetCourseAdmins(courseID uint) ([]model.User, error) {
 	var admins []model.User
@@ -327,9 +307,35 @@ func (d CoursesDaoImpl) AddUserToCourse(ctx context.Context, userID uint, course
 	return DB.WithContext(ctx).Exec("insert into course_users (user_id, course_id) values (?, ?) on duplicate key update user_id = user_id", userID, courseID).Error
 }
 
+// courseDeleteWindow is how long before its course's own deleted_at a stream may have
+// been deleted and still count as deleted with it: DeleteCourse removes the streams one
+// by one, then the course.
+const courseDeleteWindow = 10 * time.Minute
+
+// UnDeleteCourse restores the course and the streams DeleteCourse deleted with it.
+// Streams removed on their own earlier stay removed: the admin chose that separately.
+// Restoring only the course row would leave a live course with no lectures, and their
+// media would still be reaped as belonging to deleted streams.
 func (d CoursesDaoImpl) UnDeleteCourse(ctx context.Context, course model.Course) error {
 	defer Cache.Clear()
-	return DB.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
+	return DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var deletedAt gorm.DeletedAt
+		err := tx.Unscoped().Model(&model.Course{}).Select("deleted_at").Where("id = ?", course.ID).Scan(&deletedAt).Error
+		if err != nil {
+			return err
+		}
+		// A course that is not deleted has nothing to restore, streams included.
+		if deletedAt.Valid {
+			err = tx.Unscoped().Model(&model.Stream{}).
+				Where("course_id = ? AND deleted_at IS NOT NULL AND deleted_at >= ? AND deleted_at <= ?",
+					course.ID, deletedAt.Time.Add(-courseDeleteWindow), deletedAt.Time).
+				Update("deleted_at", nil).Error
+			if err != nil {
+				return err
+			}
+		}
+		return tx.Exec("UPDATE courses SET deleted_at = NULL WHERE id = ?", course.ID).Error
+	})
 }
 
 func (d CoursesDaoImpl) RemoveAdminFromCourse(userID uint, courseID uint) error {

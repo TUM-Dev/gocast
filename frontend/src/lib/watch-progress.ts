@@ -49,6 +49,15 @@ export function createWatchedMarker(mark: () => Promise<void>): { fire(): void }
 /** Playback must move this far (seconds) from where it started before progress is saved. */
 const MIN_ADVANCE_SECONDS = 3;
 
+/**
+ * No two reports are closer than this. The interval already spaces the timed ones; this
+ * bounds the pause-triggered ones, which a player that pauses and plays in a loop (a
+ * stalled split view, a refused autoplay) would otherwise send as fast as it loops.
+ */
+const MIN_REPORT_GAP_MS = 5_000;
+/** The doubling after failures stops here, so a viewer is never left without saves. */
+const MAX_INTERVAL_MS = 80_000;
+
 export interface ProgressReporter {
   onPlay(): void;
   onPause(): void;
@@ -72,18 +81,22 @@ export interface ProgressReporterOptions {
 
 /**
  * Reports watch progress the way the old player did (TUMLiveVjs.ts watchProgress):
- * every 10 s while playing, immediately on pause (which is also what a seek-and-stop or
- * leaving by pausing produces), nothing once ended. Nothing at all is reported until the
- * position has moved from where playback started (see `minAdvance`). A failed report doubles the interval
- * -- binary exponential backoff, so a struggling server is not hammered by every viewer.
- * It deliberately stays doubled after later successes, as before.
+ * every 10 s while playing, on pause (which is also what a seek-and-stop or leaving by
+ * pausing produces), nothing once ended. Nothing at all is reported until the position
+ * has moved from where playback started (see `minAdvance`). A pause within
+ * MIN_REPORT_GAP_MS of the last report is held back until the gap has passed, so the
+ * final position still arrives but a pause/play loop cannot flood the server. A failed
+ * report doubles the interval up to MAX_INTERVAL_MS -- binary exponential backoff, so a
+ * struggling server is not hammered by every viewer -- and a successful one resets it.
  *
  * Timers are `setTimeout` chains rather than an interval so a slow report cannot pile
  * up behind the next.
  */
 export function createProgressReporter(options: ProgressReporterOptions): ProgressReporter {
-  let interval = options.intervalMs ?? 10_000;
+  const baseInterval = options.intervalMs ?? 10_000;
+  let interval = baseInterval;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let lastReportAt: number | undefined;
 
   // Where the position was when playback first started; reports wait until it moves.
   let baseline: number | undefined;
@@ -101,9 +114,15 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
       if (Math.abs(progress - baseline) <= 0 || Math.abs(progress - baseline) < (options.minAdvance?.() ?? 0)) return;
       engaged = true;
     }
-    options.save(Math.min(1, Math.max(0, progress))).catch(() => {
-      interval *= 2;
-    });
+    lastReportAt = Date.now();
+    options.save(Math.min(1, Math.max(0, progress))).then(
+      () => {
+        interval = baseInterval;
+      },
+      () => {
+        interval = Math.min(interval * 2, MAX_INTERVAL_MS);
+      },
+    );
   };
   const stop = () => {
     clearTimeout(timer);
@@ -124,7 +143,16 @@ export function createProgressReporter(options: ProgressReporterOptions): Progre
     },
     onPause() {
       stop();
-      report();
+      const wait = lastReportAt === undefined ? 0 : lastReportAt + MIN_REPORT_GAP_MS - Date.now();
+      if (wait <= 0) {
+        report();
+        return;
+      }
+      // Shares `timer` with the interval: playing again cancels it, and the next timed report covers it.
+      timer = setTimeout(() => {
+        timer = undefined;
+        report();
+      }, wait);
     },
     onEnded: stop,
     dispose: stop,

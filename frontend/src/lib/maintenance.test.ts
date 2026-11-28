@@ -4,6 +4,9 @@ import { clearToken } from "./api";
 import {
   deleteEmailFailure,
   deleteTranscodingFailure,
+  dryRunReap,
+  executeReap,
+  fetchAllReapEntries,
   fetchCronJobs,
   fetchEmailFailures,
   fetchTranscodingFailures,
@@ -149,5 +152,72 @@ describe("deleteEmailFailure", () => {
     const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
     expect(url).toBe("/api/v2/admin/maintenance/email-failures/5");
     expect(init.method).toBe("DELETE");
+  });
+});
+
+const reapEntry = (path: string, kind: string) => ({
+  kind,
+  path,
+  bytes: "5",
+  streamIds: [7],
+  courseIds: [1],
+  deletedAt: "2026-01-01T00:00:00Z",
+});
+
+describe("dryRunReap", () => {
+  it("asks for a dry run and reads the plan", async () => {
+    respondWith({
+      entries: [reapEntry("/vod/7/COMBINED", "REAP_ENTRY_KIND_VOD_DIR"), reapEntry("/vod/7/COMBINED/0.ts", "REAP_ENTRY_KIND_VOD_FILE")],
+      skipped: [{ path: "/vod/8/COMBINED", streamIds: [8], reason: "still used by stream 9" }],
+      totalEntries: 2,
+      totalDirs: 1,
+      totalFiles: 1,
+      totalBytes: "5",
+      planToken: "tok",
+    });
+
+    const plan = await dryRunReap();
+
+    const [url, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+    expect(url).toBe("/api/v2/admin/maintenance/reap-deleted-media");
+    expect(JSON.parse(init.body as string).execute ?? false).toBe(false);
+    expect(plan.entries.map((e) => e.type)).toEqual(["dir", "segment"]);
+    expect(plan.entries[1].bytes).toBe(5);
+    expect(plan.entries[0].deletedAt).toEqual(new Date("2026-01-01T00:00:00Z"));
+    expect(plan.skipped[0].reason).toBe("still used by stream 9");
+    expect(plan.planToken).toBe("tok");
+  });
+});
+
+describe("fetchAllReapEntries", () => {
+  it("pages on from the entries it already has, with the dry run's token", async () => {
+    respondWith({ entries: [reapEntry("/b", "REAP_ENTRY_KIND_FILE")], totalEntries: 2, planToken: "tok" });
+    const first = {
+      entries: [{ type: "file" as const, path: "/a", bytes: 1, streamIds: [], courseIds: [], deletedAt: null }],
+      skipped: [],
+      totalEntries: 2,
+      totalDirs: 0,
+      totalFiles: 2,
+      totalBytes: 2,
+      planToken: "tok",
+    };
+
+    const all = await fetchAllReapEntries(first);
+
+    const [, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({ planToken: "tok", offset: 1 });
+    expect(all.map((e) => e.path)).toEqual(["/a", "/b"]);
+  });
+});
+
+describe("executeReap", () => {
+  it("sends the dry run's token and executes", async () => {
+    respondWith({ executed: true, deletedFiles: 3, deletedBytes: "15", errors: ["x"] });
+
+    const res = await executeReap("tok");
+
+    const [, init] = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({ execute: true, planToken: "tok" });
+    expect(res).toEqual({ deletedFiles: 3, deletedBytes: 15, errors: ["x"] });
   });
 });

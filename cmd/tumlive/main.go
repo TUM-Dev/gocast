@@ -15,8 +15,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 	slogGorm "github.com/orandin/slog-gorm"
 	"github.com/soheilhy/cmux"
 	"golang.org/x/sync/errgroup"
@@ -25,11 +23,13 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/TUM-Dev/gocast/api"
+	"github.com/tum-dev/gocast/runner/pkg/tracing"
+
 	apiv2 "github.com/TUM-Dev/gocast/apiv2/server"
 	"github.com/TUM-Dev/gocast/dao"
 	"github.com/TUM-Dev/gocast/model"
 	"github.com/TUM-Dev/gocast/pkg/camera"
+	"github.com/TUM-Dev/gocast/pkg/cutting"
 	"github.com/TUM-Dev/gocast/pkg/livepreview"
 	"github.com/TUM-Dev/gocast/pkg/livestate"
 	"github.com/TUM-Dev/gocast/pkg/postprocessing"
@@ -73,6 +73,20 @@ func run(ctx context.Context) error {
 	})).With("service", "main")
 	initAll(initializers)
 
+	// Off unless OTEL_EXPORTER_OTLP_ENDPOINT is set, see tracing.Setup.
+	shutdownTracing, err := tracing.Setup(ctx, "tumlive", VersionTag)
+	if err != nil {
+		logger.Error("tracing disabled", "err", err)
+	} else {
+		defer func() {
+			flushCtx, stop := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+			defer stop()
+			if err := shutdownTracing(flushCtx); err != nil {
+				logger.Error("flushing traces failed", "err", err)
+			}
+		}()
+	}
+
 	web.VersionTag = VersionTag
 	tools.VersionTag = VersionTag
 
@@ -81,7 +95,7 @@ func run(ctx context.Context) error {
 	)
 
 	db, err := gorm.Open(mysql.Open(fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local",
+		"%s:%s@tcp(%s:%d)/%s?parseTime=true&loc=Local&timeout=5s",
 		tools.Cfg.Db.User,
 		tools.Cfg.Db.Password,
 		tools.Cfg.Db.Host,
@@ -93,6 +107,21 @@ func run(ctx context.Context) error {
 	})
 	if err != nil {
 		logger.Error("Error opening database", "err", err)
+	}
+	if err == nil {
+		// database/sql opens a connection per concurrent query and keeps two idle
+		// by default, so a burst hit max_connections and every restart refilled it.
+		sqlDB, err := db.DB()
+		if err != nil {
+			return fmt.Errorf("sql handle: %w", err)
+		}
+		maxOpen := tools.Cfg.Db.MaxOpenConns
+		if maxOpen <= 0 {
+			maxOpen = 80
+		}
+		sqlDB.SetMaxOpenConns(maxOpen)
+		sqlDB.SetMaxIdleConns(maxOpen / 2)
+		sqlDB.SetConnMaxLifetime(5 * time.Minute)
 	}
 	dao.DB = db
 
@@ -107,7 +136,6 @@ func run(ctx context.Context) error {
 		&model.Chat{},
 		&model.RegisterLink{},
 		&model.Silence{},
-		&model.ShortLink{},
 		&model.Stat{},
 		&model.LectureHall{},
 		&model.IngestServer{},
@@ -128,6 +156,7 @@ func run(ctx context.Context) error {
 		&model.InfoPage{},
 		&model.Bookmark{},
 		&model.TranscodingProgress{},
+		&model.LectureCut{},
 		&model.ChatReaction{},
 		&model.Subtitles{},
 		&model.TranscodingFailure{},
@@ -138,6 +167,7 @@ func run(ctx context.Context) error {
 		&model.Integration{},
 		&model.IntegrationGrant{},
 		&model.IntegrationAuthorizationCode{},
+		&model.IntegrationRecording{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration: %w", err)
@@ -167,14 +197,19 @@ func run(ctx context.Context) error {
 	}
 	camService := camera.NewService(camAuths)
 
-	// One hub for the process: the v2 realtime socket reads it, and the producers that
-	// still live in api/ (the runner's live flips, v1's title and description edits)
-	// publish to it.
+	// One hub for the process: the v2 realtime socket reads it, and the producers
+	// (the runner's live flips, title and description edits) publish to it.
 	hub := realtimehub.NewMemory()
 	livestate.SetRealtimeHub(hub)
 
+	// m.Run only logs a failure below, so a broken setup has to stop the process here.
+	if err := tools.Cfg.RunnerTLS.Validate(); err != nil {
+		return fmt.Errorf("runnerTLS: %w", err)
+	}
+
 	opts := []runner_manager.Option{
 		runner_manager.WithMassStorage(tools.Cfg.Paths.Mass),
+		runner_manager.WithTLS(tools.Cfg.RunnerTLS),
 		runner_manager.WithCamService(camService),
 		runner_manager.WithLiveStateNotifier(livestate.NotifyViewersLiveState),
 	}
@@ -231,29 +266,26 @@ func initAll(initializers []initializer) {
 	}
 }
 
+// newRouter mounts everything the web port serves. There is no compression here: the
+// reverse proxy in front compresses.
+//
+// ServeMux panics when two patterns can match one request and neither is more
+// specific, and the apiv2 and web routes only meet here; TestNewRouter registers them
+// together so a conflict fails a test instead of the boot.
+func newRouter(api2Client *apiv2.API) *tools.Router {
+	router := tools.NewRouter()
+	router.Use(tools.InitContext(dao.NewDaoWrapper()))
+	router.Handle("/api/v2/", api2Client.Handler())
+	api2Client.RegisterLegacyRoutes(router)
+	web.ConfigRouter(router)
+	return router
+}
+
 // serveHttp launches all http servers
 func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService *camera.Service, subtitles pb.SubtitleGeneratorClient, hub realtimehub.Hub) (err error) {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	gin.SetMode(gin.ReleaseMode)
 	if VersionTag != "development" {
 		tools.CookieSecure = true
 	}
-
-	router.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		if param.StatusCode >= 400 && VersionTag == "development" {
-			return fmt.Sprintf("{\"service\": \"GIN\", \"time\": %s, \"status\": %d, \"client\": \"%s\", \"path\": \"%s\", \"agent\": %s}\n",
-				param.TimeStamp.Format(time.DateTime),
-				param.StatusCode,
-				param.ClientIP,
-				param.Path,
-				param.Request.UserAgent(),
-			)
-		}
-		return ""
-	}))
-
-	router.Use(tools.InitContext(dao.NewDaoWrapper()))
 
 	l, err := net.Listen("tcp", ":8081")
 	if err != nil {
@@ -278,12 +310,15 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		apiv2.WithTUMOnline(tum.Catalog{Dao: dao.NewDaoWrapper()}),
 		// Uploads land where v1 puts them, and section thumbnails go the way v1's do.
 		apiv2.WithMassStorage(tools.Cfg.Paths.Mass),
+		apiv2.WithVODStorage(tools.Cfg.Paths.Vod),
 		apiv2.WithSectionImages(sectionimages.SectionImages{Manager: manager}),
 		apiv2.WithPostProcessing(postprocessing.PostProcessing{Manager: manager}),
 		apiv2.WithUploads(uploads.Uploads{Manager: manager}),
+		apiv2.WithCutting(cutting.Cutting{Manager: manager}),
 		apiv2.WithRealtimeHub(hub),
 		// Ending a stream goes through the manager, which tells the viewers it is over.
 		apiv2.WithStreamEnder(manager),
+		apiv2.WithSelfStreamStarter(manager),
 		apiv2.WithSubtitleSearch(tools.NewMeiliSearchFunctions()),
 		// The Meilisearch filters and post-filtering in pkg/search decide who may find what.
 		apiv2.WithSearch(search.SearchCatalog{Dao: dao.NewDaoWrapper(), Meili: tools.NewMeiliSearchFunctions()}),
@@ -299,16 +334,8 @@ func serveHttp(ctx context.Context, manager *runner_manager.Manager, camService 
 		return api2Client.Run(grpcl)
 	})
 
-	// The v2 realtime socket is served by the /api/v2/*any route below, so it cannot be
-	// registered ahead of gzip: gin refuses a static route beside that catch-all. It is
-	// excluded by path instead.
-	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{apiv2.RealtimePath})))
-	router.Any("/api/v2/*any", api2Client.Proxy())
-	api2Client.RegisterLegacyCalendar(router)
-	api.ConfigGinRouter(router, manager)
-	web.ConfigGinRouter(router)
 	g.Go(func() error {
-		return router.RunListener(httpl)
+		return http.Serve(httpl, newRouter(api2Client))
 	})
 
 	g.Go(func() error {

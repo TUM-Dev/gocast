@@ -4,8 +4,6 @@ package apiv2
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/TUM-Dev/gocast/tools"
 )
 
@@ -23,36 +21,34 @@ type accessTokenResponse struct {
 //
 // Not a login endpoint: it mints only from an existing session. Credentials are still
 // exchanged by the redirect-based flows in web/user.go and web/saml.go.
-func (a *API) handleAuthToken(c *gin.Context) {
-	if c.Request.Method != http.MethodPost {
-		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, gin.H{"error": "use POST"})
+func (a *API) handleAuthToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		tools.WriteJSON(w, http.StatusMethodNotAllowed, map[string]any{"error": "use POST"})
 		return
 	}
 
 	// TUMLiveContext is populated by tools.InitContext, which runs for every route.
-	foundContext, exists := c.Get("TUMLiveContext")
-	if !exists {
+	tumLiveContext, ok := tools.GetTUMLiveContext(r)
+	if !ok {
 		a.log.Error("TUMLiveContext missing on token endpoint")
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not read session"})
+		tools.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "could not read session"})
 		return
 	}
-
-	tumLiveContext, ok := foundContext.(tools.TUMLiveContext)
-	if !ok || tumLiveContext.User == nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no active session"})
+	if tumLiveContext.User == nil {
+		tools.WriteJSON(w, http.StatusUnauthorized, map[string]any{"error": "no active session"})
 		return
 	}
 
 	token, err := tools.CreateAccessToken(tumLiveContext.User.ID, tumLiveContext.SamlSubjectID)
 	if err != nil {
 		a.log.Error("could not create access token", "err", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "could not create token"})
+		tools.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "could not create token"})
 		return
 	}
 
 	// Short-lived and re-minted on demand, so it must not be cached anywhere.
-	c.Header("Cache-Control", "no-store")
-	c.JSON(http.StatusOK, accessTokenResponse{
+	w.Header().Set("Cache-Control", "no-store")
+	tools.WriteJSON(w, http.StatusOK, accessTokenResponse{
 		AccessToken: token,
 		TokenType:   "Bearer",
 		ExpiresIn:   int(tools.AccessTokenTTL.Seconds()),

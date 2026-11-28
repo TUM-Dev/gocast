@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/metadata"
@@ -265,7 +266,16 @@ func (a *API) authorizeUserForStreamCourse(ctx context.Context, req StreamReques
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not eligible to access course content"))
 	}
 
-	if !visibility.StreamVisible(user, course, stream) {
+	now := time.Now()
+	admin := user.IsAdminOfCourse(course)
+	if stream.Private && !admin {
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access this stream"))
+	}
+	if course.IsLectureExpired(stream, now) && !admin {
+		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New(tools.ExpiredStreamAccess))
+	}
+
+	if !visibility.StreamVisibleAt(user, course, stream, now) {
 		return nil, stream, course, e.WithStatus(http.StatusForbidden, errors.New("User is not allowed to access this stream"))
 	}
 

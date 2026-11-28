@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -154,3 +156,49 @@ func TestMigrate202610250SkipsAFreshDatabase(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, Migrate202610250().Migrate(db))
 }
+
+// More entries than one batch, with PrepareStmt as the server runs it: every batch must
+// be linked. sqlite cannot reproduce MariaDB's max_prepared_stmt_count, so this guards
+// the batching logic, not the limit itself (see auditBackfillBatch).
+func TestMigrate202610250LinksAcrossBatches(t *testing.T) {
+	sqlDB, err := sql.Open("sqlite3", "file:audit_backfill_batches_"+t.Name()+"?mode=memory&cache=shared")
+	require.NoError(t, err)
+	pool := &txCountingPool{DB: sqlDB}
+	db, err := gorm.Open(sqlite.Dialector{Conn: pool}, &gorm.Config{PrepareStmt: true})
+	require.NoError(t, err)
+	for _, ddl := range []string{
+		`CREATE TABLE courses (id integer primary key, name text, slug text, year integer, teaching_term text, created_at datetime, deleted_at datetime)`,
+		`CREATE TABLE streams (id integer primary key, course_id integer, created_at datetime)`,
+		`CREATE TABLE audits (id integer primary key, type integer, message text, created_at datetime, course_id integer, stream_id integer)`,
+	} {
+		require.NoError(t, db.Exec(ddl).Error)
+	}
+	require.NoError(t, db.Exec(`INSERT INTO courses VALUES (4,'Analysis 1','ana1',2025,'W',?,NULL)`, t0).Error)
+	require.NoError(t, db.Exec(`INSERT INTO streams VALUES (100,4,?)`, t0).Error)
+	n := 2*auditBackfillBatch + 37
+	for i := 1; i <= n; i++ {
+		require.NoError(t, db.Exec(`INSERT INTO audits (id,type,message,created_at) VALUES (?,8,'100: x',?)`, i, t0).Error)
+	}
+
+	require.NoError(t, Migrate202610250().Migrate(db))
+
+	var unlinked int64
+	require.NoError(t, db.Table("audits").Where("course_id IS NULL").Count(&unlinked).Error)
+	assert.Zero(t, unlinked)
+	assert.Equal(t, 3, pool.begins, "one transaction per batch; a single one holds a prepared statement per row until commit")
+}
+
+// txCountingPool counts the transactions gorm opens, which is how the backfill's
+// batching shows: sqlite has no max_prepared_stmt_count to trip over.
+type txCountingPool struct {
+	*sql.DB
+	begins int
+}
+
+func (p *txCountingPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (gorm.ConnPool, error) {
+	p.begins++
+	return p.DB.BeginTx(ctx, opts)
+}
+
+// GetDBConn lets gorm's PrepareStmt layer recognise the pool.
+func (p *txCountingPool) GetDBConn() (*sql.DB, error) { return p.DB, nil }

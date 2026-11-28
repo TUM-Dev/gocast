@@ -140,6 +140,175 @@ func local_request_IntegrationService_RevokeIntegrationGrant_0(ctx context.Conte
 	return msg, metadata, err
 }
 
+var filter_IntegrationService_GetIntegrationRecording_0 = &utilities.DoubleArray{Encoding: map[string]int{"grant_id": 0, "stream_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+
+func request_IntegrationService_GetIntegrationRecording_0(ctx context.Context, marshaler runtime.Marshaler, client IntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIntegrationRecordingRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	val, ok = pathParams["stream_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
+	}
+	protoReq.StreamId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_IntegrationService_GetIntegrationRecording_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetIntegrationRecording(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_IntegrationService_GetIntegrationRecording_0(ctx context.Context, marshaler runtime.Marshaler, server IntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetIntegrationRecordingRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	val, ok = pathParams["stream_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "stream_id")
+	}
+	protoReq.StreamId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "stream_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_IntegrationService_GetIntegrationRecording_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetIntegrationRecording(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_IntegrationService_CreateIntegrationUpload_0(ctx context.Context, marshaler runtime.Marshaler, client IntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CreateIntegrationUploadRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.CreateIntegrationUpload(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_IntegrationService_CreateIntegrationUpload_0(ctx context.Context, marshaler runtime.Marshaler, server IntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq CreateIntegrationUploadRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	msg, err := server.CreateIntegrationUpload(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_IntegrationService_DeleteIntegrationRecording_0(ctx context.Context, marshaler runtime.Marshaler, client IntegrationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq DeleteIntegrationRecordingRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	val, ok = pathParams["external_ref"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "external_ref")
+	}
+	protoReq.ExternalRef, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "external_ref", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.DeleteIntegrationRecording(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_IntegrationService_DeleteIntegrationRecording_0(ctx context.Context, marshaler runtime.Marshaler, server IntegrationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq DeleteIntegrationRecordingRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["grant_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "grant_id")
+	}
+	protoReq.GrantId, err = runtime.Uint32(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "grant_id", err)
+	}
+	val, ok = pathParams["external_ref"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "external_ref")
+	}
+	protoReq.ExternalRef, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "external_ref", err)
+	}
+	msg, err := server.DeleteIntegrationRecording(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 // RegisterIntegrationServiceHandlerServer registers the http handlers for service IntegrationService to "mux".
 // UnaryRPC     :call IntegrationServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -205,6 +374,66 @@ func RegisterIntegrationServiceHandlerServer(ctx context.Context, mux *runtime.S
 			return
 		}
 		forward_IntegrationService_RevokeIntegrationGrant_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_IntegrationService_GetIntegrationRecording_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.IntegrationService/GetIntegrationRecording", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/recordings/{stream_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_IntegrationService_GetIntegrationRecording_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_GetIntegrationRecording_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_IntegrationService_CreateIntegrationUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.IntegrationService/CreateIntegrationUpload", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/uploads"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_IntegrationService_CreateIntegrationUpload_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_CreateIntegrationUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodDelete, pattern_IntegrationService_DeleteIntegrationRecording_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/protobuf.IntegrationService/DeleteIntegrationRecording", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/uploads/{external_ref}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_IntegrationService_DeleteIntegrationRecording_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_DeleteIntegrationRecording_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
@@ -297,6 +526,57 @@ func RegisterIntegrationServiceHandlerClient(ctx context.Context, mux *runtime.S
 		}
 		forward_IntegrationService_RevokeIntegrationGrant_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_IntegrationService_GetIntegrationRecording_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.IntegrationService/GetIntegrationRecording", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/recordings/{stream_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_IntegrationService_GetIntegrationRecording_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_GetIntegrationRecording_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodPost, pattern_IntegrationService_CreateIntegrationUpload_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.IntegrationService/CreateIntegrationUpload", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/uploads"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_IntegrationService_CreateIntegrationUpload_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_CreateIntegrationUpload_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodDelete, pattern_IntegrationService_DeleteIntegrationRecording_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/protobuf.IntegrationService/DeleteIntegrationRecording", runtime.WithHTTPPathPattern("/integration/grants/{grant_id}/uploads/{external_ref}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_IntegrationService_DeleteIntegrationRecording_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_IntegrationService_DeleteIntegrationRecording_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	return nil
 }
 
@@ -304,10 +584,16 @@ var (
 	pattern_IntegrationService_RedeemIntegrationAuthorization_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"integration", "authorizations", "redeem"}, ""))
 	pattern_IntegrationService_GetIntegrationGrant_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"integration", "grants", "grant_id"}, ""))
 	pattern_IntegrationService_RevokeIntegrationGrant_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"integration", "grants", "grant_id"}, ""))
+	pattern_IntegrationService_GetIntegrationRecording_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"integration", "grants", "grant_id", "recordings", "stream_id"}, ""))
+	pattern_IntegrationService_CreateIntegrationUpload_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"integration", "grants", "grant_id", "uploads"}, ""))
+	pattern_IntegrationService_DeleteIntegrationRecording_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"integration", "grants", "grant_id", "uploads", "external_ref"}, ""))
 )
 
 var (
 	forward_IntegrationService_RedeemIntegrationAuthorization_0 = runtime.ForwardResponseMessage
 	forward_IntegrationService_GetIntegrationGrant_0            = runtime.ForwardResponseMessage
 	forward_IntegrationService_RevokeIntegrationGrant_0         = runtime.ForwardResponseMessage
+	forward_IntegrationService_GetIntegrationRecording_0        = runtime.ForwardResponseMessage
+	forward_IntegrationService_CreateIntegrationUpload_0        = runtime.ForwardResponseMessage
+	forward_IntegrationService_DeleteIntegrationRecording_0     = runtime.ForwardResponseMessage
 )

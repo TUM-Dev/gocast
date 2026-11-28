@@ -250,6 +250,21 @@ func (mr *MockStreamsDaoMockRecorder) GetAllStreams() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllStreams", reflect.TypeOf((*MockStreamsDao)(nil).GetAllStreams))
 }
 
+// GetCourseLectureSeries mocks base method.
+func (m *MockStreamsDao) GetCourseLectureSeries(courseID uint, seriesIdentifier string) ([]model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCourseLectureSeries", courseID, seriesIdentifier)
+	ret0, _ := ret[0].([]model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCourseLectureSeries indicates an expected call of GetCourseLectureSeries.
+func (mr *MockStreamsDaoMockRecorder) GetCourseLectureSeries(courseID, seriesIdentifier any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCourseLectureSeries", reflect.TypeOf((*MockStreamsDao)(nil).GetCourseLectureSeries), courseID, seriesIdentifier)
+}
+
 // GetCurrentLive mocks base method.
 func (m *MockStreamsDao) GetCurrentLive(ctx context.Context) ([]model.Stream, error) {
 	m.ctrl.T.Helper()
@@ -293,6 +308,21 @@ func (m *MockStreamsDao) GetLiveStreamsInLectureHall(lectureHallId uint) ([]mode
 func (mr *MockStreamsDaoMockRecorder) GetLiveStreamsInLectureHall(lectureHallId any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveStreamsInLectureHall", reflect.TypeOf((*MockStreamsDao)(nil).GetLiveStreamsInLectureHall), lectureHallId)
+}
+
+// GetRecordedStreamsForExport mocks base method.
+func (m *MockStreamsDao) GetRecordedStreamsForExport(ctx context.Context, courseID uint) ([]model.Stream, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRecordedStreamsForExport", ctx, courseID)
+	ret0, _ := ret[0].([]model.Stream)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRecordedStreamsForExport indicates an expected call of GetRecordedStreamsForExport.
+func (mr *MockStreamsDaoMockRecorder) GetRecordedStreamsForExport(ctx, courseID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecordedStreamsForExport", reflect.TypeOf((*MockStreamsDao)(nil).GetRecordedStreamsForExport), ctx, courseID)
 }
 
 // GetRunnerJobsForStream mocks base method.
@@ -536,6 +566,20 @@ func (mr *MockStreamsDaoMockRecorder) SaveTranscodingProgress(progress any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTranscodingProgress", reflect.TypeOf((*MockStreamsDao)(nil).SaveTranscodingProgress), progress)
 }
 
+// SetDuration mocks base method.
+func (m *MockStreamsDao) SetDuration(streamID uint, seconds uint32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDuration", streamID, seconds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDuration indicates an expected call of SetDuration.
+func (mr *MockStreamsDaoMockRecorder) SetDuration(streamID, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDuration", reflect.TypeOf((*MockStreamsDao)(nil).SetDuration), streamID, seconds)
+}
+
 // SetLectureHall mocks base method.
 func (m *MockStreamsDao) SetLectureHall(streamIDs []uint, lectureHallID uint) error {
 	m.ctrl.T.Helper()
@@ -576,6 +620,20 @@ func (m *MockStreamsDao) SetStreamNotLiveById(streamID uint) error {
 func (mr *MockStreamsDaoMockRecorder) SetStreamNotLiveById(streamID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreamNotLiveById", reflect.TypeOf((*MockStreamsDao)(nil).SetStreamNotLiveById), streamID)
+}
+
+// SetThumbInterval mocks base method.
+func (m *MockStreamsDao) SetThumbInterval(streamID uint, seconds uint32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetThumbInterval", streamID, seconds)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetThumbInterval indicates an expected call of SetThumbInterval.
+func (mr *MockStreamsDaoMockRecorder) SetThumbInterval(streamID, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetThumbInterval", reflect.TypeOf((*MockStreamsDao)(nil).SetThumbInterval), streamID, seconds)
 }
 
 // ToggleVisibility mocks base method.

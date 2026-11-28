@@ -803,6 +803,7 @@ const (
 	CourseService_CopyCourse_FullMethodName                      = "/protobuf.CourseService/copyCourse"
 	CourseService_DeleteCourse_FullMethodName                    = "/protobuf.CourseService/deleteCourse"
 	CourseService_RedoCoursePostProcessing_FullMethodName        = "/protobuf.CourseService/redoCoursePostProcessing"
+	CourseService_ExportCourseVideos_FullMethodName              = "/protobuf.CourseService/exportCourseVideos"
 	CourseService_ListCourseAudits_FullMethodName                = "/protobuf.CourseService/listCourseAudits"
 	CourseService_ListCourseAdmins_FullMethodName                = "/protobuf.CourseService/listCourseAdmins"
 	CourseService_AddCourseAdmin_FullMethodName                  = "/protobuf.CourseService/addCourseAdmin"
@@ -812,6 +813,8 @@ const (
 	CourseService_UpdateCourseLectureHallSettings_FullMethodName = "/protobuf.CourseService/updateCourseLectureHallSettings"
 	CourseService_ListCourseParticipants_FullMethodName          = "/protobuf.CourseService/listCourseParticipants"
 	CourseService_InviteCourseParticipants_FullMethodName        = "/protobuf.CourseService/inviteCourseParticipants"
+	CourseService_LookupUsersForCourse_FullMethodName            = "/protobuf.CourseService/lookupUsersForCourse"
+	CourseService_EnrolCourseParticipant_FullMethodName          = "/protobuf.CourseService/enrolCourseParticipant"
 	CourseService_ListAdministeredCourses_FullMethodName         = "/protobuf.CourseService/listAdministeredCourses"
 	CourseService_CreateLectureSections_FullMethodName           = "/protobuf.CourseService/createLectureSections"
 	CourseService_UpdateLectureSection_FullMethodName            = "/protobuf.CourseService/updateLectureSection"
@@ -820,6 +823,12 @@ const (
 	CourseService_DeleteLectureThumbnail_FullMethodName          = "/protobuf.CourseService/deleteLectureThumbnail"
 	CourseService_RequestLectureSubtitles_FullMethodName         = "/protobuf.CourseService/requestLectureSubtitles"
 	CourseService_GetLectureTranscodingProgress_FullMethodName   = "/protobuf.CourseService/getLectureTranscodingProgress"
+	CourseService_RequestLectureWaveform_FullMethodName          = "/protobuf.CourseService/requestLectureWaveform"
+	CourseService_GetLectureWaveform_FullMethodName              = "/protobuf.CourseService/getLectureWaveform"
+	CourseService_CutLecture_FullMethodName                      = "/protobuf.CourseService/cutLecture"
+	CourseService_GetLectureCut_FullMethodName                   = "/protobuf.CourseService/getLectureCut"
+	CourseService_RetryLectureCut_FullMethodName                 = "/protobuf.CourseService/retryLectureCut"
+	CourseService_AbandonLectureCut_FullMethodName               = "/protobuf.CourseService/abandonLectureCut"
 )
 
 // CourseServiceClient is the client API for CourseService service.
@@ -880,6 +889,7 @@ type CourseServiceClient interface {
 	CopyCourse(ctx context.Context, in *CopyCourseRequest, opts ...grpc.CallOption) (*CopyCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RedoCoursePostProcessing(ctx context.Context, in *RedoCoursePostProcessingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ExportCourseVideos(ctx context.Context, in *ExportCourseVideosRequest, opts ...grpc.CallOption) (*ExportCourseVideosResponse, error)
 	ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error)
 	ListCourseAdmins(ctx context.Context, in *ListCourseAdminsRequest, opts ...grpc.CallOption) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(ctx context.Context, in *AddCourseAdminRequest, opts ...grpc.CallOption) (*CourseAdminUser, error)
@@ -889,6 +899,8 @@ type CourseServiceClient interface {
 	UpdateCourseLectureHallSettings(ctx context.Context, in *UpdateCourseLectureHallSettingsRequest, opts ...grpc.CallOption) (*ListCourseLectureHallSettingsResponse, error)
 	ListCourseParticipants(ctx context.Context, in *ListCourseParticipantsRequest, opts ...grpc.CallOption) (*ListCourseParticipantsResponse, error)
 	InviteCourseParticipants(ctx context.Context, in *InviteCourseParticipantsRequest, opts ...grpc.CallOption) (*InviteCourseParticipantsResponse, error)
+	LookupUsersForCourse(ctx context.Context, in *LookupUsersForCourseRequest, opts ...grpc.CallOption) (*LookupUsersForCourseResponse, error)
+	EnrolCourseParticipant(ctx context.Context, in *EnrolCourseParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// The sidebar's tree of courses; a flat list, grouped by semester by the caller.
 	ListAdministeredCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error)
 	CreateLectureSections(ctx context.Context, in *CreateLectureSectionsRequest, opts ...grpc.CallOption) (*CreateLectureSectionsResponse, error)
@@ -898,6 +910,12 @@ type CourseServiceClient interface {
 	DeleteLectureThumbnail(ctx context.Context, in *DeleteLectureThumbnailRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RequestLectureSubtitles(ctx context.Context, in *RequestLectureSubtitlesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetLectureTranscodingProgress(ctx context.Context, in *GetLectureTranscodingProgressRequest, opts ...grpc.CallOption) (*GetLectureTranscodingProgressResponse, error)
+	RequestLectureWaveform(ctx context.Context, in *RequestLectureWaveformRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetLectureWaveform(ctx context.Context, in *GetLectureWaveformRequest, opts ...grpc.CallOption) (*GetLectureWaveformResponse, error)
+	CutLecture(ctx context.Context, in *CutLectureRequest, opts ...grpc.CallOption) (*CutLectureResponse, error)
+	GetLectureCut(ctx context.Context, in *GetLectureCutRequest, opts ...grpc.CallOption) (*GetLectureCutResponse, error)
+	RetryLectureCut(ctx context.Context, in *RetryLectureCutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	AbandonLectureCut(ctx context.Context, in *AbandonLectureCutRequest, opts ...grpc.CallOption) (*AbandonLectureCutResponse, error)
 }
 
 type courseServiceClient struct {
@@ -1268,6 +1286,16 @@ func (c *courseServiceClient) RedoCoursePostProcessing(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *courseServiceClient) ExportCourseVideos(ctx context.Context, in *ExportCourseVideosRequest, opts ...grpc.CallOption) (*ExportCourseVideosResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExportCourseVideosResponse)
+	err := c.cc.Invoke(ctx, CourseService_ExportCourseVideos_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) ListCourseAudits(ctx context.Context, in *ListCourseAuditsRequest, opts ...grpc.CallOption) (*ListAuditsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAuditsResponse)
@@ -1358,6 +1386,26 @@ func (c *courseServiceClient) InviteCourseParticipants(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *courseServiceClient) LookupUsersForCourse(ctx context.Context, in *LookupUsersForCourseRequest, opts ...grpc.CallOption) (*LookupUsersForCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LookupUsersForCourseResponse)
+	err := c.cc.Invoke(ctx, CourseService_LookupUsersForCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) EnrolCourseParticipant(ctx context.Context, in *EnrolCourseParticipantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_EnrolCourseParticipant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *courseServiceClient) ListAdministeredCourses(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdministeredCoursesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAdministeredCoursesResponse)
@@ -1438,6 +1486,66 @@ func (c *courseServiceClient) GetLectureTranscodingProgress(ctx context.Context,
 	return out, nil
 }
 
+func (c *courseServiceClient) RequestLectureWaveform(ctx context.Context, in *RequestLectureWaveformRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_RequestLectureWaveform_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetLectureWaveform(ctx context.Context, in *GetLectureWaveformRequest, opts ...grpc.CallOption) (*GetLectureWaveformResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLectureWaveformResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetLectureWaveform_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) CutLecture(ctx context.Context, in *CutLectureRequest, opts ...grpc.CallOption) (*CutLectureResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CutLectureResponse)
+	err := c.cc.Invoke(ctx, CourseService_CutLecture_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) GetLectureCut(ctx context.Context, in *GetLectureCutRequest, opts ...grpc.CallOption) (*GetLectureCutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLectureCutResponse)
+	err := c.cc.Invoke(ctx, CourseService_GetLectureCut_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) RetryLectureCut(ctx context.Context, in *RetryLectureCutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CourseService_RetryLectureCut_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseServiceClient) AbandonLectureCut(ctx context.Context, in *AbandonLectureCutRequest, opts ...grpc.CallOption) (*AbandonLectureCutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AbandonLectureCutResponse)
+	err := c.cc.Invoke(ctx, CourseService_AbandonLectureCut_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CourseServiceServer is the server API for CourseService service.
 // All implementations must embed UnimplementedCourseServiceServer
 // for forward compatibility.
@@ -1496,6 +1604,7 @@ type CourseServiceServer interface {
 	CopyCourse(context.Context, *CopyCourseRequest) (*CopyCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*emptypb.Empty, error)
 	RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error)
+	ExportCourseVideos(context.Context, *ExportCourseVideosRequest) (*ExportCourseVideosResponse, error)
 	ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error)
 	ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error)
 	AddCourseAdmin(context.Context, *AddCourseAdminRequest) (*CourseAdminUser, error)
@@ -1505,6 +1614,8 @@ type CourseServiceServer interface {
 	UpdateCourseLectureHallSettings(context.Context, *UpdateCourseLectureHallSettingsRequest) (*ListCourseLectureHallSettingsResponse, error)
 	ListCourseParticipants(context.Context, *ListCourseParticipantsRequest) (*ListCourseParticipantsResponse, error)
 	InviteCourseParticipants(context.Context, *InviteCourseParticipantsRequest) (*InviteCourseParticipantsResponse, error)
+	LookupUsersForCourse(context.Context, *LookupUsersForCourseRequest) (*LookupUsersForCourseResponse, error)
+	EnrolCourseParticipant(context.Context, *EnrolCourseParticipantRequest) (*emptypb.Empty, error)
 	// The sidebar's tree of courses; a flat list, grouped by semester by the caller.
 	ListAdministeredCourses(context.Context, *emptypb.Empty) (*ListAdministeredCoursesResponse, error)
 	CreateLectureSections(context.Context, *CreateLectureSectionsRequest) (*CreateLectureSectionsResponse, error)
@@ -1514,6 +1625,12 @@ type CourseServiceServer interface {
 	DeleteLectureThumbnail(context.Context, *DeleteLectureThumbnailRequest) (*emptypb.Empty, error)
 	RequestLectureSubtitles(context.Context, *RequestLectureSubtitlesRequest) (*emptypb.Empty, error)
 	GetLectureTranscodingProgress(context.Context, *GetLectureTranscodingProgressRequest) (*GetLectureTranscodingProgressResponse, error)
+	RequestLectureWaveform(context.Context, *RequestLectureWaveformRequest) (*emptypb.Empty, error)
+	GetLectureWaveform(context.Context, *GetLectureWaveformRequest) (*GetLectureWaveformResponse, error)
+	CutLecture(context.Context, *CutLectureRequest) (*CutLectureResponse, error)
+	GetLectureCut(context.Context, *GetLectureCutRequest) (*GetLectureCutResponse, error)
+	RetryLectureCut(context.Context, *RetryLectureCutRequest) (*emptypb.Empty, error)
+	AbandonLectureCut(context.Context, *AbandonLectureCutRequest) (*AbandonLectureCutResponse, error)
 	mustEmbedUnimplementedCourseServiceServer()
 }
 
@@ -1632,8 +1749,11 @@ func (UnimplementedCourseServiceServer) DeleteCourse(context.Context, *DeleteCou
 func (UnimplementedCourseServiceServer) RedoCoursePostProcessing(context.Context, *RedoCoursePostProcessingRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RedoCoursePostProcessing not implemented")
 }
+func (UnimplementedCourseServiceServer) ExportCourseVideos(context.Context, *ExportCourseVideosRequest) (*ExportCourseVideosResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportCourseVideos not implemented")
+}
 func (UnimplementedCourseServiceServer) ListCourseAudits(context.Context, *ListCourseAuditsRequest) (*ListAuditsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListCourseAudits not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ListCourseAudits not implemented")
 }
 func (UnimplementedCourseServiceServer) ListCourseAdmins(context.Context, *ListCourseAdminsRequest) (*ListCourseAdminsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCourseAdmins not implemented")
@@ -1659,6 +1779,12 @@ func (UnimplementedCourseServiceServer) ListCourseParticipants(context.Context, 
 func (UnimplementedCourseServiceServer) InviteCourseParticipants(context.Context, *InviteCourseParticipantsRequest) (*InviteCourseParticipantsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InviteCourseParticipants not implemented")
 }
+func (UnimplementedCourseServiceServer) LookupUsersForCourse(context.Context, *LookupUsersForCourseRequest) (*LookupUsersForCourseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LookupUsersForCourse not implemented")
+}
+func (UnimplementedCourseServiceServer) EnrolCourseParticipant(context.Context, *EnrolCourseParticipantRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnrolCourseParticipant not implemented")
+}
 func (UnimplementedCourseServiceServer) ListAdministeredCourses(context.Context, *emptypb.Empty) (*ListAdministeredCoursesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListAdministeredCourses not implemented")
 }
@@ -1682,6 +1808,24 @@ func (UnimplementedCourseServiceServer) RequestLectureSubtitles(context.Context,
 }
 func (UnimplementedCourseServiceServer) GetLectureTranscodingProgress(context.Context, *GetLectureTranscodingProgressRequest) (*GetLectureTranscodingProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLectureTranscodingProgress not implemented")
+}
+func (UnimplementedCourseServiceServer) RequestLectureWaveform(context.Context, *RequestLectureWaveformRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestLectureWaveform not implemented")
+}
+func (UnimplementedCourseServiceServer) GetLectureWaveform(context.Context, *GetLectureWaveformRequest) (*GetLectureWaveformResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLectureWaveform not implemented")
+}
+func (UnimplementedCourseServiceServer) CutLecture(context.Context, *CutLectureRequest) (*CutLectureResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CutLecture not implemented")
+}
+func (UnimplementedCourseServiceServer) GetLectureCut(context.Context, *GetLectureCutRequest) (*GetLectureCutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLectureCut not implemented")
+}
+func (UnimplementedCourseServiceServer) RetryLectureCut(context.Context, *RetryLectureCutRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetryLectureCut not implemented")
+}
+func (UnimplementedCourseServiceServer) AbandonLectureCut(context.Context, *AbandonLectureCutRequest) (*AbandonLectureCutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AbandonLectureCut not implemented")
 }
 func (UnimplementedCourseServiceServer) mustEmbedUnimplementedCourseServiceServer() {}
 func (UnimplementedCourseServiceServer) testEmbeddedByValue()                       {}
@@ -2352,6 +2496,24 @@ func _CourseService_RedoCoursePostProcessing_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_ExportCourseVideos_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportCourseVideosRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).ExportCourseVideos(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_ExportCourseVideos_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).ExportCourseVideos(ctx, req.(*ExportCourseVideosRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_ListCourseAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListCourseAuditsRequest)
 	if err := dec(in); err != nil {
@@ -2514,6 +2676,42 @@ func _CourseService_InviteCourseParticipants_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CourseService_LookupUsersForCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupUsersForCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).LookupUsersForCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_LookupUsersForCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).LookupUsersForCourse(ctx, req.(*LookupUsersForCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_EnrolCourseParticipant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrolCourseParticipantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).EnrolCourseParticipant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_EnrolCourseParticipant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).EnrolCourseParticipant(ctx, req.(*EnrolCourseParticipantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CourseService_ListAdministeredCourses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -2654,6 +2852,114 @@ func _CourseService_GetLectureTranscodingProgress_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CourseServiceServer).GetLectureTranscodingProgress(ctx, req.(*GetLectureTranscodingProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_RequestLectureWaveform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestLectureWaveformRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).RequestLectureWaveform(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_RequestLectureWaveform_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).RequestLectureWaveform(ctx, req.(*RequestLectureWaveformRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetLectureWaveform_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLectureWaveformRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetLectureWaveform(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetLectureWaveform_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetLectureWaveform(ctx, req.(*GetLectureWaveformRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_CutLecture_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CutLectureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).CutLecture(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_CutLecture_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).CutLecture(ctx, req.(*CutLectureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_GetLectureCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLectureCutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).GetLectureCut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_GetLectureCut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).GetLectureCut(ctx, req.(*GetLectureCutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_RetryLectureCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryLectureCutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).RetryLectureCut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_RetryLectureCut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).RetryLectureCut(ctx, req.(*RetryLectureCutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseService_AbandonLectureCut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AbandonLectureCutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseServiceServer).AbandonLectureCut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseService_AbandonLectureCut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseServiceServer).AbandonLectureCut(ctx, req.(*AbandonLectureCutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2810,6 +3116,10 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CourseService_RedoCoursePostProcessing_Handler,
 		},
 		{
+			MethodName: "exportCourseVideos",
+			Handler:    _CourseService_ExportCourseVideos_Handler,
+		},
+		{
 			MethodName: "listCourseAudits",
 			Handler:    _CourseService_ListCourseAudits_Handler,
 		},
@@ -2846,6 +3156,14 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CourseService_InviteCourseParticipants_Handler,
 		},
 		{
+			MethodName: "lookupUsersForCourse",
+			Handler:    _CourseService_LookupUsersForCourse_Handler,
+		},
+		{
+			MethodName: "enrolCourseParticipant",
+			Handler:    _CourseService_EnrolCourseParticipant_Handler,
+		},
+		{
 			MethodName: "listAdministeredCourses",
 			Handler:    _CourseService_ListAdministeredCourses_Handler,
 		},
@@ -2876,6 +3194,30 @@ var CourseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "getLectureTranscodingProgress",
 			Handler:    _CourseService_GetLectureTranscodingProgress_Handler,
+		},
+		{
+			MethodName: "requestLectureWaveform",
+			Handler:    _CourseService_RequestLectureWaveform_Handler,
+		},
+		{
+			MethodName: "getLectureWaveform",
+			Handler:    _CourseService_GetLectureWaveform_Handler,
+		},
+		{
+			MethodName: "cutLecture",
+			Handler:    _CourseService_CutLecture_Handler,
+		},
+		{
+			MethodName: "getLectureCut",
+			Handler:    _CourseService_GetLectureCut_Handler,
+		},
+		{
+			MethodName: "retryLectureCut",
+			Handler:    _CourseService_RetryLectureCut_Handler,
+		},
+		{
+			MethodName: "abandonLectureCut",
+			Handler:    _CourseService_AbandonLectureCut_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -3746,6 +4088,7 @@ const (
 	AdminService_DeleteMaintenanceTranscodingFailure_FullMethodName = "/protobuf.AdminService/deleteMaintenanceTranscodingFailure"
 	AdminService_ListMaintenanceEmailFailures_FullMethodName        = "/protobuf.AdminService/listMaintenanceEmailFailures"
 	AdminService_DeleteMaintenanceEmailFailure_FullMethodName       = "/protobuf.AdminService/deleteMaintenanceEmailFailure"
+	AdminService_ReapDeletedMedia_FullMethodName                    = "/protobuf.AdminService/reapDeletedMedia"
 	AdminService_SearchCourseImportSchedule_FullMethodName          = "/protobuf.AdminService/searchCourseImportSchedule"
 	AdminService_ImportCourseImportCourses_FullMethodName           = "/protobuf.AdminService/importCourseImportCourses"
 	AdminService_ListTokens_FullMethodName                          = "/protobuf.AdminService/listTokens"
@@ -3806,6 +4149,7 @@ type AdminServiceClient interface {
 	DeleteMaintenanceTranscodingFailure(ctx context.Context, in *DeleteMaintenanceTranscodingFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(ctx context.Context, in *DeleteMaintenanceEmailFailureRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReapDeletedMedia(ctx context.Context, in *ReapDeletedMediaRequest, opts ...grpc.CallOption) (*ReapDeletedMediaResponse, error)
 	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
 	// course yet, so it is server-wide like runners and info pages.
 	SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error)
@@ -4096,6 +4440,16 @@ func (c *adminServiceClient) DeleteMaintenanceEmailFailure(ctx context.Context, 
 	return out, nil
 }
 
+func (c *adminServiceClient) ReapDeletedMedia(ctx context.Context, in *ReapDeletedMediaRequest, opts ...grpc.CallOption) (*ReapDeletedMediaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReapDeletedMediaResponse)
+	err := c.cc.Invoke(ctx, AdminService_ReapDeletedMedia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminServiceClient) SearchCourseImportSchedule(ctx context.Context, in *CourseImportSearchRequest, opts ...grpc.CallOption) (*CourseImportSearchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CourseImportSearchResponse)
@@ -4316,6 +4670,7 @@ type AdminServiceServer interface {
 	DeleteMaintenanceTranscodingFailure(context.Context, *DeleteMaintenanceTranscodingFailureRequest) (*emptypb.Empty, error)
 	ListMaintenanceEmailFailures(context.Context, *emptypb.Empty) (*ListMaintenanceEmailFailuresResponse, error)
 	DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error)
+	ReapDeletedMedia(context.Context, *ReapDeletedMediaRequest) (*ReapDeletedMediaResponse, error)
 	// Course import reaches TUMonline directly (rather than a dao) and belongs to no
 	// course yet, so it is server-wide like runners and info pages.
 	SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error)
@@ -4430,6 +4785,9 @@ func (UnimplementedAdminServiceServer) ListMaintenanceEmailFailures(context.Cont
 }
 func (UnimplementedAdminServiceServer) DeleteMaintenanceEmailFailure(context.Context, *DeleteMaintenanceEmailFailureRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMaintenanceEmailFailure not implemented")
+}
+func (UnimplementedAdminServiceServer) ReapDeletedMedia(context.Context, *ReapDeletedMediaRequest) (*ReapDeletedMediaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReapDeletedMedia not implemented")
 }
 func (UnimplementedAdminServiceServer) SearchCourseImportSchedule(context.Context, *CourseImportSearchRequest) (*CourseImportSearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchCourseImportSchedule not implemented")
@@ -4956,6 +5314,24 @@ func _AdminService_DeleteMaintenanceEmailFailure_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_ReapDeletedMedia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReapDeletedMediaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ReapDeletedMedia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ReapDeletedMedia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ReapDeletedMedia(ctx, req.(*ReapDeletedMediaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminService_SearchCourseImportSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CourseImportSearchRequest)
 	if err := dec(in); err != nil {
@@ -5386,6 +5762,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "deleteMaintenanceEmailFailure",
 			Handler:    _AdminService_DeleteMaintenanceEmailFailure_Handler,
+		},
+		{
+			MethodName: "reapDeletedMedia",
+			Handler:    _AdminService_ReapDeletedMedia_Handler,
 		},
 		{
 			MethodName: "searchCourseImportSchedule",

@@ -118,7 +118,7 @@ const semesterGroups = computed(() =>
 </script>
 
 <template>
-  <div class="flex w-full grow flex-col md:flex-row">
+  <div class="flex w-full grow flex-col md:min-h-0 md:flex-row">
     <button
       type="button"
       class="tum-live-button-secondary tum-live-button mx-4 mt-4 self-start px-3 py-1 text-sm md:hidden"
@@ -197,7 +197,7 @@ const semesterGroups = computed(() =>
       </section>
     </nav>
 
-    <article class="text-3 min-w-0 grow p-4">
+    <article class="text-3 tum-live-scroll-pane min-w-0 grow p-4 md:overflow-y-auto">
       <slot />
     </article>
   </div>

@@ -47,11 +47,10 @@ watch(() => route.fullPath, sidenav.close);
 </script>
 
 <template>
-  <div class="flex w-full grow">
+  <div class="flex min-h-0 w-full grow">
     <StartPageSidenav />
 
-    <!-- Hidden rather than pushed aside while the sidebar is covering the screen. -->
-    <article class="text-3 grow p-4" :class="{ hidden: sidenav.open }">
+    <article class="text-3 tum-live-scroll-pane grow overflow-y-auto p-4" :class="{ hidden: sidenav.open }">
       <slot />
     </article>
   </div>

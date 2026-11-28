@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
 
 	"github.com/TUM-Dev/gocast/dao"
@@ -236,6 +237,25 @@ func TestEndStream_MarksStreamEnded(t *testing.T) {
 	}
 	if !ended {
 		t.Error("stream was not marked ended, TriggerDueStreams will start it again")
+	}
+}
+
+// TestStreamEnded_DeletedStreamIsAcknowledged guards against a StreamEnd loop: the runner
+// retries a StreamEnd until the manager acknowledges it, so an error for a stream that was
+// deleted while running would be retried every 30 seconds for good.
+func TestStreamEnded_DeletedStreamIsAcknowledged(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	streamsDao := mock_dao.NewMockStreamsDao(ctrl)
+	streamsDao.EXPECT().ClearRunnerJobForStream(uint(7), gomock.Any()).Return(nil)
+	streamsDao.EXPECT().CountRunnerJobsForStream(uint(7)).Return(int64(0), nil)
+	streamsDao.EXPECT().SetStreamNotLiveById(uint(7)).Return(nil)
+	streamsDao.EXPECT().GetStreamByID(gomock.Any(), "7").Return(model.Stream{}, gorm.ErrRecordNotFound)
+
+	m := New(dao.DaoWrapper{StreamsDao: streamsDao})
+
+	n := &protobuf.StreamEndNotification{Stream: &protobuf.StreamInfo{Id: ptr.Take(uint64(7))}}
+	if err := m.streamEnded(context.Background(), n); err != nil {
+		t.Fatalf("expected the StreamEnd of a deleted stream to be acknowledged, got %v", err)
 	}
 }
 

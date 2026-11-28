@@ -57,11 +57,12 @@ jwtkey: |
     0D2sRiCzTBQY06fMx9m+zb9PRixyPIDGaM4He58EkZqWBf7qnHI2Og==
     -----END RSA PRIVATE KEY-----
 mail:
-    maxmailsperminute: 10
-    sender: noreply@example.org
-    server: mailrelay.example.org
-    smimecert: /path/to/cert.pem
-    smimekey: /path/to/key.pem
+  sender: noreply@example.org
+  server: mailrelay.example.org
+  smimecert: /path/to/cert.pem
+  smimekey: /path/to/key.pem
+  # smimekeypassword: changeme # only if the key is password protected
+  maxMailsPerMinute: 10
 meili:
     apikey: MASTER_KEY
     host: http://localhost:7700

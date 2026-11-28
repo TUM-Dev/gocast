@@ -35,7 +35,7 @@ jobs:
 
   # Browser tests against a real server: a MariaDB seeded from the starter dump, the
   # Go binary serving the SPA, and Playwright driving Chromium against it. This
-  # is the only job that can see gin choosing between the SPA shell and a template, or
+  # is the only job that can see the Go router answering a page with the SPA shell, or
   # the session cookie surviving a login redirect.
   #
   # The server runs on the config.yaml in the repository root, unchanged — the same

@@ -218,16 +218,21 @@ export const RECORDING_VERSIONS: { type: MediaType; label: string }[] = [
   { type: "CAM", label: "Camera video" },
 ];
 
-/** Hands a recording to a runner, which transcodes it into that version. */
+/**
+ * Hands a recording to a runner, which transcodes it into that version. onProgress gets
+ * the share of the file sent so far (0 to 1); the call resolves once the runner has
+ * accepted it, which can be a while after that reaches 1.
+ */
 export async function uploadLectureRecording(
   courseId: number,
   streamId: number,
   type: MediaType,
   file: File,
+  onProgress?: (fraction: number) => void,
 ): Promise<void> {
   const form = new FormData();
   form.append("file", file);
-  await apiUpload(`${lecturePath(courseId, streamId)}/media?type=${type}`, form);
+  await apiUpload(`${lecturePath(courseId, streamId)}/media?type=${type}`, form, onProgress);
 }
 
 export function recordingUploadErrorMessage(err: unknown): string {

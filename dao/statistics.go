@@ -54,7 +54,7 @@ func (d statisticsDao) GetCourseNumVodViews(courseID uint) (int, error) {
 	var res int
 	err := DB.Raw(`SELECT IFNULL(SUM(stats.viewers), 0) FROM stats
 		JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? or ? = 0) AND live = 0`, courseID, courseID).Scan(&res).Error
+		WHERE (s.course_id = ? or ? = 0) AND live = 0 AND stats.deleted_at IS NULL`, courseID, courseID).Scan(&res).Error
 	return res, err
 }
 
@@ -66,6 +66,7 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
         	JOIN streams s ON s.id = stats.stream_id
 		WHERE (s.course_id = ? OR ? = 0)
             AND stats.live = 1
+            AND stats.deleted_at IS NULL
         GROUP BY stats.stream_id)
 		SELECT IFNULL(SUM(y), 0)
 			FROM views_per_stream WHERE y IS NOT NULL`, courseID, courseID).Scan(&res).Error
@@ -76,7 +77,7 @@ func (d statisticsDao) GetCourseNumLiveViews(courseID uint) (int, error) {
 func (d statisticsDao) GetLectureNumVodViews(streamID uint) (int, error) {
 	var res int
 	err := DB.Raw(`SELECT IFNULL(SUM(viewers), 0) FROM stats
-		WHERE live = 0 AND stream_id = ?`, streamID).Scan(&res).Error
+		WHERE live = 0 AND stream_id = ? AND deleted_at IS NULL`, streamID).Scan(&res).Error
 	return res, err
 }
 
@@ -85,7 +86,8 @@ func (d statisticsDao) GetLectureNumLiveViews(streamID uint) (int, error) {
 	var res int
 	// MAX over no rows is NULL, not 0, and NULL does not scan into an int: a lecture
 	// nobody watched live would fail instead of answering 0.
-	err := DB.Raw(`SELECT IFNULL(MAX(viewers), 0) from stats where stream_id = ?`, streamID).Scan(&res).Error
+	err := DB.Raw(`SELECT IFNULL(MAX(viewers), 0) FROM stats
+		WHERE stream_id = ? AND live = 1 AND deleted_at IS NULL`, streamID).Scan(&res).Error
 	return res, err
 }
 
@@ -95,7 +97,7 @@ func (d statisticsDao) GetCourseNumVodViewsPerDay(courseID uint) ([]Stat, error)
 	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND live = 0
+		WHERE (s.course_id = ? OR ? = 0) AND live = 0 AND stats.deleted_at IS NULL
 		GROUP BY DATE(stats.time);`,
 		courseID, courseID).Scan(&res).Error
 	return res, err
@@ -106,7 +108,7 @@ func (d statisticsDao) GetLectureNumVodViewsPerDay(streamID uint) ([]Stat, error
 	var res []Stat
 	err := DB.Raw(`SELECT DATE_FORMAT(stats.time, GET_FORMAT(DATE, 'EUR')) AS x, sum(viewers) AS y
 		FROM stats
-		WHERE stream_id = ? AND live = 0
+		WHERE stream_id = ? AND live = 0 AND deleted_at IS NULL
 		GROUP BY DATE(stats.time);`,
 		streamID).Scan(&res).Error
 	return res, err
@@ -118,7 +120,7 @@ func (d statisticsDao) GetCourseStatsWeekdays(courseID uint) ([]Stat, error) {
 	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0 AND stats.deleted_at IS NULL
 		GROUP BY DAYOFWEEK(stats.time);`,
 		courseID, courseID).Scan(&res).Error
 	return res, err
@@ -130,7 +132,7 @@ func (d statisticsDao) GetCourseStatsHourly(courseID uint) ([]Stat, error) {
 	err := DB.Raw(`SELECT HOUR(stats.time) AS x, SUM(stats.viewers) as y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? or ? = 0) AND stats.live = 0
+		WHERE (s.course_id = ? or ? = 0) AND stats.live = 0 AND stats.deleted_at IS NULL
 		GROUP BY HOUR(stats.time);`,
 		courseID, courseID).Scan(&res).Error
 	return res, err
@@ -142,7 +144,7 @@ func (d statisticsDao) GetLectureStatsWeekdays(courseID uint, streamID uint) ([]
 	err := DB.Raw(`SELECT DAYNAME(stats.time) AS x, SUM(stats.viewers) as y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0 AND stats.stream_id = ?
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = 0 AND stats.stream_id = ? AND stats.deleted_at IS NULL
 		GROUP BY DAYOFWEEK(stats.time);`,
 		courseID, courseID, streamID).Scan(&res).Error
 	return res, err
@@ -154,7 +156,7 @@ func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, er
 	err := DB.Raw(`SELECT Date_FORMAT(stats.time, "%H:%i") AS x, stats.viewers AS y
 		FROM stats
 			JOIN streams s ON s.id = stats.stream_id
-		WHERE s.course_id = ? AND s.id = ? AND stats.live = 1
+		WHERE s.course_id = ? AND s.id = ? AND stats.live = 1 AND stats.deleted_at IS NULL
 		ORDER BY x;`, courseID, streamID).Scan(&res).Error
 	return res, err
 }
@@ -162,7 +164,7 @@ func (d statisticsDao) GetLectureStats(courseID uint, streamID uint) ([]Stat, er
 // GetStreamNumLiveViews returns the number of viewers currently watching a live stream.
 func (d statisticsDao) GetStreamNumLiveViews(streamID uint) (int, error) {
 	var res int
-	err := DB.Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1 ORDER BY id DESC LIMIT 1`, streamID).Scan(&res).Error
+	err := DB.Raw(`SELECT viewers FROM stats WHERE stream_id = ? AND live = 1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 1`, streamID).Scan(&res).Error
 	return res, err
 }
 
@@ -181,7 +183,7 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
 	err := DB.Raw(`SELECT year(stats.time) AS year, week(stats.time) AS week, `+countMethod+`(stats.viewers) AS count
 		FROM stats
         	JOIN streams s ON s.id = stats.stream_id
-		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ? AND week(stats.time) > 0
+		WHERE (s.course_id = ? OR ? = 0) AND stats.live = ? AND stats.deleted_at IS NULL AND week(stats.time) > 0
 		GROUP BY year, week
 		ORDER BY year, week;`, // or ? = 0 -> if courseID is 0, all stats are selected
 		courseID, courseID, live).Scan(&res).Error
@@ -214,7 +216,7 @@ func (d statisticsDao) GetStudentActivityCourseStats(courseID uint, live bool) (
 
 func (d statisticsDao) GetLectureLiveStats(streamID uint) ([]model.Stat, error) {
 	var res []model.Stat
-	err := DB.Raw("SELECT * FROM stats WHERE stream_id = ? AND live = 1", streamID).Scan(&res).Error
+	err := DB.Raw("SELECT * FROM stats WHERE stream_id = ? AND live = 1 AND deleted_at IS NULL", streamID).Scan(&res).Error
 
 	return res, err
 }

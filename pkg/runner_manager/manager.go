@@ -25,8 +25,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 
+	"github.com/tum-dev/gocast/runner/pkg/mtls"
 	"github.com/tum-dev/gocast/runner/pkg/ptr"
 	"github.com/tum-dev/gocast/runner/protobuf"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/TUM-Dev/gocast/pkg/camera"
 
@@ -41,6 +44,8 @@ type Manager struct {
 	dao        dao.DaoWrapper
 	listenAddr string
 	logger     *log.Logger
+	// tls secures the link to the runners; the zero value leaves it plaintext (development).
+	tls mtls.Files
 
 	protobuf.UnimplementedRunnerManagerServiceServer
 
@@ -158,7 +163,9 @@ func (m *Manager) TriggerDueStreams() error {
 // triggerStreamVersion starts one version of a stream on a reserved runner. It owns the
 // runner connection for the duration of the call, so that a tick spanning several streams
 // and versions doesn't hold one connection open per iteration.
-func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) error {
+func (m *Manager) triggerStreamVersion(ctx context.Context, s model.Stream, lh model.LectureHall, version protobuf.StreamVersion, detectSilence bool) (err error) {
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(s.ID), version), "manager.trigger_stream", streamAttrs(uint64(s.ID), version)...)
+	defer endSpan(span, &err)
 	runner, client, conn, err := m.getClient(ctx)
 	if err != nil {
 		return fmt.Errorf("getClient: %w", err)
@@ -188,6 +195,13 @@ func WithListenAddr(addr string) Option {
 	}
 	return func(m *Manager) {
 		m.listenAddr = addr
+	}
+}
+
+// WithTLS secures the gRPC link to the runners with mutual TLS. Unset files leave it off.
+func WithTLS(files mtls.Files) Option {
+	return func(m *Manager) {
+		m.tls = files
 	}
 }
 
@@ -229,13 +243,27 @@ func (m *Manager) Run() error {
 	if err != nil {
 		return fmt.Errorf("run manager: %v", err)
 	}
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
+	serverOpts := []grpc.ServerOption{grpc.KeepaliveParams(keepalive.ServerParameters{
 		MaxConnectionIdle:     time.Minute,
 		MaxConnectionAge:      time.Minute,
 		MaxConnectionAgeGrace: time.Second * 5,
 		Time:                  time.Minute * 10,
 		Timeout:               time.Second * 20,
-	}))
+	})}
+	on, err := m.tls.Enabled()
+	if err != nil {
+		return fmt.Errorf("run manager: %w", err)
+	}
+	if on {
+		creds, err := m.tls.ServerCredentials()
+		if err != nil {
+			return fmt.Errorf("run manager: %w", err)
+		}
+		serverOpts = append(serverOpts, grpc.Creds(creds))
+	} else {
+		m.logger.Warn("mutual TLS is off: the gRPC link to the runners is unauthenticated and unencrypted")
+	}
+	grpcServer := grpc.NewServer(serverOpts...)
 	protobuf.RegisterRunnerManagerServiceServer(grpcServer, m)
 	reflection.Register(grpcServer)
 	go func(listener net.Listener) {
@@ -251,12 +279,17 @@ func (m *Manager) Run() error {
 
 func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (*protobuf.RegisterResponse, error) {
 	m.logger.Info("Register Runner", "d", req)
-	err := m.dao.RunnerDao.Create(ctx, &model.Runner{
+	if err := m.requirePeer(ctx, req.GetHostname()); err != nil {
+		return nil, err
+	}
+	reg := &model.Runner{
 		Hostname:       req.GetHostname(),
 		Port:           uint32(req.GetPort()),
 		TimeOfRegister: time.Now(),
 		Version:        req.GetVersion(),
-	})
+	}
+	recordCert(ctx, reg)
+	err := m.dao.RunnerDao.Create(ctx, reg)
 	if err != nil {
 		return nil, fmt.Errorf("create runner: %v", err)
 	}
@@ -270,9 +303,45 @@ func (m *Manager) Register(ctx context.Context, req *protobuf.RegisterRequest) (
 	return &protobuf.RegisterResponse{}, nil
 }
 
-func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
+// requirePeer lets a runner act only under the name its certificate carries, so one runner
+// can't take over another's hostname and with it its jobs. Without mutual TLS it allows all.
+func (m *Manager) requirePeer(ctx context.Context, hostname string) error {
+	if on, _ := m.tls.Enabled(); !on {
+		return nil
+	}
+	return mtls.CheckPeer(ctx, hostname)
+}
+
+// recordCert copies what the caller's certificate says onto r. Without mutual TLS there is none
+// and r keeps what it has.
+func recordCert(ctx context.Context, r *model.Runner) {
+	c := mtls.PeerCert(ctx)
+	if c == nil {
+		return
+	}
+	notAfter := c.NotAfter
+	r.CertSerial = c.SerialNumber.Text(16)
+	r.CertFingerprint = mtls.Fingerprint(c)
+	r.CertNotAfter = &notAfter
+	r.CertNames = strings.Join(c.DNSNames, ",")
+}
+
+func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notification) (resp *protobuf.NotificationResponse, err error) {
+	// Heartbeats come every few seconds from every runner and are not part of any stream.
+	if _, ok := notification.Data.(*protobuf.Notification_Heartbeat); !ok {
+		var span trace.Span
+		ctx, span = startNotifySpan(ctx, notification)
+		defer endSpan(span, &err)
+	}
+	return m.handleNotification(ctx, notification)
+}
+
+func (m *Manager) handleNotification(ctx context.Context, notification *protobuf.Notification) (*protobuf.NotificationResponse, error) {
 	switch notification.Data.(type) {
 	case *protobuf.Notification_Heartbeat:
+		if err := m.requirePeer(ctx, notification.GetHeartbeat().GetHostname()); err != nil {
+			return nil, err
+		}
 		runner, err := m.dao.RunnerDao.Get(ctx, notification.GetHeartbeat().GetHostname())
 		if err != nil {
 			return nil, lookupError(err, "runner %s", notification.GetHeartbeat().GetHostname())
@@ -282,6 +351,9 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		if runner.Draining != newDraining || runner.JobCount != newJobCount {
 			m.logger.Info("Runner state changed", "hostname", notification.GetHeartbeat().GetHostname(), "draining", newDraining, "jobCount", newJobCount)
 		}
+		// Certificates reload on handshake, so a rotation shows up here and not at Register,
+		// which a runner does once per start.
+		recordCert(ctx, &runner)
 		runner.LastSeen = time.Now()
 		runner.Draining = newDraining
 		runner.JobCount = newJobCount
@@ -306,6 +378,12 @@ func (m *Manager) Notify(ctx context.Context, notification *protobuf.Notificatio
 		return &protobuf.NotificationResponse{}, m.saveSectionImages(ctx, notification.GetSectionImagesReady())
 	case *protobuf.Notification_SilenceDetected:
 		return &protobuf.NotificationResponse{}, m.saveSilences(ctx, notification.GetSilenceDetected())
+	case *protobuf.Notification_DurationProbed:
+		return &protobuf.NotificationResponse{}, m.saveDuration(ctx, notification.GetDurationProbed())
+	case *protobuf.Notification_SpriteReady:
+		return &protobuf.NotificationResponse{}, m.saveSprite(ctx, notification.GetSpriteReady())
+	case *protobuf.Notification_WaveformReady:
+		return &protobuf.NotificationResponse{}, m.saveWaveform(ctx, notification.GetWaveformReady())
 	default:
 		return nil, status.Error(codes.Unimplemented, "unsupported notification type")
 	}
@@ -341,7 +419,7 @@ func (m *Manager) getClient(ctx context.Context) (model.Runner, protobuf.RunnerS
 		// without this the caller would only see a timeout dialing an empty host.
 		return model.Runner{}, nil, nil, ErrNoRunner
 	}
-	conn, err := dialRunner(r)
+	conn, err := m.dialRunner(r)
 	if err != nil {
 		return model.Runner{}, nil, nil, fmt.Errorf("dial runner: %w", err)
 	}
@@ -488,7 +566,10 @@ func (m *Manager) requestStreamVersion(ctx context.Context, s model.Stream, clie
 	})
 }
 
-func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) error {
+func (m *Manager) RequestSelfStream(ctx context.Context, stream model.Stream) (err error) {
+	version := protobuf.StreamVersion_STREAM_VERSION_COMBINED
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(stream.ID), version), "manager.request_self_stream", streamAttrs(uint64(stream.ID), version)...)
+	defer endSpan(span, &err)
 	if !tools.TestEnv.AllowsStream(stream.CourseID) {
 		m.logger.Warn("Stream rejected, course not allowed in test env", "streamId", stream.ID, "course", stream.CourseID)
 		return errors.New("stream rejected")
@@ -670,6 +751,10 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 		return nil, status.Errorf(codes.Internal, "can't clear the transcoding progress: %v", err)
 	}
 
+	if err := m.afterVODReady(ctx, stream.ID); err != nil {
+		return nil, err
+	}
+
 	err = m.requestSubtitles(ctx, stream, modelVersion)
 	if err != nil {
 		log.Error("failed to request subtitles", "stream", streamId, "version", modelVersion, "err", err)
@@ -678,7 +763,9 @@ func (m *Manager) handleVODReady(ctx context.Context, notification *protobuf.VOD
 	return &protobuf.NotificationResponse{}, nil
 }
 
-func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) error {
+func (m *Manager) requestSubtitles(ctx context.Context, stream model.Stream, version model.StreamVersion) (err error) {
+	ctx, span := startSpan(ctx, "manager.request_subtitles", streamAttrs(uint64(stream.ID), protobufStreamVersion(version))...)
+	defer endSpan(span, &err)
 	if m.subtitleClient == nil {
 		m.logger.Info("skipping subtitle generation, not configured", "stream-id", stream.ID, "version", version)
 		return nil // nothing to do
@@ -726,6 +813,8 @@ func (m *Manager) handleCamera(ctx context.Context, stream model.Stream) (err er
 	if stream.IsSelfStream() {
 		return nil
 	}
+	ctx, span := startSpan(ctx, "manager.handle_camera", attribute.Int64("stream.id", int64(stream.ID)))
+	defer endSpan(span, &err)
 	// A StreamStart arrives once per stream version, so a camera that is briefly unreachable
 	// gets a few tries. A failed attempt used to clear the mark entirely, which made every
 	// redelivered StreamStart move the camera again: several streams of one hall then kept
@@ -855,13 +944,20 @@ func (m *Manager) streamEnded(ctx context.Context, notification *protobuf.Stream
 	m.notifyLiveState(streamID, false)
 
 	stream, err := m.dao.StreamsDao.GetStreamByID(ctx, strconv.FormatUint(notification.GetStream().GetId(), 10))
-	if err != nil {
-		return err
-	}
 
 	m.camsHandledLock.Lock()
 	delete(m.camsHandled, streamID)
 	m.camsHandledLock.Unlock()
+
+	// A stream deleted while it was running is never found again. Returning the error would make
+	// the runner retry this StreamEnd forever, so acknowledge it.
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		m.logger.Info("stream ended but no longer exists", "stream", streamID, "version", version)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
 
 	// In the background for the same reason as in streamStarted: the runner retries a
 	// StreamEnd until it is acknowledged, and the power control can be slow or unreachable.
@@ -923,12 +1019,16 @@ func (m *Manager) EndStream(ctx context.Context, streamID uint, discardVoD bool)
 	return nil
 }
 
-func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) error {
+func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, discardVoD bool) (err error) {
+	version := protobufStreamVersion(job.Version)
+	ctx, span := startSpan(withStreamTrace(ctx, uint64(job.StreamID), version), "manager.end_runner_job",
+		append(streamAttrs(uint64(job.StreamID), version), attribute.String("job.id", job.JobID), attribute.Bool("discard_vod", discardVoD))...)
+	defer endSpan(span, &err)
 	runner, err := m.dao.RunnerDao.Get(ctx, job.RunnerHostname)
 	if err != nil {
 		return fmt.Errorf("get runner %s: %w", job.RunnerHostname, err)
 	}
-	conn, err := dialRunner(runner)
+	conn, err := m.dialRunner(runner)
 	if err != nil {
 		return fmt.Errorf("dial runner %s: %w", job.RunnerHostname, err)
 	}
@@ -952,8 +1052,18 @@ func (m *Manager) endRunnerJob(ctx context.Context, job model.StreamRunnerJob, d
 	return nil
 }
 
-func dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
-	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (m *Manager) dialRunner(runner model.Runner) (*grpc.ClientConn, error) {
+	creds := insecure.NewCredentials()
+	on, err := m.tls.Enabled()
+	if err != nil {
+		return nil, err
+	}
+	if on {
+		if creds, err = m.tls.ClientCredentials(runner.Hostname); err != nil {
+			return nil, err
+		}
+	}
+	return grpc.NewClient(fmt.Sprintf("%s:%d", runner.Hostname, runner.Port), grpc.WithTransportCredentials(creds), runnerClientTracing)
 }
 
 // ReapStaleStreams finds streams that are stuck in live state and cleans them up.

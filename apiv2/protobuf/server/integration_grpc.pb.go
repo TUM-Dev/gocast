@@ -23,6 +23,9 @@ const (
 	IntegrationService_RedeemIntegrationAuthorization_FullMethodName = "/protobuf.IntegrationService/redeemIntegrationAuthorization"
 	IntegrationService_GetIntegrationGrant_FullMethodName            = "/protobuf.IntegrationService/getIntegrationGrant"
 	IntegrationService_RevokeIntegrationGrant_FullMethodName         = "/protobuf.IntegrationService/revokeIntegrationGrant"
+	IntegrationService_GetIntegrationRecording_FullMethodName        = "/protobuf.IntegrationService/getIntegrationRecording"
+	IntegrationService_CreateIntegrationUpload_FullMethodName        = "/protobuf.IntegrationService/createIntegrationUpload"
+	IntegrationService_DeleteIntegrationRecording_FullMethodName     = "/protobuf.IntegrationService/deleteIntegrationRecording"
 )
 
 // IntegrationServiceClient is the client API for IntegrationService service.
@@ -34,6 +37,9 @@ type IntegrationServiceClient interface {
 	RedeemIntegrationAuthorization(ctx context.Context, in *RedeemIntegrationAuthorizationRequest, opts ...grpc.CallOption) (*RedeemIntegrationAuthorizationResponse, error)
 	GetIntegrationGrant(ctx context.Context, in *GetIntegrationGrantRequest, opts ...grpc.CallOption) (*GetIntegrationGrantResponse, error)
 	RevokeIntegrationGrant(ctx context.Context, in *RevokeIntegrationGrantRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetIntegrationRecording(ctx context.Context, in *GetIntegrationRecordingRequest, opts ...grpc.CallOption) (*GetIntegrationRecordingResponse, error)
+	CreateIntegrationUpload(ctx context.Context, in *CreateIntegrationUploadRequest, opts ...grpc.CallOption) (*CreateIntegrationUploadResponse, error)
+	DeleteIntegrationRecording(ctx context.Context, in *DeleteIntegrationRecordingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type integrationServiceClient struct {
@@ -74,6 +80,36 @@ func (c *integrationServiceClient) RevokeIntegrationGrant(ctx context.Context, i
 	return out, nil
 }
 
+func (c *integrationServiceClient) GetIntegrationRecording(ctx context.Context, in *GetIntegrationRecordingRequest, opts ...grpc.CallOption) (*GetIntegrationRecordingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetIntegrationRecordingResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_GetIntegrationRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) CreateIntegrationUpload(ctx context.Context, in *CreateIntegrationUploadRequest, opts ...grpc.CallOption) (*CreateIntegrationUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateIntegrationUploadResponse)
+	err := c.cc.Invoke(ctx, IntegrationService_CreateIntegrationUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *integrationServiceClient) DeleteIntegrationRecording(ctx context.Context, in *DeleteIntegrationRecordingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, IntegrationService_DeleteIntegrationRecording_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IntegrationServiceServer is the server API for IntegrationService service.
 // All implementations must embed UnimplementedIntegrationServiceServer
 // for forward compatibility.
@@ -83,6 +119,9 @@ type IntegrationServiceServer interface {
 	RedeemIntegrationAuthorization(context.Context, *RedeemIntegrationAuthorizationRequest) (*RedeemIntegrationAuthorizationResponse, error)
 	GetIntegrationGrant(context.Context, *GetIntegrationGrantRequest) (*GetIntegrationGrantResponse, error)
 	RevokeIntegrationGrant(context.Context, *RevokeIntegrationGrantRequest) (*emptypb.Empty, error)
+	GetIntegrationRecording(context.Context, *GetIntegrationRecordingRequest) (*GetIntegrationRecordingResponse, error)
+	CreateIntegrationUpload(context.Context, *CreateIntegrationUploadRequest) (*CreateIntegrationUploadResponse, error)
+	DeleteIntegrationRecording(context.Context, *DeleteIntegrationRecordingRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedIntegrationServiceServer()
 }
 
@@ -101,6 +140,15 @@ func (UnimplementedIntegrationServiceServer) GetIntegrationGrant(context.Context
 }
 func (UnimplementedIntegrationServiceServer) RevokeIntegrationGrant(context.Context, *RevokeIntegrationGrantRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeIntegrationGrant not implemented")
+}
+func (UnimplementedIntegrationServiceServer) GetIntegrationRecording(context.Context, *GetIntegrationRecordingRequest) (*GetIntegrationRecordingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetIntegrationRecording not implemented")
+}
+func (UnimplementedIntegrationServiceServer) CreateIntegrationUpload(context.Context, *CreateIntegrationUploadRequest) (*CreateIntegrationUploadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateIntegrationUpload not implemented")
+}
+func (UnimplementedIntegrationServiceServer) DeleteIntegrationRecording(context.Context, *DeleteIntegrationRecordingRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteIntegrationRecording not implemented")
 }
 func (UnimplementedIntegrationServiceServer) mustEmbedUnimplementedIntegrationServiceServer() {}
 func (UnimplementedIntegrationServiceServer) testEmbeddedByValue()                            {}
@@ -177,6 +225,60 @@ func _IntegrationService_RevokeIntegrationGrant_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IntegrationService_GetIntegrationRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIntegrationRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).GetIntegrationRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_GetIntegrationRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).GetIntegrationRecording(ctx, req.(*GetIntegrationRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_CreateIntegrationUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateIntegrationUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).CreateIntegrationUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_CreateIntegrationUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).CreateIntegrationUpload(ctx, req.(*CreateIntegrationUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IntegrationService_DeleteIntegrationRecording_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteIntegrationRecordingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IntegrationServiceServer).DeleteIntegrationRecording(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IntegrationService_DeleteIntegrationRecording_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IntegrationServiceServer).DeleteIntegrationRecording(ctx, req.(*DeleteIntegrationRecordingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IntegrationService_ServiceDesc is the grpc.ServiceDesc for IntegrationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -195,6 +297,18 @@ var IntegrationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "revokeIntegrationGrant",
 			Handler:    _IntegrationService_RevokeIntegrationGrant_Handler,
+		},
+		{
+			MethodName: "getIntegrationRecording",
+			Handler:    _IntegrationService_GetIntegrationRecording_Handler,
+		},
+		{
+			MethodName: "createIntegrationUpload",
+			Handler:    _IntegrationService_CreateIntegrationUpload_Handler,
+		},
+		{
+			MethodName: "deleteIntegrationRecording",
+			Handler:    _IntegrationService_DeleteIntegrationRecording_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

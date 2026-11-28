@@ -2,8 +2,10 @@ package apiv2
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -161,7 +163,15 @@ func TestUpdateLectureAdminFields(t *testing.T) {
 		for _, days := range []int32{0, 14, -1} {
 			api, m := newLectureAPI(t)
 			m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
-			m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+			m.audits.EXPECT().Create(gomock.Any()).DoAndReturn(func(a *model.Audit) error {
+				if days == -1 && !strings.Contains(a.Message, "expiration days override: use course default") {
+					t.Errorf("audit message = %q, want readable course default", a.Message)
+				}
+				if strings.Contains(a.Message, "expiration days override: -1") {
+					t.Errorf("audit message = %q, must not record the sentinel", a.Message)
+				}
+				return nil
+			})
 			m.streams.EXPECT().UpdateStream(gomock.Any()).DoAndReturn(func(s model.Stream) error {
 				if days == -1 {
 					if s.ExpirationDaysOverride.Valid {
@@ -473,6 +483,43 @@ func TestUpdateLecturesLectureHall(t *testing.T) {
 	})
 }
 
+// chanEnder reports the streams it is asked to end over a channel, as discardLive ends them
+// in the background.
+type chanEnder struct {
+	ended chan uint
+	err   error
+}
+
+func newChanEnder(err error) *chanEnder { return &chanEnder{ended: make(chan uint, 8), err: err} }
+
+func (c *chanEnder) EndStream(_ context.Context, id uint, discard bool) error {
+	if !discard {
+		return errors.New("recording kept")
+	}
+	c.ended <- id
+	return c.err
+}
+
+// wantEnded fails unless exactly the given streams were ended, in order.
+func (c *chanEnder) wantEnded(t *testing.T, want ...uint) {
+	t.Helper()
+	for _, id := range want {
+		select {
+		case got := <-c.ended:
+			if got != id {
+				t.Fatalf("ended %d, want %d", got, id)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatalf("stream %d was not ended", id)
+		}
+	}
+	select {
+	case got := <-c.ended:
+		t.Fatalf("ended %d too", got)
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
 func TestDeleteLectures(t *testing.T) {
 	t.Run("deletes and audits each of the course's lectures", func(t *testing.T) {
 		api, m := newLectureAPI(t)
@@ -490,6 +537,30 @@ func TestDeleteLectures(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("DeleteLectures: %v", err)
 		}
+	})
+
+	t.Run("stops lectures that are live or hold a runner job, discarding the recording", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		f := newChanEnder(errors.New("runner unreachable"))
+		api.streamEnder = f
+		live, starting, idle := courseOneLecture(), courseOneLecture(), courseOneLecture()
+		live.LiveNow, starting.ID, idle.ID = true, 8, 9
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(live, nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "8").Return(starting, nil)
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "9").Return(idle, nil)
+		m.streams.EXPECT().GetRunnerJobsForStream(uint(7)).Return(nil, nil)
+		m.streams.EXPECT().GetRunnerJobsForStream(uint(8)).Return([]model.StreamRunnerJob{{StreamID: 8}}, nil)
+		m.streams.EXPECT().GetRunnerJobsForStream(uint(9)).Return(nil, nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}}, nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).Times(3)
+		m.streams.EXPECT().RemoveStream(gomock.Any()).Return(nil).Times(3)
+
+		if _, err := api.DeleteLectures(asCaller(lectureAdmin), &protobuf.DeleteLecturesRequest{
+			CourseId: 1, StreamIds: []uint32{7, 8, 9},
+		}); err != nil {
+			t.Fatalf("a runner that can't be stopped must not block the delete: %v", err)
+		}
+		f.wantEnded(t, 7, 8)
 	})
 
 	t.Run("audits nothing for a lecture whose delete failed", func(t *testing.T) {
@@ -546,6 +617,28 @@ func TestDeleteLectureSeries(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("DeleteLectureSeries: %v", err)
 		}
+	})
+
+	t.Run("stops the series' lectures that are live or hold a runner job, discarding the recording", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		f := newChanEnder(nil)
+		api.streamEnder = f
+		live, past := courseOneLecture(), courseOneLecture()
+		live.ID, live.LiveNow, past.ID = 9, true, 10
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(courseOneLecture(), nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(1)).Return(model.Course{Model: gorm.Model{ID: 1}}, nil)
+		m.streams.EXPECT().GetCourseLectureSeries(uint(1), "s1").Return([]model.Stream{live, past}, nil)
+		m.streams.EXPECT().GetRunnerJobsForStream(uint(9)).Return(nil, nil)
+		m.streams.EXPECT().GetRunnerJobsForStream(uint(10)).Return(nil, nil)
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil)
+		m.streams.EXPECT().DeleteCourseLectureSeries(uint(1), "s1").Return(nil)
+
+		if _, err := api.DeleteLectureSeries(asCaller(lectureAdmin), &protobuf.DeleteLectureSeriesRequest{
+			CourseId: 1, StreamId: 7,
+		}); err != nil {
+			t.Fatalf("DeleteLectureSeries: %v", err)
+		}
+		f.wantEnded(t, 9)
 	})
 
 	t.Run("refuses a lecture in no series", func(t *testing.T) {
@@ -617,11 +710,16 @@ func TestCopyLecture(t *testing.T) {
 
 	t.Run("a copy keeps the original and gets its own stream key", func(t *testing.T) {
 		api, m := newLectureAPI(t)
-		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(withChildren(), nil)
+		original := withChildren()
+		original.ExpirationDaysOverride = sql.NullInt32{Int32: 14, Valid: true}
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(original, nil)
 		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(courseThree, nil)
 		m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
 			if s.StreamKey == "secret" || s.StreamKey == "" {
 				t.Errorf("stream key = %q, want a fresh one", s.StreamKey)
+			}
+			if s.ExpirationDaysOverride.Valid {
+				t.Errorf("copied expiration override = %+v, want target course default", s.ExpirationDaysOverride)
 			}
 			s.ID = 99
 			return nil
@@ -633,6 +731,29 @@ func TestCopyLecture(t *testing.T) {
 			CourseId: 1, StreamId: 7, TargetCourseId: 3,
 		}); err != nil {
 			t.Fatalf("CopyLecture: %v", err)
+		}
+	})
+
+	t.Run("a move keeps the lecture's expiration override", func(t *testing.T) {
+		api, m := newLectureAPI(t)
+		original := withChildren()
+		original.ExpirationDaysOverride = sql.NullInt32{Int32: 14, Valid: true}
+		m.streams.EXPECT().GetStreamByID(gomock.Any(), "7").Return(original, nil)
+		m.courses.EXPECT().GetCourseById(gomock.Any(), uint(3)).Return(courseThree, nil)
+		created := m.streams.EXPECT().CreateStream(gomock.Any()).DoAndReturn(func(s *model.Stream) error {
+			if !s.ExpirationDaysOverride.Valid || s.ExpirationDaysOverride.Int32 != 14 {
+				t.Errorf("moved expiration override = %+v, want 14", s.ExpirationDaysOverride)
+			}
+			s.ID = 99
+			return nil
+		})
+		m.audits.EXPECT().Create(gomock.Any()).Return(nil).AnyTimes()
+		m.streams.EXPECT().RemoveStream("7").Return(nil).After(created)
+
+		if _, err := api.CopyLecture(asCaller(caller), &protobuf.CopyLectureRequest{
+			CourseId: 1, StreamId: 7, TargetCourseId: 3, Move: true,
+		}); err != nil {
+			t.Fatalf("CopyLecture move: %v", err)
 		}
 	})
 

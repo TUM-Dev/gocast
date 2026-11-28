@@ -6,17 +6,23 @@ import { ApiError } from "@/lib/api";
 import {
   deleteEmailFailure,
   deleteTranscodingFailure,
+  dryRunReap,
+  executeReap,
+  fetchAllReapEntries,
   fetchCronJobs,
   fetchEmailFailures,
   fetchTranscodingFailures,
   runCronJob,
   type EmailFailure,
+  type ReapEntry,
+  type ReapPlanPage,
+  type ReapResult,
   type TranscodingFailure,
 } from "@/lib/maintenance";
 import { redirectToLogin, useAuthStore } from "@/stores/auth";
 
 /**
- * Server maintenance: cron jobs, and dismissing failed transcodings and emails. Three
+ * Server maintenance: cron jobs, and dismissing failed transcodings and emails. Four
  * independent panels, matching the old page — nothing here shares state, so one
  * panel's error does not block the others from loading.
  */
@@ -150,6 +156,99 @@ async function removeEmailFailure(failure: EmailFailure): Promise<void> {
   }
 }
 
+// --- Deleted media -----------------------------------------------------------------
+
+// Soft-deleting a stream leaves its files on disk. The dry run lists every file and
+// directory a delete would remove; deleting needs that dry run's token, and the server
+// refuses if anything changed since, so only what is shown here is ever removed.
+const reapPlan = ref<ReapPlanPage | null>(null);
+const reapEntries = ref<ReapEntry[]>([]);
+const reapResult = ref<ReapResult | null>(null);
+const reapBusy = ref(false);
+
+function formatBytes(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+async function runReapDryRun(): Promise<void> {
+  reapBusy.value = true;
+  reapResult.value = null;
+  try {
+    const plan = await dryRunReap();
+    reapPlan.value = plan;
+    reapEntries.value = plan.entries;
+  } catch (err) {
+    error.value = message(err);
+  } finally {
+    reapBusy.value = false;
+  }
+}
+
+async function loadMoreReapEntries(): Promise<void> {
+  if (!reapPlan.value) return;
+  reapBusy.value = true;
+  try {
+    const page = await dryRunReap(reapEntries.value.length, reapPlan.value.planToken);
+    reapEntries.value = [...reapEntries.value, ...page.entries];
+  } catch (err) {
+    error.value = message(err);
+  } finally {
+    reapBusy.value = false;
+  }
+}
+
+async function downloadReapList(): Promise<void> {
+  if (!reapPlan.value) return;
+  reapBusy.value = true;
+  try {
+    const all = await fetchAllReapEntries(reapPlan.value);
+    const lines = all.map((e) => `${e.type}\t${e.bytes}\t${e.path}`);
+    const url = URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/plain" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "reap-deleted-media.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    error.value = message(err);
+  } finally {
+    reapBusy.value = false;
+  }
+}
+
+async function runReap(): Promise<void> {
+  const plan = reapPlan.value;
+  if (!plan) return;
+  if (
+    !window.confirm(
+      `Permanently delete ${plan.totalFiles} files (${formatBytes(plan.totalBytes)})? This cannot be undone.`,
+    )
+  ) {
+    return;
+  }
+
+  reapBusy.value = true;
+  try {
+    reapResult.value = await executeReap(plan.planToken);
+    reapPlan.value = null;
+    reapEntries.value = [];
+  } catch (err) {
+    error.value = message(err);
+    // The plan is stale after a refusal; make the admin review a fresh one.
+    reapPlan.value = null;
+    reapEntries.value = [];
+  } finally {
+    reapBusy.value = false;
+  }
+}
+
 onMounted(async () => {
   const user = await auth.load().catch(() => null);
   if (!user) {
@@ -200,6 +299,84 @@ onUnmounted(() => {
         >
           {{ cronRunOk ? "Job has been triggered." : "Something went wrong." }}
         </span>
+      </div>
+
+      <div class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800">
+        <h2 class="text-1 font-semibold">Deleted Media</h2>
+        <p class="text-5 text-sm">
+          Deleting a stream or course leaves its video files on disk. A dry run lists every file and
+          directory that would be removed, for streams deleted more than 30 days ago. Files that a live
+          stream or a copy still uses are never listed.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="tum-live-button-primary px-4 py-2 text-sm"
+            :disabled="reapBusy"
+            @click="runReapDryRun"
+          >
+            Dry run
+          </button>
+          <template v-if="reapPlan && reapPlan.totalEntries">
+            <button type="button" class="px-4 py-2 text-sm" :disabled="reapBusy" @click="downloadReapList">
+              Download full list
+            </button>
+            <button
+              type="button"
+              class="rounded bg-danger px-4 py-2 text-sm text-white"
+              :disabled="reapBusy"
+              @click="runReap"
+            >
+              Delete {{ reapPlan.totalFiles }} files ({{ formatBytes(reapPlan.totalBytes) }})
+            </button>
+          </template>
+        </div>
+
+        <p v-if="reapResult" class="text-sm" role="status">
+          Deleted {{ reapResult.deletedFiles }} files ({{ formatBytes(reapResult.deletedBytes) }}).
+          <span v-if="reapResult.errors.length" class="text-red-500">
+            {{ reapResult.errors.length }} failed: {{ reapResult.errors.slice(0, 3).join("; ") }}
+          </span>
+        </p>
+
+        <template v-if="reapPlan">
+          <p v-if="!reapPlan.totalEntries" class="text-5 text-sm">Nothing to delete.</p>
+          <template v-else>
+            <p class="text-3 text-sm">
+              {{ reapPlan.totalDirs }} directories, {{ reapPlan.totalFiles }} files,
+              {{ formatBytes(reapPlan.totalBytes) }}
+            </p>
+            <ul class="flex max-h-96 flex-col gap-1 overflow-auto font-mono text-xs">
+              <li v-for="entry in reapEntries" :key="entry.path" class="flex justify-between gap-4">
+                <span class="text-3 break-all">{{ entry.type === "dir" ? entry.path + "/" : entry.path }}</span>
+                <span class="text-5 shrink-0">
+                  {{ entry.type === "dir" ? "" : formatBytes(entry.bytes) }} · stream
+                  {{ entry.streamIds.join(", ") }}
+                </span>
+              </li>
+            </ul>
+            <button
+              v-if="reapEntries.length < reapPlan.totalEntries"
+              type="button"
+              class="self-start text-sm"
+              :disabled="reapBusy"
+              @click="loadMoreReapEntries"
+            >
+              Show more ({{ reapPlan.totalEntries - reapEntries.length }} left)
+            </button>
+          </template>
+          <details v-if="reapPlan.skipped.length" class="text-sm">
+            <summary class="text-5 cursor-pointer">
+              {{ reapPlan.skipped.length }} left alone
+            </summary>
+            <ul class="mt-2 flex max-h-64 flex-col gap-1 overflow-auto font-mono text-xs">
+              <li v-for="skipped in reapPlan.skipped" :key="skipped.path + skipped.streamIds.join()">
+                <span class="text-3 break-all">{{ skipped.path }}</span>
+                <span class="text-5"> · {{ skipped.reason }}</span>
+              </li>
+            </ul>
+          </details>
+        </template>
       </div>
 
       <div class="flex flex-col gap-3 rounded-lg border p-4 dark:border-gray-800">

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 
@@ -15,8 +15,6 @@ import (
 )
 
 func TestLoggedIn(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	t.Run("sends an anonymous visitor to the login page with somewhere to return to", func(t *testing.T) {
 		// Without the return parameter, SetLoginRedirectCookie has nothing to record and
 		// the user is dropped on the start page after signing in.
@@ -40,14 +38,24 @@ func TestLoggedIn(t *testing.T) {
 	})
 }
 
+// withContext stands in for InitContext: the testutils package has the same helper,
+// but imports this one.
+func withContext(ctx TUMLiveContext) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, WithTUMLiveContext(r, ctx))
+		})
+	}
+}
+
 // serveWithContext runs LoggedIn against one request with the given context already
 // set, standing in for InitContext.
 func serveWithContext(t *testing.T, target string, ctx TUMLiveContext) *httptest.ResponseRecorder {
 	t.Helper()
 
-	router := gin.New()
-	router.Use(func(c *gin.Context) { c.Set("TUMLiveContext", ctx) })
-	router.GET("/settings", LoggedIn, func(c *gin.Context) { c.Status(http.StatusOK) })
+	router := NewRouter()
+	router.Use(withContext(ctx))
+	router.Group(LoggedIn).HandleFunc("GET /settings", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
@@ -56,8 +64,6 @@ func serveWithContext(t *testing.T, target string, ctx TUMLiveContext) *httptest
 
 // RequirePermission is the single gate in front of thirteen route groups.
 func TestRequirePermission(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name     string
 		ctx      TUMLiveContext
@@ -105,10 +111,10 @@ func TestRequirePermission(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			router := gin.New()
-			router.Use(func(c *gin.Context) { c.Set("TUMLiveContext", tt.ctx) })
-			router.GET("/gated", RequirePermission(tt.required), func(c *gin.Context) {
-				c.Status(http.StatusOK)
+			router := NewRouter()
+			router.Use(withContext(tt.ctx))
+			router.Group(RequirePermission(tt.required)).HandleFunc("GET /gated", func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
 			})
 
 			rec := httptest.NewRecorder()
@@ -124,24 +130,21 @@ func TestRequirePermission(t *testing.T) {
 // A refused course page goes through the error page renderer, so the SPA can show the
 // refusal; a bare 403 used to leave the browser with an empty page.
 func TestAdminOfCourseRendersTheRefusal(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	var rendered int
-	SetErrorPageRenderer(func(c *gin.Context, status int, _ string) {
+	SetErrorPageRenderer(func(w http.ResponseWriter, _ *http.Request, status int, _ string) {
 		rendered = status
-		c.Status(status)
+		w.WriteHeader(status)
 	})
 	t.Cleanup(func() { SetErrorPageRenderer(nil) })
 
 	course := model.Course{Model: gorm.Model{ID: 1}}
-	router := gin.New()
-	router.Use(func(c *gin.Context) {
-		c.Set("TUMLiveContext", TUMLiveContext{
-			User:   &model.User{Role: model.StudentType},
-			Course: &course,
-		})
-	})
-	router.GET("/admin/courses/1/settings", AdminOfCourse, func(c *gin.Context) {
-		c.Status(http.StatusOK)
+	router := NewRouter()
+	router.Use(withContext(TUMLiveContext{
+		User:   &model.User{Role: model.StudentType},
+		Course: &course,
+	}))
+	router.Group(AdminOfCourse).HandleFunc("GET /admin/courses/1/settings", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
 	})
 
 	rec := httptest.NewRecorder()
@@ -155,8 +158,6 @@ func TestAdminOfCourseRendersTheRefusal(t *testing.T) {
 // InitStream behind InitCourse: the course from the URL is already in the context, and
 // AdminOfCourse vouched only for it, so a stream of any other course must look missing.
 func TestInitStreamCourseScope(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	course := model.Course{Model: gorm.Model{ID: 1}, Visibility: "public"}
 	own := model.Stream{Model: gorm.Model{ID: 10}, CourseID: 1}
 	foreign := model.Stream{Model: gorm.Model{ID: 20}, CourseID: 2}
@@ -175,18 +176,54 @@ func TestInitStreamCourseScope(t *testing.T) {
 			streams.EXPECT().GetStreamByID(gomock.Any(), "10").Return(own, nil).AnyTimes()
 			streams.EXPECT().GetStreamByID(gomock.Any(), "20").Return(foreign, nil).AnyTimes()
 
-			router := gin.New()
-			router.Use(func(c *gin.Context) {
-				c.Set("TUMLiveContext", TUMLiveContext{User: &model.User{Role: model.AdminType}, Course: &course})
-			})
-			router.GET("/:streamID", InitStream(dao.DaoWrapper{StreamsDao: streams}), func(c *gin.Context) {
-				c.Status(http.StatusOK)
+			router := NewRouter()
+			router.Use(withContext(TUMLiveContext{User: &model.User{Role: model.AdminType}, Course: &course}))
+			router.Group(InitStream(dao.DaoWrapper{StreamsDao: streams})).HandleFunc("GET /{streamID}", func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
 			})
 
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/"+tt.streamID, nil))
 			if rec.Code != tt.want {
 				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+func TestInitStreamExpiredLecture(t *testing.T) {
+	course := model.Course{
+		Model: gorm.Model{ID: 1}, Visibility: "public", LectureExpirationDays: 1,
+	}
+	stream := model.Stream{
+		Model: gorm.Model{ID: 10}, CourseID: 1, End: time.Now().Add(-48 * time.Hour),
+	}
+
+	for _, tt := range []struct {
+		name string
+		user *model.User
+		want int
+	}{
+		{"student", &model.User{Role: model.StudentType}, http.StatusGone},
+		{"course administrator", &model.User{Role: model.LecturerType, AdministeredCourses: []model.Course{course}}, http.StatusOK},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			streams := mock_dao.NewMockStreamsDao(gomock.NewController(t))
+			streams.EXPECT().GetStreamByID(gomock.Any(), "10").Return(stream, nil)
+
+			router := NewRouter()
+			router.Use(withContext(TUMLiveContext{User: tt.user, Course: &course}))
+			router.Group(InitStream(dao.DaoWrapper{StreamsDao: streams})).HandleFunc("GET /{streamID}", func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/10", nil))
+			if rec.Code != tt.want {
+				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+			if tt.want == http.StatusGone && rec.Body.String() != ExpiredStreamAccess {
+				t.Errorf("body = %q, want %q", rec.Body.String(), ExpiredStreamAccess)
 			}
 		})
 	}

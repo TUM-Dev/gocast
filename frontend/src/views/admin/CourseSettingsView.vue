@@ -44,6 +44,13 @@ const form = reactive<CourseSettings>({
   lectureExpirationDays: 0,
 });
 
+const expirationDays = computed({
+  get: () => String(form.lectureExpirationDays),
+  set: (value: string) => {
+    form.lectureExpirationDays = value.trim() === "" ? 0 : Number(value);
+  },
+});
+
 function reset(from: CourseAdmin): void {
   form.visibility = from.visibility;
   form.vodEnabled = from.vodEnabled;
@@ -253,7 +260,7 @@ const languages: Record<string, string> = { de: "German", en: "English" };
         <div class="flex items-center gap-2">
           <input
             id="lecture-expiration-days"
-            v-model.number="form.lectureExpirationDays"
+            v-model="expirationDays"
             type="number"
             min="0"
             max="3650"

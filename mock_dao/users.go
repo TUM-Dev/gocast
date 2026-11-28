@@ -125,6 +125,21 @@ func (mr *MockUsersDaoMockRecorder) DeleteUser(ctx, uid any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockUsersDao)(nil).DeleteUser), ctx, uid)
 }
 
+// FindUsersByIdentifier mocks base method.
+func (m *MockUsersDao) FindUsersByIdentifier(ctx context.Context, identifier string) ([]model.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindUsersByIdentifier", ctx, identifier)
+	ret0, _ := ret[0].([]model.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindUsersByIdentifier indicates an expected call of FindUsersByIdentifier.
+func (mr *MockUsersDaoMockRecorder) FindUsersByIdentifier(ctx, identifier any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindUsersByIdentifier", reflect.TypeOf((*MockUsersDao)(nil).FindUsersByIdentifier), ctx, identifier)
+}
+
 // GetAllAdminsAndLecturers mocks base method.
 func (m *MockUsersDao) GetAllAdminsAndLecturers(users *[]model.User) error {
 	m.ctrl.T.Helper()
@@ -256,6 +271,20 @@ func (m *MockUsersDao) SearchUserWithRole(query string, role uint64) ([]model.Us
 func (mr *MockUsersDaoMockRecorder) SearchUserWithRole(query, role any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchUserWithRole", reflect.TypeOf((*MockUsersDao)(nil).SearchUserWithRole), query, role)
+}
+
+// TouchLastLogin mocks base method.
+func (m *MockUsersDao) TouchLastLogin(ctx context.Context, uid uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TouchLastLogin", ctx, uid)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TouchLastLogin indicates an expected call of TouchLastLogin.
+func (mr *MockUsersDaoMockRecorder) TouchLastLogin(ctx, uid any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TouchLastLogin", reflect.TypeOf((*MockUsersDao)(nil).TouchLastLogin), ctx, uid)
 }
 
 // UpdateUser mocks base method.

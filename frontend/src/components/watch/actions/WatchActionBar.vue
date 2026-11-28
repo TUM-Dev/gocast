@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 
 import KeyboardShortcuts from "@/components/KeyboardShortcuts.vue";
 import { WatchLayout, type StreamWatch } from "@/gen/server/apiv2_pb";
-import { announceDownload } from "@/lib/download-notice";
+import { startDownload } from "@/lib/download-notice";
 import type { PlayerController } from "@/lib/player/controller";
 import {
   attachmentLink,
@@ -111,7 +111,7 @@ const iconClass = "fa-solid text-lg transition-transform motion-safe:group-hover
         :href="d.url"
         download
         :class="itemClass"
-        @click="announceDownload"
+        @click.prevent="startDownload(d.url)"
       >
         <i class="fa-solid fa-download text-xs text-gray-500 dark:text-gray-200"></i>
         <span>Download {{ d.friendlyName }}</span>

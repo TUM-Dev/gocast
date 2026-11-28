@@ -9,9 +9,12 @@ import {
   fetchAdministeredCourses,
   fetchCourseAdmin,
   fetchCourseIntegrationGrants,
+  fetchCourseVideoExport,
   fetchLectureHallSettings,
   groupBySemester,
+  enrolCourseParticipant,
   inviteCourseParticipants,
+  lookupUsersForCourse,
   parseInviteBatch,
   publicCoursePath,
   removeCourseAdmin,
@@ -19,6 +22,7 @@ import {
   searchUsersForCourse,
   updateCourseSettings,
   updateLectureHallSettings,
+  videoExportScript,
 } from "./course-admin";
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -230,6 +234,25 @@ describe("participants", () => {
   });
 });
 
+describe("enrolling existing accounts", () => {
+  it("escapes the identifier it looks up", async () => {
+    respondWith({ users: [{ id: 5, name: "Stephanie Studi", login: "ge42abc@tum.de", role: 4 }] });
+
+    const found = await lookupUsersForCourse(1, "ge42abc@tum.de");
+    expect(lastCall().url).toBe("/api/v2/courses/1/participants/lookup?q=ge42abc%40tum.de");
+    expect(found).toEqual([{ id: 5, name: "Stephanie Studi", login: "ge42abc@tum.de", role: 4 }]);
+  });
+
+  it("enrols by user id", async () => {
+    respondWith({});
+
+    await enrolCourseParticipant(1, 5);
+    expect(lastCall().url).toBe("/api/v2/courses/1/participants/enrol");
+    expect(lastCall().method).toBe("POST");
+    expect(lastCall().body).toEqual({ courseId: 1, userId: 5 });
+  });
+});
+
 describe("parseInviteBatch", () => {
   it("reads name,email lines in the old form's order, skipping blank ones", () => {
     expect(parseInviteBatch("Tim, tim69@hotmail.com\n\n  Anja,anja@lmu.de \n")).toEqual({
@@ -268,5 +291,35 @@ describe("the sidebar's course tree", () => {
 
     expect(groups.map((g) => g.label)).toEqual(["Winter 2022/23", "Summer 2022", "Winter 2021/22"]);
     expect(groups[1].courses.map((c) => c.id)).toEqual([1, 4]);
+  });
+});
+
+describe("course video export", () => {
+  it("asks for the version and maps the links", async () => {
+    respondWith({ videos: [{ streamId: 3, fileName: "a_COMB.mp4", url: "https://edge/x.m3u8?jwt=j&download=1" }] });
+
+    const videos = await fetchCourseVideoExport(5, "CAMERA");
+
+    expect(lastCall().url).toContain("/courses/5/export/videos?kind=WATCH_VIEW_KIND_CAMERA");
+    expect(videos).toEqual([{ streamId: 3, fileName: "a_COMB.mp4", url: "https://edge/x.m3u8?jwt=j&download=1" }]);
+  });
+
+  it("asks for every version unless one is chosen", async () => {
+    respondWith({ videos: [] });
+
+    await fetchCourseVideoExport(5);
+
+    expect(lastCall().url).toMatch(/\/courses\/5\/export\/videos$/);
+  });
+
+  it("writes a resumable, quoted script that survives a failed file", () => {
+    const script = videoExportScript([
+      { streamId: 1, fileName: "it's.mp4", url: "https://edge/a.m3u8?jwt=j&download=1" },
+    ]);
+
+    expect(script).toContain("get 'it'\\''s.mp4' 'https://edge/a.m3u8?jwt=j&download=1'\n");
+    expect(script).toContain("curl -fL -C - --retry 10 -o \"$1.part\"");
+    expect(script).not.toContain("set -e");
+    expect(script.endsWith("exit $failed\n")).toBe(true);
   });
 });

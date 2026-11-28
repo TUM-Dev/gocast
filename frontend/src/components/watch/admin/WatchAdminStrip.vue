@@ -8,7 +8,7 @@ import EndStreamDialog from "./EndStreamDialog.vue";
 
 /**
  * The lecturer's controls under the watch page's player: edit the lecture, its
- * statistics, the live management page, the camera presets and "End stream". Shown by
+ * statistics, the cut editor (once the stream is over), the live management page, the camera presets and "End stream". Shown by
  * the page only when StreamWatch.admin is present, so the server has already decided
  * this caller administers the course; every action behind it checks again.
  *
@@ -37,9 +37,13 @@ const linkClass = "text-3 hover:text-1 inline-flex items-center gap-1 rounded px
 
 <template>
   <section aria-label="Lecturer controls" class="flex flex-col gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700" data-testid="watch-admin">
+    <p v-if="admin.expired" class="text-sm font-semibold text-amber-700 dark:text-amber-300" role="status" data-testid="lecture-expired">
+      This lecture has expired.
+    </p>
     <div class="flex flex-wrap items-center gap-1">
       <RouterLink :to="links.edit" :class="linkClass"><i class="fas fa-pen" aria-hidden="true"></i> Edit lecture</RouterLink>
       <RouterLink :to="links.stats" :class="linkClass"><i class="fas fa-chart-bar" aria-hidden="true"></i> Statistics</RouterLink>
+      <RouterLink v-if="!liveNow" :to="links.cut" :class="linkClass"><i class="fas fa-scissors" aria-hidden="true"></i> Cut video</RouterLink>
       <RouterLink v-if="liveNow" :to="links.live" :class="linkClass"><i class="fas fa-broadcast-tower" aria-hidden="true"></i> Live management</RouterLink>
       <button
         v-if="admin.canEndStream"

@@ -196,6 +196,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/views/admin/LectureStatsView.vue"),
   },
   {
+    path: "/admin/courses/:courseID/lectures/:streamID/cut",
+    name: "admin-lecture-cut",
+    component: () => import("@/views/admin/LectureCutView.vue"),
+  },
+  {
     // The lecturer's view of a running lecture; replaces /admin/management/:c/:s. Not in
     // spaRoutes until the watch flip, which also redirects the old URL here.
     path: "/admin/courses/:courseID/lectures/:streamID/live",

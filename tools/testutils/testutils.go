@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/TUM-Dev/gocast/tools"
@@ -24,12 +24,12 @@ func Equal(t *testing.T, a, b interface{}) {
 	assert.Equal(t, a, b)
 }
 
-func GetMiddlewares(mw ...func(ctx *gin.Context)) []func(c *gin.Context) {
-	return mw
-}
-
-func TUMLiveContext(ctx tools.TUMLiveContext) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		c.Set("TUMLiveContext", ctx)
+// InjectContext is a middleware standing in for tools.InitContext: it puts ctx on every
+// request, so a test can pick who is signed in without a session cookie or a database.
+func InjectContext(ctx tools.TUMLiveContext) tools.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, tools.WithTUMLiveContext(r, ctx))
+		})
 	}
 }

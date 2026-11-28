@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api";
 import { copyCourse, deleteCourse, redoCoursePostProcessing, type CourseAdmin } from "@/lib/course-admin";
 import { fetchSemesters, semesterLabel, type TeachingTerm } from "@/lib/semesters";
 import { courseError, useCourseAdminStore } from "@/stores/course-admin";
+import CourseVideoExport from "./CourseVideoExport.vue";
 
 /** Copying the course into another semester, and deleting it. */
 const props = defineProps<{ course: CourseAdmin }>();
@@ -65,7 +66,7 @@ async function copy(): Promise<void> {
 
 async function redoPostProcessing(): Promise<void> {
   const confirmed = window.confirm(
-    `Redo the post-processing (thumbnails and silences) for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
+    `Redo the post-processing (thumbnails, durations, missing seekbar previews and silences) for every recording in "${props.course.name}"? This runs in the background and can take a while.`,
   );
   if (!confirmed) return;
   busy.value = true;
@@ -177,5 +178,8 @@ async function remove(): Promise<void> {
         <i class="fa-regular fa-trash-can mr-2" aria-hidden="true"></i>Delete course and all its lectures
       </button>
     </div>
+
+    <h3 class="text-1 mt-2 font-semibold">Export videos</h3>
+    <CourseVideoExport :course-id="course.id" />
   </section>
 </template>

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WatchLayout, WatchViewKind } from "@/gen/server/apiv2_pb";
 import { ApiError } from "@/lib/api";
-import { dismissDownloadNotice, downloadNoticeVisible } from "@/lib/download-notice";
+import { dismissDownloadNotice, downloadNoticeKind, downloadNoticeVisible } from "@/lib/download-notice";
 import { onOwnReaction } from "@/lib/reaction-floats";
 import WatchActionBar from "./WatchActionBar.vue";
 
@@ -124,6 +124,8 @@ describe("WatchActionBar", () => {
 
   it("says the download is being prepared when a recording download is clicked", async () => {
     dismissDownloadNotice();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     const w = bar({
       attachments: [{ fileId: 3, filename: "slides.pdf" }],
       downloads: [{ kind: WatchViewKind.COMBINED, friendlyName: "Combined", url: "https://dl/c.mp4" }],
@@ -136,6 +138,28 @@ describe("WatchActionBar", () => {
     await links[1].trigger("click");
     expect(downloadNoticeVisible.value).toBe(true);
     dismissDownloadNotice();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    w.unmount();
+  });
+
+  it("says to retry in a minute when the edge rejects the download", async () => {
+    dismissDownloadNotice();
+    const fetchMock = vi.fn().mockResolvedValue(new Response("busy", { status: 503, headers: { "Retry-After": "60" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    const w = bar({
+      downloads: [{ kind: WatchViewKind.COMBINED, friendlyName: "Combined", url: "https://dl/c.mp4?jwt=j&download=1" }],
+    });
+    await byLabel(w, "Attachments and downloads").trigger("click");
+    await w.find("a[role=menuitem]").trigger("click");
+    await vi.waitFor(() => expect(downloadNoticeKind.value).toBe("busy"));
+    expect(String(fetchMock.mock.calls[0][0])).toContain("probe=1");
+    // Navigating would replace the watch page with the edge's error.
+    expect(click).not.toHaveBeenCalled();
+    dismissDownloadNotice();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     w.unmount();
   });
 

@@ -14,6 +14,7 @@ import {
   fetchTranscodingProgress,
   formatSectionStart,
   pollTranscodingProgress,
+  RECORDING_VERSIONS,
   requestLectureSubtitles,
   sectionChanged,
   shouldPollProgress,
@@ -21,6 +22,7 @@ import {
   subtitleErrorMessage,
   updateLectureSection,
   uploadLectureAttachment,
+  uploadLectureRecording,
   uploadProblem,
   type TranscodingProgress,
 } from "./lecture-content";
@@ -188,6 +190,88 @@ describe("the content calls", () => {
     const [url, init] = lastCall();
     expect(url).toBe("/api/v2/courses/1/streams/2/attachments");
     expect((init.body as FormData).get("file")).toBeInstanceOf(File);
+  });
+
+  describe("recording upload", () => {
+    type Outcome = { status?: number; body?: string; event?: "error" | "abort" | "timeout" };
+
+    /** Stubs XMLHttpRequest to send two progress events, then end as `outcome` says. */
+    function stubXhr(outcome: Outcome): { headers: Record<string, string>[] } {
+      const seen = { headers: [] as Record<string, string>[] };
+      class FakeXhr {
+        status = 0;
+        statusText = "";
+        responseText = "";
+        withCredentials = false;
+        upload: { onprogress?: (e: unknown) => void } = {};
+        onload?: () => void;
+        onerror?: () => void;
+        onabort?: () => void;
+        ontimeout?: () => void;
+        headers: Record<string, string> = {};
+        open = vi.fn();
+        setRequestHeader = (k: string, v: string) => (this.headers[k] = v);
+        send = () => {
+          seen.headers.push(this.headers);
+          this.upload.onprogress?.({ lengthComputable: true, loaded: 1, total: 4 });
+          this.upload.onprogress?.({ lengthComputable: true, loaded: 4, total: 4 });
+          if (outcome.event) {
+            this[`on${outcome.event}`]?.();
+            return;
+          }
+          this.status = outcome.status ?? 200;
+          this.responseText = outcome.body ?? "";
+          this.onload?.();
+        };
+      }
+      vi.stubGlobal("XMLHttpRequest", FakeXhr);
+      return seen;
+    }
+
+    const upload = (progress: number[] = []) =>
+      uploadLectureRecording(1, 2, RECORDING_VERSIONS[0].type, new File(["x"], "a.mp4"), (f) => progress.push(f));
+
+    it("reports progress, and sends a token minted for the upload", async () => {
+      respondWith({});
+      clearToken();
+      const seen = stubXhr({ status: 204 });
+      const progress: number[] = [];
+
+      await upload(progress);
+
+      expect(progress).toEqual([0.25, 1]);
+      expect(seen.headers[0].Authorization).toBe("Bearer t");
+    });
+
+    it("mints a fresh token even when one is cached", async () => {
+      respondWith({});
+      stubXhr({ status: 200, body: "{}" });
+      await upload();
+      const tokenCalls = () => fetchMock.mock.calls.filter(([u]) => String(u).endsWith("/auth/token")).length;
+      const before = tokenCalls();
+
+      await upload();
+
+      expect(tokenCalls()).toBe(before + 1);
+    });
+
+    it("surfaces a refusal as ApiError with the gateway's message", async () => {
+      respondWith({});
+      stubXhr({ status: 503, body: JSON.stringify({ code: 14, message: "no runner" }) });
+
+      const err = await upload().catch((e) => e);
+
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.status).toBe(503);
+      expect(err.message).toBe("no runner");
+    });
+
+    it.each(["error", "abort", "timeout"] as const)("rejects like fetch does on %s", async (event) => {
+      respondWith({});
+      stubXhr({ event });
+
+      await expect(upload()).rejects.toBeInstanceOf(TypeError);
+    });
   });
 
   it("request subtitles in a language", async () => {

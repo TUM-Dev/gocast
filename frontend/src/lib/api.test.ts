@@ -170,6 +170,79 @@ describe("apiFetchOptionalAuth", () => {
   });
 });
 
+describe("a failing token endpoint", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("is not asked again for a few seconds, so each API call does not mint another token", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: "slow down" }, 429));
+
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 429 });
+    await expect(apiGet("/courses/live")).rejects.toMatchObject({ status: 429 });
+    await expect(apiGet("/semesters")).rejects.toMatchObject({ status: 429 });
+    expect(calls()).toEqual([TOKEN_URL]);
+
+    vi.advanceTimersByTime(5_000);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await expect(apiGet("/courses")).resolves.toEqual({ ok: 1 });
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+
+  it("waits as long as Retry-After says", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("{}", { status: 503, headers: { "Retry-After": "20" } }));
+
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 503 });
+    vi.advanceTimersByTime(19_000);
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 503 });
+    expect(calls()).toEqual([TOKEN_URL]);
+
+    vi.advanceTimersByTime(1_000);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await apiGet("/courses");
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+
+  it("reads Retry-After given as an HTTP date", async () => {
+    vi.setSystemTime(new Date("2026-11-08T12:00:00Z"));
+    fetchMock.mockResolvedValueOnce(
+      new Response("{}", { status: 503, headers: { "Retry-After": "Sun, 08 Nov 2026 12:00:20 GMT" } }),
+    );
+
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 503 });
+    vi.advanceTimersByTime(19_000);
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 503 });
+    expect(calls()).toEqual([TOKEN_URL]);
+
+    vi.advanceTimersByTime(1_000);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await apiGet("/courses");
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+
+  it("also backs off when the request gets no response, and rethrows the original error", async () => {
+    const reset = new TypeError("Failed to fetch");
+    fetchMock.mockRejectedValueOnce(reset);
+
+    await expect(apiGet("/courses")).rejects.toBe(reset);
+    await expect(apiGet("/courses/live")).rejects.toBe(reset);
+    expect(calls()).toEqual([TOKEN_URL]);
+
+    vi.advanceTimersByTime(5_000);
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await apiGet("/courses");
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+
+  it("does not hold off after a 401, which is answered once per page already", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ message: "no session" }, 401));
+    await expect(apiGet("/courses")).rejects.toMatchObject({ status: 401 });
+
+    fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ ok: 1 }));
+    await apiGet("/courses");
+    expect(calls()).toEqual([TOKEN_URL, TOKEN_URL, "/api/v2/courses"]);
+  });
+});
+
 describe("apiUpload", () => {
   it("posts the form as it is, leaving the multipart Content-Type to the browser", async () => {
     fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(jsonResponse({ id: 4 }));

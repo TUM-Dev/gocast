@@ -324,7 +324,11 @@ func (a *API) UpdateLecture(ctx context.Context, req *protobuf.UpdateLectureRequ
 		changed = append(changed, fmt.Sprintf("Visibility: %v", req.GetPrivate()))
 	}
 	if req.ExpirationDaysOverride != nil {
-		changed = append(changed, fmt.Sprintf("expiration days override: %d", req.GetExpirationDaysOverride()))
+		if req.GetExpirationDaysOverride() == -1 {
+			changed = append(changed, "expiration days override: use course default")
+		} else {
+			changed = append(changed, fmt.Sprintf("expiration days override: %d", req.GetExpirationDaysOverride()))
+		}
 	}
 	if len(changed) > 0 {
 		a.audit(ctx, model.AuditStreamEdit, fmt.Sprintf("%d: (%s)", stream.ID, strings.Join(changed, ", ")), forStream(stream))
@@ -478,6 +482,7 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 		return nil, e.FromGorm(err, "can't find course")
 	}
 
+	a.discardLive(ctx, streams)
 	for _, stream := range streams {
 		if err := a.dao.StreamsDao.RemoveStream(fmt.Sprintf("%d", stream.ID)); err != nil {
 			return nil, e.WithStatus(http.StatusInternalServerError, err)
@@ -486,6 +491,47 @@ func (a *API) DeleteLectures(ctx context.Context, req *protobuf.DeleteLecturesRe
 			fmt.Sprintf("'%s': %s (%d)", course.Name, stream.Start.Format("2006 02 Jan, 15:04"), stream.ID), forStream(stream))
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// discardLiveTimeout bounds the stop of one stream: it dials the runner and switches the
+// lights, both of which can hang on an unreachable host.
+const discardLiveTimeout = 30 * time.Second
+
+// discardLive stops the runner jobs of streams that are about to be deleted, without keeping
+// the recording. Once the lecture is gone nothing could publish the VoD, and the runner would
+// keep recording into the void. A stream counts when it is live or a runner still holds a job
+// for it, which covers one that is starting up.
+//
+// The stops run in the background and a failure is only logged: the admin asked for the
+// delete, an unreachable runner has nothing to stop, and a slow one must not hold up the
+// response.
+func (a *API) discardLive(ctx context.Context, streams []model.Stream) {
+	if a.streamEnder == nil {
+		return
+	}
+	var ids []uint
+	for _, s := range streams {
+		jobs, err := a.dao.StreamsDao.GetRunnerJobsForStream(s.ID)
+		if err != nil {
+			a.log.Error("can't look up the runner jobs of a deleted lecture", "err", err, "stream", s.ID)
+		}
+		if s.LiveNow || len(jobs) > 0 {
+			ids = append(ids, s.ID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	ender, ctx := a.streamEnder, context.WithoutCancel(ctx)
+	go func() {
+		for _, id := range ids {
+			stopCtx, cancel := context.WithTimeout(ctx, discardLiveTimeout)
+			if err := ender.EndStream(stopCtx, id, true); err != nil {
+				a.log.Error("can't stop the live stream of a deleted lecture", "err", err, "stream", id)
+			}
+			cancel()
+		}
+	}()
 }
 
 // DeleteLectureSeries replaces v1's deleteLectureSeries, audited the same way and
@@ -504,6 +550,13 @@ func (a *API) DeleteLectureSeries(ctx context.Context, req *protobuf.DeleteLectu
 		return nil, e.FromGorm(err, "can't find course")
 	}
 
+	if a.streamEnder != nil {
+		if series, err := a.dao.StreamsDao.GetCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
+			a.log.Error("can't look up the series before deleting it", "err", err, "stream", stream.ID)
+		} else {
+			a.discardLive(ctx, series)
+		}
+	}
 	if err := a.dao.StreamsDao.DeleteCourseLectureSeries(stream.CourseID, stream.SeriesIdentifier); err != nil {
 		return nil, e.WithStatus(http.StatusInternalServerError, err)
 	}
@@ -568,13 +621,15 @@ func (a *API) CopyLecture(ctx context.Context, req *protobuf.CopyLectureRequest)
 //
 // A copy gets its own stream key, since the key is what ingest finds a lecture by. A
 // move keeps it: the original is going away, and the self-streamer's settings keep
-// working.
+// working. A copy starts with the target course's retention policy rather than carrying
+// over the source lecture's per-lecture override.
 func copyOfLecture(stream model.Stream, courseID uint, move bool) model.Stream {
 	c := stream
 	c.Model = gorm.Model{}
 	c.CourseID = courseID
 	if !move {
 		c.StreamKey = strings.ReplaceAll(uuid.NewV4().String(), "-", "")
+		c.ExpirationDaysOverride = sql.NullInt32{}
 	}
 
 	c.VideoSections = make([]model.VideoSection, len(stream.VideoSections))

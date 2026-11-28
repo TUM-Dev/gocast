@@ -53,11 +53,15 @@
     "link": "link",
     "location-arrow": "location-arrow",
     "location-pin": "location-pin",
+    "magnifying-glass-minus": "magnifying-glass-minus",
+    "magnifying-glass-plus": "magnifying-glass-plus",
     "paperclip": "paperclip",
     "pen": "pen",
     "plus": "plus",
     "power-off": "power-off",
+    "rotate": "rotate",
     "satellite-dish": "satellite-dish",
+    "scissors": "scissors",
     "search": "magnifying-glass",
     "share-nodes": "share-nodes",
     "shield-halved": "shield-halved",
@@ -73,6 +77,7 @@
     "undo": "arrow-rotate-left",
     "upload": "upload",
     "user": "user",
+    "wifi": "wifi",
     "xmark": "xmark"
   },
   "regular": {
