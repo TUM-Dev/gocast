@@ -71,6 +71,7 @@ describe("fetchCourseAdmin", () => {
       vodEnabled: true,
       chatEnabled: true,
       userId: 1,
+      organization: "CIT",
     });
 
     const course = await fetchCourseAdmin(1);
@@ -86,6 +87,7 @@ describe("fetchCourseAdmin", () => {
       chatEnabled: true,
       language: "",
       tumOnlineIdentifier: "",
+      organization: "CIT",
     });
     expect(publicCoursePath(course)).toBe("/course/2022/S/brauereiwesen");
   });
@@ -100,15 +102,20 @@ describe("fetchCourseAdmin", () => {
 
 describe("updateCourseSettings", () => {
   it("sends only the fields given, false included", async () => {
-    respondWith({ id: 1, name: "X", slug: "x", year: 2022, term: "S", visibility: "hidden" });
+    respondWith({ id: 1, name: "X", slug: "x", year: 2022, term: "S", visibility: "hidden", organization: "IN" });
 
-    const updated = await updateCourseSettings(1, { downloadsEnabled: false, visibility: "hidden" });
+    const updated = await updateCourseSettings(1, {
+      downloadsEnabled: false,
+      visibility: "hidden",
+      organization: "IN",
+    });
 
     const call = lastCall();
     expect(call.url).toBe("/api/v2/courses/1/settings");
     expect(call.method).toBe("PATCH");
-    expect(call.body).toEqual({ courseId: 1, downloadsEnabled: false, visibility: "hidden" });
+    expect(call.body).toEqual({ courseId: 1, downloadsEnabled: false, visibility: "hidden", organization: "IN" });
     expect(updated.visibility).toBe("hidden");
+    expect(updated.organization).toBe("IN");
   });
 });
 

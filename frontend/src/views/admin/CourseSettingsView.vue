@@ -41,6 +41,7 @@ const form = reactive<CourseSettings>({
   moderatedChatEnabled: false,
   livePrivate: false,
   vodPrivate: false,
+  organization: "",
 });
 
 function reset(from: CourseAdmin): void {
@@ -52,6 +53,7 @@ function reset(from: CourseAdmin): void {
   form.moderatedChatEnabled = from.moderatedChatEnabled;
   form.livePrivate = from.livePrivate;
   form.vodPrivate = from.vodPrivate;
+  form.organization = from.organization;
 }
 
 watch(course, (c) => c && reset(c), { immediate: true });
@@ -83,7 +85,12 @@ async function save(): Promise<void> {
   saving.value = true;
   error.value = "";
   try {
-    const updated = await updateCourseSettings(course.value.id, changes.value);
+    const submittedChanges = { ...changes.value };
+    if (submittedChanges.organization !== undefined) {
+      submittedChanges.organization = submittedChanges.organization.trim();
+    }
+    const updated = await updateCourseSettings(course.value.id, submittedChanges);
+    form.organization = updated.organization;
     store.replace(updated);
     saved.value = true;
   } catch (err) {
@@ -244,6 +251,22 @@ const languages: Record<string, string> = { de: "German", en: "English" };
           <span class="text-1">Private recordings after the livestream</span>
         </label>
       </fieldset>
+
+      <div class="flex flex-col gap-1 text-sm">
+        <label for="cs-organization" class="text-2">Organization</label>
+        <input
+          id="cs-organization"
+          v-model="form.organization"
+          type="text"
+          maxlength="100"
+          autocomplete="off"
+          placeholder="e.g. CIT, IN, MA"
+          class="tum-live-input"
+        />
+        <p class="text-5 text-xs">
+          Used to filter and color this course's lectures in the admin schedule. Leave blank for unassigned.
+        </p>
+      </div>
 
       <div class="flex flex-wrap items-center justify-end gap-3">
         <p v-if="saved" class="text-sm text-green-700 dark:text-green-400" role="status">Settings saved.</p>

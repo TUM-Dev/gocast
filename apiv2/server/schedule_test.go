@@ -34,7 +34,8 @@ func TestGetSchedule(t *testing.T) {
 		halls := mock_dao.NewMockLectureHallsDao(gomock.NewController(t))
 		halls.EXPECT().GetSchedule(uint(2), from, to, []uint{0, 3}, false).Return([]dao.ScheduleEntry{{
 			StreamID: 7, CourseID: 1, CourseName: "Brauereiwesen", Name: "Hopfen",
-			Start: from.Add(time.Hour), End: from.Add(2 * time.Hour), LectureHallID: 3, LectureHallName: "HS1",
+			Organization: "CIT",
+			Start:        from.Add(time.Hour), End: from.Add(2 * time.Hour), LectureHallID: 3, LectureHallName: "HS1",
 		}}, nil)
 		api := &API{dao: dao.DaoWrapper{LectureHallsDao: halls}, log: slog.Default()}
 
@@ -46,7 +47,8 @@ func TestGetSchedule(t *testing.T) {
 			t.Fatalf("lectures = %v", resp.Lectures)
 		}
 		got := resp.Lectures[0]
-		if got.StreamId != 7 || got.CourseId != 1 || got.Name != "Hopfen" || got.LectureHallName != "HS1" {
+		if got.StreamId != 7 || got.CourseId != 1 || got.Name != "Hopfen" || got.LectureHallName != "HS1" ||
+			got.Organization != "CIT" {
 			t.Errorf("lecture = %v", got)
 		}
 		if !got.Start.AsTime().Equal(from.Add(time.Hour)) {

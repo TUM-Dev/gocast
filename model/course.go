@@ -30,6 +30,7 @@ type Course struct {
 	Slug                    string `gorm:"not null"` // eg. eidi
 	Year                    int    `gorm:"not null"` // eg. 2021
 	TeachingTerm            string `gorm:"not null"` // eg. Summer/Winter
+	Organization            string
 	TUMOnlineIdentifier     string
 	VODEnabled              bool `gorm:"default:true"`
 	DownloadsEnabled        bool `gorm:"default:false"`

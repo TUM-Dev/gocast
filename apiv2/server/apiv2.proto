@@ -2858,6 +2858,7 @@ message ScheduledLecture {
   // 0 and empty for a lecture in no hall (self-streamed).
   uint32 lecture_hall_id = 8;
   string lecture_hall_name = 9;
+  string organization = 10;
 }
 
 message GetScheduleResponse {
@@ -2919,6 +2920,7 @@ message CourseAdmin {
   string tum_online_identifier = 16;
   // The course's owner; administrators are listed by listCourseAdmins.
   uint32 user_id = 17;
+  string organization = 18;
 }
 
 // The settings v1's course settings form edited.
@@ -2933,6 +2935,7 @@ message UpdateCourseSettingsRequest {
   optional bool moderated_chat_enabled = 7;
   optional bool live_private = 8;
   optional bool vod_private = 9;
+  optional string organization = 10;
 }
 
 message CopyCourseRequest {

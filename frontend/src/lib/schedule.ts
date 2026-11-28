@@ -12,6 +12,7 @@ export interface ScheduledLecture {
   streamId: number;
   courseId: number;
   courseName: string;
+  organization: string;
   name: string;
   description: string;
   start: Date;
@@ -28,6 +29,19 @@ export interface ScheduleLectureHall {
 
 /** Stands for lectures in no hall in a hall filter, as on the server. */
 export const SELF_STREAMED = 0;
+
+/** Applies the hall and organization filters without requiring a preset list of organizations. */
+export function filterScheduleLectures(
+  lectures: readonly ScheduledLecture[],
+  halls: readonly number[] | "all",
+  organization: string,
+): ScheduledLecture[] {
+  return lectures.filter(
+    (lecture) =>
+      (halls === "all" || halls.includes(lecture.lectureHallId)) &&
+      (!organization || (lecture.organization.trim() || "Unassigned") === organization),
+  );
+}
 
 /**
  * The lectures overlapping [from, to). `halls` limits them to those halls, with
@@ -50,6 +64,7 @@ export async function fetchSchedule(
     streamId: l.streamId,
     courseId: l.courseId,
     courseName: l.courseName,
+    organization: l.organization,
     name: l.name,
     description: l.description,
     // Always sent; the epoch fallback only keeps a malformed answer from throwing.
@@ -63,6 +78,19 @@ export async function fetchSchedule(
 export async function fetchScheduleLectureHalls(): Promise<ScheduleLectureHall[]> {
   const res = await apiGetMessage(ListScheduleLectureHallsResponseSchema, "/schedule/lecture-halls");
   return res.lectureHalls.map((h) => ({ id: h.id, name: h.name }));
+}
+
+/** Stable color assignment so an organization's lectures keep their color across views. */
+export function scheduleOrganizationColor(organization: string): string {
+  const value = organization.trim();
+  if (!value) return "#475569";
+
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `hsl(${(hash >>> 0) % 360} 72% 36%)`;
 }
 
 /** Sets whichever of name and description is given and leaves the other. */

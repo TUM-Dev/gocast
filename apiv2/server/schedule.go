@@ -62,6 +62,7 @@ func (a *API) GetSchedule(ctx context.Context, req *protobuf.GetScheduleRequest)
 			StreamId:        uint32(entry.StreamID),
 			CourseId:        uint32(entry.CourseID),
 			CourseName:      entry.CourseName,
+			Organization:    entry.Organization,
 			Name:            entry.Name,
 			Description:     entry.Description,
 			Start:           timestamppb.New(entry.Start),

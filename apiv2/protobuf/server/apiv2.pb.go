@@ -9234,6 +9234,7 @@ type ScheduledLecture struct {
 	// 0 and empty for a lecture in no hall (self-streamed).
 	LectureHallId   uint32 `protobuf:"varint,8,opt,name=lecture_hall_id,json=lectureHallId,proto3" json:"lecture_hall_id,omitempty"`
 	LectureHallName string `protobuf:"bytes,9,opt,name=lecture_hall_name,json=lectureHallName,proto3" json:"lecture_hall_name,omitempty"`
+	Organization    string `protobuf:"bytes,10,opt,name=organization,proto3" json:"organization,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -9327,6 +9328,13 @@ func (x *ScheduledLecture) GetLectureHallId() uint32 {
 func (x *ScheduledLecture) GetLectureHallName() string {
 	if x != nil {
 		return x.LectureHallName
+	}
+	return ""
+}
+
+func (x *ScheduledLecture) GetOrganization() string {
+	if x != nil {
+		return x.Organization
 	}
 	return ""
 }
@@ -9652,6 +9660,7 @@ type CourseAdmin struct {
 	TumOnlineIdentifier string `protobuf:"bytes,16,opt,name=tum_online_identifier,json=tumOnlineIdentifier,proto3" json:"tum_online_identifier,omitempty"`
 	// The course's owner; administrators are listed by listCourseAdmins.
 	UserId        uint32 `protobuf:"varint,17,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Organization  string `protobuf:"bytes,18,opt,name=organization,proto3" json:"organization,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -9805,6 +9814,13 @@ func (x *CourseAdmin) GetUserId() uint32 {
 	return 0
 }
 
+func (x *CourseAdmin) GetOrganization() string {
+	if x != nil {
+		return x.Organization
+	}
+	return ""
+}
+
 // The settings v1's course settings form edited.
 type UpdateCourseSettingsRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -9818,6 +9834,7 @@ type UpdateCourseSettingsRequest struct {
 	ModeratedChatEnabled *bool   `protobuf:"varint,7,opt,name=moderated_chat_enabled,json=moderatedChatEnabled,proto3,oneof" json:"moderated_chat_enabled,omitempty"`
 	LivePrivate          *bool   `protobuf:"varint,8,opt,name=live_private,json=livePrivate,proto3,oneof" json:"live_private,omitempty"`
 	VodPrivate           *bool   `protobuf:"varint,9,opt,name=vod_private,json=vodPrivate,proto3,oneof" json:"vod_private,omitempty"`
+	Organization         *string `protobuf:"bytes,10,opt,name=organization,proto3,oneof" json:"organization,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -9913,6 +9930,13 @@ func (x *UpdateCourseSettingsRequest) GetVodPrivate() bool {
 		return *x.VodPrivate
 	}
 	return false
+}
+
+func (x *UpdateCourseSettingsRequest) GetOrganization() string {
+	if x != nil && x.Organization != nil {
+		return *x.Organization
+	}
+	return ""
 }
 
 type CopyCourseRequest struct {
@@ -21395,7 +21419,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12(\n" +
 	"\x10lecture_hall_ids\x18\x03 \x03(\rR\x0electureHallIds\x12*\n" +
-	"\x11all_lecture_halls\x18\x04 \x01(\bR\x0fallLectureHalls\"\xd7\x02\n" +
+	"\x11all_lecture_halls\x18\x04 \x01(\bR\x0fallLectureHalls\"\xfb\x02\n" +
 	"\x10ScheduledLecture\x12\x1b\n" +
 	"\tstream_id\x18\x01 \x01(\rR\bstreamId\x12\x1b\n" +
 	"\tcourse_id\x18\x02 \x01(\rR\bcourseId\x12\x1f\n" +
@@ -21406,7 +21430,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x05start\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12,\n" +
 	"\x03end\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x03end\x12&\n" +
 	"\x0flecture_hall_id\x18\b \x01(\rR\rlectureHallId\x12*\n" +
-	"\x11lecture_hall_name\x18\t \x01(\tR\x0flectureHallName\"M\n" +
+	"\x11lecture_hall_name\x18\t \x01(\tR\x0flectureHallName\x12\"\n" +
+	"\forganization\x18\n" +
+	" \x01(\tR\forganization\"M\n" +
 	"\x13GetScheduleResponse\x126\n" +
 	"\blectures\x18\x01 \x03(\v2\x1a.protobuf.ScheduledLectureR\blectures\"9\n" +
 	"\x13ScheduleLectureHall\x12\x0e\n" +
@@ -21431,7 +21457,7 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\n" +
 	"\b_private\"4\n" +
 	"\x15GetCourseAdminRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"\xc1\x04\n" +
+	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\"\xe5\x04\n" +
 	"\vCourseAdmin\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\rR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -21454,7 +21480,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"vodPrivate\x12\x1a\n" +
 	"\blanguage\x18\x0f \x01(\tR\blanguage\x122\n" +
 	"\x15tum_online_identifier\x18\x10 \x01(\tR\x13tumOnlineIdentifier\x12\x17\n" +
-	"\auser_id\x18\x11 \x01(\rR\x06userId\"\xc0\x04\n" +
+	"\auser_id\x18\x11 \x01(\rR\x06userId\x12\"\n" +
+	"\forganization\x18\x12 \x01(\tR\forganization\"\xfa\x04\n" +
 	"\x1bUpdateCourseSettingsRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12#\n" +
 	"\n" +
@@ -21468,7 +21495,9 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x16moderated_chat_enabled\x18\a \x01(\bH\x05R\x14moderatedChatEnabled\x88\x01\x01\x12&\n" +
 	"\flive_private\x18\b \x01(\bH\x06R\vlivePrivate\x88\x01\x01\x12$\n" +
 	"\vvod_private\x18\t \x01(\bH\aR\n" +
-	"vodPrivate\x88\x01\x01B\r\n" +
+	"vodPrivate\x88\x01\x01\x12'\n" +
+	"\forganization\x18\n" +
+	" \x01(\tH\bR\forganization\x88\x01\x01B\r\n" +
 	"\v_visibilityB\x0e\n" +
 	"\f_vod_enabledB\x14\n" +
 	"\x12_downloads_enabledB\x0f\n" +
@@ -21476,7 +21505,8 @@ const file_server_apiv2_proto_rawDesc = "" +
 	"\x17_anonymous_chat_enabledB\x19\n" +
 	"\x17_moderated_chat_enabledB\x0f\n" +
 	"\r_live_privateB\x0e\n" +
-	"\f_vod_private\"X\n" +
+	"\f_vod_privateB\x0f\n" +
+	"\r_organization\"X\n" +
 	"\x11CopyCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\rR\bcourseId\x12\x12\n" +
 	"\x04year\x18\x02 \x01(\x05R\x04year\x12\x12\n" +
